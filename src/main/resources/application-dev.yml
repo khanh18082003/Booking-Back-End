@@ -1,0 +1,54 @@
+# application-dev
+# spring config
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/booking_db
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: root
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: true
+#  cache:
+#    type: redis
+#  data:
+#    redis:
+#      host: ${REDIS_HOST:localhost}
+#      port: ${REDIS_PORT:6379}
+
+
+# swagger config
+openapi:
+  service:
+    api-docs: booking-back-end-service
+    title: Booking Back-End API DOCS
+    version: v1.0
+    server: http://localhost:${server.port}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+# jwt secret key
+jwt:
+  expirationTime: 2
+  expirationDay: 7
+  expirationOfVerifyTokenTime: 5
+  accessToken: 7SQerx9SoaVXIgymVZCEA3I6kloqfaZt+WJYWPUJ0Qk=
+  refreshToken: XES8dv8sa5hTheY+E51IUFcs7xkgm+cLGUNYTEaods8=
+  verifyToken: SES8dv8sa6hTheY+R51IUFcs7xkgm+cLGUNYTEaods2=
+
+
+admin-user:
+  email: nguyentrungk285@gmail.com
+  password: 18082003
