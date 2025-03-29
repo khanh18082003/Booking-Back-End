@@ -51,6 +51,7 @@ public class GlobalExceptionHandler {
       MethodArgumentNotValidException e,
       WebRequest req) {
     String errorKey = Objects.requireNonNull(e.getFieldError()).getDefaultMessage();
+    log.info("errorKey: {}", errorKey);
     String fieldError = e.getFieldError().getField();
     ErrorCode errorCode;
     try {

@@ -16,11 +16,14 @@ import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.UuidGenerator.Style;
 
 @Entity
 @Table(name = "tbl_profile")
@@ -29,11 +32,14 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Profile extends UUIDJpaEntity {
+
   @Serial
   private static final long serialVersionUID = -4881599000575895723L;
 
   @Id
+  @UuidGenerator(style = Style.TIME)
   UUID id;
 
   @Column(name = "first_name")
@@ -44,6 +50,9 @@ public class Profile extends UUIDJpaEntity {
 
   @Column(name = "avatar")
   String avatar;
+
+  @Column(name = "country_code")
+  String countryCode;
 
   @Column(name = "phone_number")
   String phone;

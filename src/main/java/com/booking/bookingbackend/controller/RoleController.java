@@ -4,13 +4,12 @@ import com.booking.bookingbackend.configuration.Translator;
 import com.booking.bookingbackend.constant.CommonConstant;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
-import com.booking.bookingbackend.data.dto.request.PermissionRequest;
+import com.booking.bookingbackend.data.dto.request.RoleRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.Meta;
 import com.booking.bookingbackend.data.dto.response.PaginationResponse;
-import com.booking.bookingbackend.data.dto.response.PermissionResponse;
 import com.booking.bookingbackend.data.dto.response.RoleResponse;
-import com.booking.bookingbackend.service.permission.PermissionService;
+import com.booking.bookingbackend.service.role.RoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -37,23 +36,23 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(EndpointConstant.ENDPOINT_PERMISSION)
+@RequestMapping(EndpointConstant.ENDPOINT_ROLE)
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
-@Slf4j(topic = "PERMISSION-CONTROLLER")
-public class PermissionController {
+@Slf4j(topic = "ROLE-CONTROLLER")
+public class RoleController {
 
-  PermissionService permissionService;
+  RoleService roleService;
 
   @PostMapping()
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
-      summary = "Create Permission",
-      description = "Create a new permission (`ADMIN` only)",
+      summary = "Create Role",
+      description = "Create a new Role (`ADMIN` only)",
       responses = {
           @io.swagger.v3.oas.annotations.responses.ApiResponse(
               responseCode = CommonConstant.MESSAGE_CREATED,
-              description = "Permission created",
+              description = "Role created",
               content =
               @Content(
                   examples =
@@ -66,9 +65,8 @@ public class PermissionController {
                                 "message": "Success",
                                 "data": {
                                   "id": 1073741824,
-                                  "method": "GET",
-                                  "url": "string",
-                                  "description": "string",
+                                  "name": "ADMIN",
+                                  "description": "All permission",
                                   "created_at": "2025-03-15T05:35:35.467Z",
                                   "updated_at": "2025-03-15T05:35:35.467Z"
                                 }
@@ -76,57 +74,37 @@ public class PermissionController {
                               """))),
       }
   )
-  ApiResponse<PermissionResponse> createPermission(@Valid @RequestBody PermissionRequest request) {
+  ApiResponse<RoleResponse> createRole(@Valid @RequestBody RoleRequest request) {
 
-    return ApiResponse.<PermissionResponse>builder()
+    return ApiResponse.<RoleResponse>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.CREATED.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .data(permissionService.save(request))
+        .data(roleService.save(request))
         .build();
   }
 
   @PutMapping("/{id}")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(
-      summary = "Update Permission",
-      description = "Update a exist permission (`ADMIN` only)",
-      responses = {
-          @io.swagger.v3.oas.annotations.responses.ApiResponse(
-              responseCode = CommonConstant.MESSAGE_OK,
-              description = "Permission updated",
-              content =
-              @Content(
-                  examples =
-                  @ExampleObject(
-                      value =
-                          """
-                              {
-                                "code": "M000",
-                                "status": "200",
-                                "message": "Success"
-                              }
-                              """))),
-      }
-  )
-  ApiResponse<PermissionResponse> updatePermission(@PathVariable int id,
-      @Valid @RequestBody PermissionRequest request) {
-    permissionService.update(id, request);
-    return ApiResponse.<PermissionResponse>builder()
+  ApiResponse<Void> updateRole(
+      @PathVariable int id,
+      @Valid @RequestBody RoleRequest request
+  ) {
+    roleService.update(id, request);
+    return ApiResponse.<Void>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-        .status(HttpStatus.OK.value())
+        .status(HttpStatus.ACCEPTED.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .build();
   }
 
   @GetMapping("/{id}")
   @Operation(
-      summary = "Get Permission By ID",
-      description = "Get a exist permission by id (`ADMIN` only)",
+      summary = "Get Role",
+      description = "Get a Role (`ADMIN` only)",
       responses = {
           @io.swagger.v3.oas.annotations.responses.ApiResponse(
-              responseCode = CommonConstant.MESSAGE_OK,
-              description = "Get Permission",
+              responseCode = CommonConstant.MESSAGE_CREATED,
+              description = "Get Role",
               content =
               @Content(
                   examples =
@@ -139,9 +117,8 @@ public class PermissionController {
                                 "message": "Success",
                                 "data": {
                                   "id": 1073741824,
-                                  "method": "GET",
-                                  "url": "string",
-                                  "description": "string",
+                                  "name": "ADMIN",
+                                  "description": "All permission",
                                   "created_at": "2025-03-15T05:35:35.467Z",
                                   "updated_at": "2025-03-15T05:35:35.467Z"
                                 }
@@ -149,23 +126,23 @@ public class PermissionController {
                               """))),
       }
   )
-  ApiResponse<PermissionResponse> getById(@PathVariable int id) {
-    return ApiResponse.<PermissionResponse>builder()
+  ApiResponse<RoleResponse> findById(@PathVariable int id) {
+    return ApiResponse.<RoleResponse>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .data(permissionService.findById(id))
+        .data(roleService.findById(id))
         .build();
   }
 
   @GetMapping
   @Operation(
-      summary = "Get all Permission",
-      description = "Get all Permission (`ADMIN` only)",
+      summary = "Get all Role",
+      description = "Get all Role (`ADMIN` only)",
       responses = {
           @io.swagger.v3.oas.annotations.responses.ApiResponse(
               responseCode = CommonConstant.MESSAGE_CREATED,
-              description = "Get all Permission",
+              description = "Get all Role",
               content =
               @Content(
                   examples =
@@ -182,9 +159,8 @@ public class PermissionController {
                                   "pages": "10",
                                   "total": "100",
                                   "id": 1073741824,
-                                  "method": "GET",
-                                  "url": "string",
-                                  "description": "string",
+                                  "name": "ADMIN",
+                                  "description": "All permission",
                                   "created_at": "2025-03-15T05:35:35.467Z",
                                   "updated_at": "2025-03-15T05:35:35.467Z"
                                 }
@@ -192,14 +168,14 @@ public class PermissionController {
                               """))),
       }
   )
-  ApiResponse<PaginationResponse<PermissionResponse>> findAll(
+  ApiResponse<PaginationResponse<RoleResponse>> findAll(
       @RequestParam(defaultValue = "1") int pageNo,
       @RequestParam(defaultValue = "20") int pageSize
   ) {
     Order order = new Order(Direction.ASC, "createdAt");
     Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(order));
-    Page<PermissionResponse> page = permissionService.findAll(pageable);
-    PaginationResponse<PermissionResponse> result = PaginationResponse.<PermissionResponse>builder()
+    Page<RoleResponse> page = roleService.findAll(pageable);
+    PaginationResponse<RoleResponse> result = PaginationResponse.<RoleResponse>builder()
         .meta(Meta.builder()
             .page(page.getNumber())
             .pageSize(page.getSize())
@@ -208,7 +184,7 @@ public class PermissionController {
             .build())
         .data(page.getContent())
         .build();
-    return ApiResponse.<PaginationResponse<PermissionResponse>>builder()
+    return ApiResponse.<PaginationResponse<RoleResponse>>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))

@@ -1,22 +1,35 @@
 package com.booking.bookingbackend.data.entity;
 
-import com.booking.bookingbackend.data.base.AbstractIdentifiable;
 import com.booking.bookingbackend.data.base.UUIDJpaEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.io.Serial;
 import java.sql.Timestamp;
+import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.UuidGenerator.Style;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Entity
 @Table(name = "tbl_user")
@@ -25,11 +38,14 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class User extends UUIDJpaEntity {
+@Builder
+public class User extends UUIDJpaEntity implements UserDetails {
+
   @Serial
   private static final long serialVersionUID = -820978303502982886L;
 
   @Id
+  @UuidGenerator(style = Style.TIME)
   UUID id;
 
   @Column(name = "email", nullable = false, unique = true)
@@ -48,4 +64,50 @@ public class User extends UUIDJpaEntity {
   @Column(name = "updated_at")
   @UpdateTimestamp
   Timestamp updatedAt;
+
+  @ToString.Exclude
+  @ManyToMany
+  @JoinTable(
+      name = "user_has_role",
+      joinColumns = @JoinColumn(name = "user_id"),
+      inverseJoinColumns = @JoinColumn(name = "role_id")
+  )
+  Set<Role> roles;
+
+  @PrePersist
+  public void onPrePersist() {
+    this.isActive = true;
+  }
+
+  @Override
+  public Collection<? extends GrantedAuthority> getAuthorities() {
+    return roles.stream()
+        .map(role -> new SimpleGrantedAuthority(String.format("ROLE_%s", role.getName())))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public String getUsername() {
+    return email;
+  }
+
+  @Override
+  public boolean isAccountNonExpired() {
+    return UserDetails.super.isAccountNonExpired();
+  }
+
+  @Override
+  public boolean isAccountNonLocked() {
+    return UserDetails.super.isAccountNonLocked();
+  }
+
+  @Override
+  public boolean isCredentialsNonExpired() {
+    return UserDetails.super.isCredentialsNonExpired();
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return UserDetails.super.isEnabled();
+  }
 }
