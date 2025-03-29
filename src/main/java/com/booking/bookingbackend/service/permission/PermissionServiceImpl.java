@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Getter
@@ -25,6 +26,7 @@ public class PermissionServiceImpl implements PermissionService {
   PermissionMapper mapper;
 
 
+  @Transactional
   @Override
   public PermissionResponse save(PermissionRequest request) {
     Permission entity = mapper.toEntity(request);
@@ -32,6 +34,7 @@ public class PermissionServiceImpl implements PermissionService {
     return mapper.toDtoResponse(repository.save(entity));
   }
 
+  @Transactional
   @Override
   public void update(int id, PermissionRequest request) {
     Permission entity = repository.findById(id).orElseThrow(() -> new AppException(

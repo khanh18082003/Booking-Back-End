@@ -52,3 +52,10 @@ jwt:
 admin-user:
   email: nguyentrungk285@gmail.com
   password: 18082003
+admin-profile:
+  firstName: Kay
+  lastName: Nguyen
+  countryCode: +84
+  phone: +84378277559
+  gender: MALE
+  address: 40/4 Hang Tre, Long Thanh My, TP.Thu Duc, TP.Ho Chi Minh
