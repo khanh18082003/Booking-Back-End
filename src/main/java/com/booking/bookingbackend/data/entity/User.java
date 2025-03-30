@@ -74,11 +74,6 @@ public class User extends UUIDJpaEntity implements UserDetails {
   )
   Set<Role> roles;
 
-  @PrePersist
-  public void onPrePersist() {
-    this.isActive = true;
-  }
-
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
     return roles.stream()

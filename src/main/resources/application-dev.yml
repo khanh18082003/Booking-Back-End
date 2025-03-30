@@ -17,6 +17,19 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  mail:
+    from: Booking
+    host: smtp.gmail.com
+    port: 587
+    username: nguyentrungk285@gmail.com
+    password: ogqcuyyrjdddwxkm
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 #  cache:
 #    type: redis
 #  data:
