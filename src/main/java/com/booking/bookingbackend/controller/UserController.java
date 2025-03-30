@@ -6,12 +6,18 @@ import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
+import com.booking.bookingbackend.data.dto.response.ProfileResponse;
 import com.booking.bookingbackend.data.dto.response.UserCreationResponse;
+import com.booking.bookingbackend.service.mail.MailService;
+import com.booking.bookingbackend.service.profile.ProfileService;
 import com.booking.bookingbackend.service.user.UserService;
+import com.booking.bookingbackend.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
+import java.io.UnsupportedEncodingException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -31,6 +37,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
   UserService userService;
+  MailService mailService;
+  ProfileService profileService;
 
   @PostMapping("/register")
   @ResponseStatus(HttpStatus.CREATED)
@@ -63,14 +71,30 @@ public class UserController {
                               """))),
       }
   )
-  ApiResponse<UserCreationResponse> createUser(@Valid @RequestBody UserCreationRequest request) {
+  ApiResponse<UserCreationResponse> createUser(@Valid @RequestBody UserCreationRequest request)
+      throws MessagingException, UnsupportedEncodingException {
+    UserCreationResponse userResponse = userService.save(request);
+    ProfileResponse userProfile = profileService.findByUserId(userResponse.getId());
+
+    String firstName = userProfile.getFirstName();
+    String lastName = userProfile.getLastName();
+    String name = firstName != null && lastName != null ? firstName + " " + lastName : null;
+
+    mailService.sendVerificationEmail(
+        userResponse.getEmail(),
+        name,
+        SecurityUtil.generateVerificationCode()
+    );
+
     return ApiResponse.<UserCreationResponse>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.CREATED.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .data(userService.save(request))
+        .data(userResponse)
         .build();
   }
+
+
 
 
 }

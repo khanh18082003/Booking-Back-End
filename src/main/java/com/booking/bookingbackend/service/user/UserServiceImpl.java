@@ -44,8 +44,10 @@ public class UserServiceImpl implements UserService {
     entity.setPassword(passwordEncoder.encode(request.password()));
     var roles = roleRepository.findAllByName(request.roles());
     entity.setRoles(new HashSet<>(roles));
+    entity.setActive(false); // user not active
 
     UserCreationResponse res = mapper.toDtoResponse(repository.save(entity));
+
     Profile profile = Profile.builder()
         .user(entity)
         .build();
