@@ -2,6 +2,7 @@ package com.booking.bookingbackend.service.jwt;
 
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.TokenType;
+import com.booking.bookingbackend.data.repository.InvalidTokenRepository;
 import com.booking.bookingbackend.exception.AppException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -51,6 +52,8 @@ public class JwtServiceImpl implements JwtService {
   @Value("${server.servlet.context-path}")
   @NonFinal
   String issuer;
+
+  InvalidTokenRepository invalidTokenRepository;
 
   @Override
   public String generateAccessToken(String username, Collection<? extends GrantedAuthority> authorities) {
@@ -103,11 +106,17 @@ public class JwtServiceImpl implements JwtService {
   }
 
   @Override
+  public String extractId(TokenType type, String token) {
+    return extractClaims(type, token, Claims::getId);
+  }
+
+  @Override
   public boolean validateToken(TokenType type, String token, UserDetails userDetails) {
     String username = extractUsername(type, token);
 
     return username.equals(userDetails.getUsername())
-        && !isTokenExpired(type, token);
+        && !isTokenExpired(type, token)
+        && !invalidTokenRepository.existsById(extractId(type, token));
   }
 
   private boolean isTokenExpired(TokenType type, String token) {

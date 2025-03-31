@@ -69,6 +69,14 @@ public class SecurityConfig {
         .requestMatchers("/css/**", "/js/**", "/images/**");
   }
 
+  /**
+   * Configures and provides a custom {@link AuthenticationProvider} bean to be used
+   * in the authentication process. The method sets up a {@link DaoAuthenticationProvider}
+   * with a password encoder and a user details service.
+   *
+   * @return an instance of {@link AuthenticationProvider} configured with
+   *         password encoding and user details service.
+   */
   @Bean
   public AuthenticationProvider authenticationProvider() {
     DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();

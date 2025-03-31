@@ -5,6 +5,8 @@ import com.booking.bookingbackend.constant.CommonConstant;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.AuthenticationRequest;
+import com.booking.bookingbackend.data.dto.request.LogoutRequest;
+import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
 import com.booking.bookingbackend.service.authentication.AuthenticationService;
@@ -37,7 +39,7 @@ public class AuthenticationController {
       description = "Authenticate user when user login",
       responses = {
           @io.swagger.v3.oas.annotations.responses.ApiResponse(
-              responseCode = CommonConstant.MESSAGE_CREATED,
+              responseCode = CommonConstant.MESSAGE_OK,
               description = "Authentication",
               content =
               @Content(
@@ -65,4 +67,106 @@ public class AuthenticationController {
         .data(authenticationService.authenticate(request))
         .build();
   }
+
+  @PostMapping("/logout")
+  @Operation(
+      summary = "Log out account",
+      description = "Log out",
+      responses = {
+          @io.swagger.v3.oas.annotations.responses.ApiResponse(
+              responseCode = CommonConstant.MESSAGE_OK,
+              description = "Log out",
+              content =
+              @Content(
+                  examples =
+                  @ExampleObject(
+                      value =
+                          """
+                              {
+                                "code": "M000",
+                                "status": "200",
+                                "message": "Success"
+                              }
+                              """))),
+          @io.swagger.v3.oas.annotations.responses.ApiResponse(
+              responseCode = CommonConstant.MESSAGE_UNAUTHORIZED,
+              description = "Unauthorized access",
+              content =
+              @Content(
+                  examples =
+                  @ExampleObject(
+                      value =
+                          """
+                              {
+                                "code": "E001",
+                                "status": "401",
+                                "message": "Unauthorized"
+                              }
+                              """)))
+      }
+  )
+  ApiResponse<Void> logout(@Valid @RequestBody LogoutRequest request) {
+    try {
+      authenticationService.logout(request.accessToken(), request.refreshToken());
+      return ApiResponse.<Void>builder()
+          .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+          .status(HttpStatus.OK.value())
+          .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+          .build();
+    } catch (Exception e) {
+      log.error("Error during logout: {}", e.getMessage());
+      return ApiResponse.<Void>builder()
+          .code(ErrorCode.MESSAGE_UN_AUTHENTICATION.getErrorCode())
+          .status(HttpStatus.UNAUTHORIZED.value())
+          .message(Translator.toLocale(ErrorCode.MESSAGE_UN_AUTHENTICATION.getErrorCode()))
+          .build();
+    }
+  }
+
+  @PostMapping("/refresh-token")
+  @Operation(
+      summary = "Generate a new access token",
+      description = "Generates a new access token using the refresh token provided by the user",
+      responses = {
+          @io.swagger.v3.oas.annotations.responses.ApiResponse(
+              responseCode = CommonConstant.MESSAGE_OK,
+              description = "Successfully generated the new access token",
+              content = @Content(
+                  examples = @ExampleObject(
+                      value = """
+                          {
+                            "code": "M000",
+                            "status": "200",
+                            "message": "Success",
+                            "data": {
+                              "access_token": "7SQerx9SoaVXIgymVZCEA3I6kloqfaZt+WJYWPUJ0Qk=",
+                              "refresh_token": "7SQerx9SoaVXIgymVZCEA3I6kloqfaZt+WJYWPUJ0Qk="
+                            }
+                          }
+                          """))
+          ),
+          @io.swagger.v3.oas.annotations.responses.ApiResponse(
+              responseCode = CommonConstant.MESSAGE_UNAUTHORIZED,
+              description = "Invalid or expired refresh token",
+              content = @Content(
+                  examples = @ExampleObject(
+                      value = """
+                          {
+                            "code": "M0401",
+                            "status": "401",
+                            "message": "Unauthorized"
+                          }
+                          """))
+          )
+      }
+  )
+  ApiResponse<AuthenticationResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+    return ApiResponse.<AuthenticationResponse>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(authenticationService.refreshToken(request))
+        .build();
+  }
+
 }
