@@ -30,12 +30,12 @@ spring:
           starttls:
             enable: true
 
-#  cache:
-#    type: redis
-#  data:
-#    redis:
-#      host: ${REDIS_HOST:localhost}
-#      port: ${REDIS_PORT:6379}
+  cache:
+    type: redis
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
 
 # swagger config
@@ -56,11 +56,8 @@ springdoc:
 jwt:
   expirationTime: 2
   expirationDay: 7
-  expirationOfVerifyTokenTime: 5
   accessToken: 7SQerx9SoaVXIgymVZCEA3I6kloqfaZt+WJYWPUJ0Qk=
   refreshToken: XES8dv8sa5hTheY+E51IUFcs7xkgm+cLGUNYTEaods8=
-  verifyToken: SES8dv8sa6hTheY+R51IUFcs7xkgm+cLGUNYTEaods2=
-
 
 admin-user:
   email: nguyentrungk285@gmail.com
