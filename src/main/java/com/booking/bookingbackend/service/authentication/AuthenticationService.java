@@ -2,6 +2,7 @@ package com.booking.bookingbackend.service.authentication;
 
 import com.booking.bookingbackend.data.dto.request.AuthenticationRequest;
 import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
+import com.booking.bookingbackend.data.dto.request.VerificationEmailRequest;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
 
 public interface AuthenticationService {
@@ -11,5 +12,7 @@ public interface AuthenticationService {
   AuthenticationResponse refreshToken(RefreshTokenRequest request);
 
   void logout(String accessToken, String refreshToken);
+
+  void verifyTokenEmail(VerificationEmailRequest request);
 
 }

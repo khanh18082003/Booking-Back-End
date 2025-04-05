@@ -1,14 +1,14 @@
 package com.booking.bookingbackend.controller;
 
 import com.booking.bookingbackend.configuration.Translator;
-import com.booking.bookingbackend.constant.CommonConstant;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
-import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
+import com.booking.bookingbackend.data.dto.request.ResendVerificationRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.ProfileResponse;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
 import com.booking.bookingbackend.service.mail.MailService;
+import com.booking.bookingbackend.service.mail.VerificationCodeService;
 import com.booking.bookingbackend.service.profile.ProfileService;
 import com.booking.bookingbackend.service.user.UserService;
 import com.booking.bookingbackend.util.SecurityUtil;
@@ -26,76 +26,66 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(EndpointConstant.ENDPOINT_USER)
+@RequestMapping(EndpointConstant.ENDPOINT_MAIL)
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
-@Slf4j(topic = "USER-CONTROLLER")
-public class UserController {
+@Slf4j(topic = "MAIl-CONTROLLER")
+public class MailController {
 
-  UserService userService;
   MailService mailService;
+  UserService userService;
   ProfileService profileService;
+  VerificationCodeService verificationCodeService;
 
-  @PostMapping("/register")
-  @ResponseStatus(HttpStatus.CREATED)
+  @PostMapping
   @Operation(
-      summary = "Create User",
-      description = "Create a new User",
+      summary = "Resend Verification Code",
+      description = "Resend a new verification code to the user's email address",
       responses = {
           @io.swagger.v3.oas.annotations.responses.ApiResponse(
-              responseCode = CommonConstant.MESSAGE_CREATED,
-              description = "User created",
-              content =
-              @Content(
-                  examples =
-                  @ExampleObject(
-                      value =
+              responseCode = "200",
+              description = "Verification code resent successfully",
+              content = @Content(
+                  examples = @ExampleObject(
+                      value = """
+                          {
+                            "code": "M000",
+                            "status": "200",
+                            "message": "Success"
+                          }
                           """
-                              {
-                                "code": "M000",
-                                "status": "201",
-                                "message": "Success",
-                                "data": {
-                                  "id": 1073741824,
-                                  "email": "host@gmail.com",
-                                  "is_active": "true",
-                                  "created_at": "2025-03-15T05:35:35.467Z",
-                                  "updated_at": "2025-03-15T05:35:35.467Z",
-                                  "roles": ["USER"]
-                                }
-                              }
-                              """))),
+                  )
+              )
+          )
       }
   )
-  ApiResponse<UserResponse> createUser(@Valid @RequestBody UserCreationRequest request)
-      throws MessagingException, UnsupportedEncodingException {
-    UserResponse userResponse = userService.save(request);
-    ProfileResponse userProfile = profileService.findByUserId(userResponse.getId());
+  ApiResponse<Void> resendVerificationCode(
+      @Valid @RequestBody ResendVerificationRequest request
+  ) throws MessagingException, UnsupportedEncodingException {
+    UserResponse user = userService.findById(request.userId());
+    ProfileResponse userProfile = profileService.findByUserId(user.getId());
 
     String firstName = userProfile.getFirstName();
     String lastName = userProfile.getLastName();
     String name = firstName != null && lastName != null ? firstName + " " + lastName : null;
 
+    String newVerifyCode = SecurityUtil.generateVerificationCode();
+    verificationCodeService.saveCode(newVerifyCode, String.valueOf(request.userId()));
+
     mailService.sendVerificationEmail(
-        userResponse.getEmail(),
-        userResponse.getId().toString(),
+        user.getEmail(),
+        String.valueOf(request.userId()),
         name,
-        SecurityUtil.generateVerificationCode()
+        newVerifyCode
     );
 
-    return ApiResponse.<UserResponse>builder()
+    return ApiResponse.<Void>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-        .status(HttpStatus.CREATED.value())
+        .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .data(userResponse)
         .build();
   }
-
-
-
-
 }

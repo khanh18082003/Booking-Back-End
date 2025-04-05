@@ -22,7 +22,7 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @Setter
 @JsonInclude(Include.NON_NULL)
-public class UserCreationResponse implements Serializable {
+public class UserResponse implements Serializable {
 
   UUID id;
   String email;

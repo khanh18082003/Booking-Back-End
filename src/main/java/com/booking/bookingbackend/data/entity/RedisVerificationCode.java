@@ -11,16 +11,14 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.redis.core.RedisHash;
 
-@RedisHash(value = "invalid_token")
+@RedisHash(value = "verification_code", timeToLive = 60 * 10)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RedisInvalidToken implements Serializable {
-
+public class RedisVerificationCode implements Serializable {
   String id;
-  String token;
-  Date expireTime;
+  String code;
 }

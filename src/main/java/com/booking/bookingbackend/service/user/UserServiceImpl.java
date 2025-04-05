@@ -2,7 +2,7 @@ package com.booking.bookingbackend.service.user;
 
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
-import com.booking.bookingbackend.data.dto.response.UserCreationResponse;
+import com.booking.bookingbackend.data.dto.response.UserResponse;
 import com.booking.bookingbackend.data.entity.Profile;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.mapper.UserMapper;
@@ -11,6 +11,7 @@ import com.booking.bookingbackend.data.repository.RoleRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
 import java.util.HashSet;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +36,7 @@ public class UserServiceImpl implements UserService {
 
   @Transactional
   @Override
-  public UserCreationResponse save(UserCreationRequest request) {
+  public UserResponse save(UserCreationRequest request) {
     if (repository.existsByEmail(request.email())) {
       throw new AppException(ErrorCode.MESSAGE_EMAIL_EXISTED);
     }
@@ -46,13 +47,24 @@ public class UserServiceImpl implements UserService {
     entity.setRoles(new HashSet<>(roles));
     entity.setActive(false); // user not active
 
-    UserCreationResponse res = mapper.toDtoResponse(repository.save(entity));
+    UserResponse res = mapper.toDtoResponse(repository.save(entity));
 
     Profile profile = Profile.builder()
         .user(entity)
         .build();
     profileRepository.save(profile);
     return res;
+  }
+
+  @Override
+  public void activeUser(UUID id) {
+    User user = repository.findById(id).orElseThrow(
+        () -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            getEntityClass().getSimpleName()));
+    if (!user.isActive()) {
+      user.setActive(true);
+      repository.save(user);
+    }
   }
 
   @Transactional

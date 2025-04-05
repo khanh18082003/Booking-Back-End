@@ -7,13 +7,16 @@ import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.AuthenticationRequest;
 import com.booking.bookingbackend.data.dto.request.LogoutRequest;
 import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
+import com.booking.bookingbackend.data.dto.request.VerificationEmailRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
 import com.booking.bookingbackend.service.authentication.AuthenticationService;
+import com.booking.bookingbackend.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -22,7 +25,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -31,7 +33,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Slf4j(topic = "AUTHENTICATION-CONTROLLER")
 public class AuthenticationController {
+
   AuthenticationService authenticationService;
+  private final UserService userService;
 
   @PostMapping("/login")
   @Operation(
@@ -160,12 +164,65 @@ public class AuthenticationController {
           )
       }
   )
-  ApiResponse<AuthenticationResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+  ApiResponse<AuthenticationResponse> refreshToken(
+      @Valid @RequestBody RefreshTokenRequest request
+  ) {
+    log.info("Refreshing token: {}", request.refreshToken());
     return ApiResponse.<AuthenticationResponse>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .data(authenticationService.refreshToken(request))
+        .build();
+  }
+
+  @PostMapping("/verify-email")
+  @Operation(
+      summary = "Verify Email",
+      description = "Verifies the email using the provided verification code",
+      responses = {
+          @io.swagger.v3.oas.annotations.responses.ApiResponse(
+              responseCode = CommonConstant.MESSAGE_OK,
+              description = "Email verified successfully",
+              content =
+              @Content(
+                  examples =
+                  @ExampleObject(
+                      value =
+                          """
+                              {
+                                "code": "M000",
+                                "status": "200",
+                                "message": "Success"
+                              }
+                              """))),
+          @io.swagger.v3.oas.annotations.responses.ApiResponse(
+              responseCode = CommonConstant.MESSAGE_BAD_REQUEST,
+              description = "Verification code is invalid or expired",
+              content =
+              @Content(
+                  examples =
+                  @ExampleObject(
+                      value =
+                          """
+                              {
+                                "code": "M0401",
+                                "status": "401",
+                                "message": "Unauthorized"
+                              }
+                              """)))
+      }
+  )
+  ApiResponse<Void> verifyMail(@Valid @RequestBody VerificationEmailRequest request) {
+    log.info("Verifying email: {}", request.code());
+    authenticationService.verifyTokenEmail(request);
+
+    userService.activeUser(UUID.fromString(request.userId()));
+
+    return ApiResponse.<Void>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .build();
   }
 
