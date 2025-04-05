@@ -2,7 +2,6 @@ package com.booking.bookingbackend.service.jwt;
 
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.TokenType;
-import com.booking.bookingbackend.data.repository.InvalidTokenRepository;
 import com.booking.bookingbackend.exception.AppException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -23,6 +22,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -53,10 +53,11 @@ public class JwtServiceImpl implements JwtService {
   @NonFinal
   String issuer;
 
-  InvalidTokenRepository invalidTokenRepository;
+  RedisTemplate<String, Object> redisTemplate;
 
   @Override
-  public String generateAccessToken(String username, Collection<? extends GrantedAuthority> authorities) {
+  public String generateAccessToken(String username,
+      Collection<? extends GrantedAuthority> authorities) {
     log.info("Generate access token for user {} with authorities {}", username, authorities);
     Map<String, Object> headers = new HashMap<>();
     headers.put("typ", "JWT");
@@ -76,7 +77,8 @@ public class JwtServiceImpl implements JwtService {
   }
 
   @Override
-  public String generateRefreshToken(String username, Collection<? extends GrantedAuthority> authorities) {
+  public String generateRefreshToken(String username,
+      Collection<? extends GrantedAuthority> authorities) {
     log.info("Generate refresh token for user {} with authorities {}", username, authorities);
     Map<String, Object> headers = new HashMap<>();
     headers.put("typ", "JWT");
@@ -116,7 +118,12 @@ public class JwtServiceImpl implements JwtService {
 
     return username.equals(userDetails.getUsername())
         && !isTokenExpired(type, token)
-        && !invalidTokenRepository.existsById(extractId(type, token));
+        && !isBlacklisted(extractId(type, token));
+  }
+
+  private boolean isBlacklisted(String jit) {
+    String key = "invalid_token:" + jit;
+    return Boolean.TRUE.equals(redisTemplate.hasKey(key));
   }
 
   private boolean isTokenExpired(TokenType type, String token) {

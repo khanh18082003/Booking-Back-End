@@ -85,6 +85,35 @@ public class RoleController {
   }
 
   @PutMapping("/{id}")
+  @Operation(
+      summary = "Update Role",
+      description = "Update an existing Role (`ADMIN` only)",
+      responses = {
+          @io.swagger.v3.oas.annotations.responses.ApiResponse(
+              responseCode = "202",
+              description = "Role updated successfully",
+              content =
+              @Content(
+                  examples =
+                  @ExampleObject(
+                      value =
+                          """
+                                  {
+                                    "code": "M000",
+                                    "status": "202",
+                                    "message": "Success"
+                                  }
+                              """
+                  )
+              )
+          ),
+          @io.swagger.v3.oas.annotations.responses.ApiResponse(
+              responseCode = "404",
+              description = "Role not found",
+              content = @Content
+          )
+      }
+  )
   ApiResponse<Void> updateRole(
       @PathVariable int id,
       @Valid @RequestBody RoleRequest request

@@ -1,8 +1,11 @@
 package com.booking.bookingbackend.service.mail;
 
+import com.booking.bookingbackend.data.entity.RedisVerificationCode;
+import com.booking.bookingbackend.data.repository.VerificationCodeRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.transaction.Transactional;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -24,8 +27,10 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @Slf4j
 public class MailService {
+
   JavaMailSender mailSender;
   SpringTemplateEngine springTemplateEngine;
+  VerificationCodeRepository verificationCodeRepository;
 
   @Value("${spring.mail.from}")
   @NonFinal
@@ -72,7 +77,8 @@ public class MailService {
     return "sent";
   }
 
-  public void sendVerificationEmail(String to, String name, String code)
+  @Transactional
+  public void sendVerificationEmail(String to, String userId, String name, String code)
       throws MessagingException, UnsupportedEncodingException {
     // Tạo MimeMessage
     MimeMessage message = mailSender.createMimeMessage();
@@ -93,9 +99,15 @@ public class MailService {
     String htmlContent = springTemplateEngine.process("email-template.html", context);
     helper.setText(htmlContent, true);
 
+    // store code into redis
+    log.info("Store key {} with value {}", userId, code);
+    RedisVerificationCode verificationCode = RedisVerificationCode.builder()
+        .id(userId)
+        .code(code)
+        .build();
+    verificationCodeRepository.save(verificationCode);
+
     // Gửi email
-    log.info("Sent to: {}", name);
-    log.info("Code: {}", code);
     mailSender.send(message);
     log.info("Email sent");
   }
