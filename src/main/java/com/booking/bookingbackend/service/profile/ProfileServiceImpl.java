@@ -2,6 +2,7 @@ package com.booking.bookingbackend.service.profile;
 
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.ProfileUpdateRequest;
+import com.booking.bookingbackend.data.dto.response.ProfileResponse;
 import com.booking.bookingbackend.data.entity.Profile;
 import com.booking.bookingbackend.data.mapper.ProfileMapper;
 import com.booking.bookingbackend.data.repository.ProfileRepository;
@@ -23,15 +24,27 @@ public class ProfileServiceImpl implements ProfileService {
 
   ProfileRepository repository;
   ProfileMapper mapper;
+  private final ProfileMapper profileMapper;
 
   @Override
   public void update(UUID id, ProfileUpdateRequest request) {
     Profile entity = repository.findById(id)
-        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID));
+        .orElseThrow(
+            () -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID, getEntityClass())
+        );
 
     mapper.merge(request, entity);
 
     repository.save(entity);
+  }
+
+  @Override
+  public ProfileResponse findByUserId(UUID userId) {
+    return profileMapper.toDtoResponse(repository.findByUserId(userId)
+        .orElseThrow(
+            () -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID, getEntityClass())
+        )
+    );
   }
 
 

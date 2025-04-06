@@ -1,6 +1,17 @@
 package com.booking.bookingbackend.configuration;
 
+import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.service.user.UserInfoService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +22,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -18,9 +30,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableMethodSecurity
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -28,9 +43,27 @@ public class SecurityConfig {
   private final UserInfoService userInfoService;
 
   private static final String[] WHITE_LIST_API = {
-      "/users/register",
-      "/auth/login"
+      EndpointConstant.ENDPOINT_USER + "/register",
+      EndpointConstant.ENDPOINT_AUTH + "/login",
+      EndpointConstant.ENDPOINT_AUTH + "/verify-email",
+      EndpointConstant.ENDPOINT_AUTH + "/refresh-token",
+      EndpointConstant.ENDPOINT_MAIL,
   };
+
+  @Bean
+  public WebMvcConfigurer webMvcConfigurer() {
+    return new WebMvcConfigurer() {
+      @Override
+      public void addCorsMappings(@NonNull CorsRegistry registry) {
+        registry.addMapping("/**")
+            .allowCredentials(true)
+            .allowedHeaders("*")
+            .allowedMethods("*")
+            .allowedOrigins("http://localhost:5179");
+
+      }
+    };
+  }
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
@@ -50,13 +83,12 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         )
         .authenticationProvider(authenticationProvider())
-        .addFilterBefore(requestFilter, UsernamePasswordAuthenticationFilter.class);
-//        .exceptionHandling(
-//            ex -> ex
-//                .authenticationEntryPoint(new JwtAuthenticationEntryPoint(objectMapper())));
+        .addFilterBefore(requestFilter, UsernamePasswordAuthenticationFilter.class)
+        .exceptionHandling(
+            ex -> ex
+                .authenticationEntryPoint(new JwtAuthenticationEntryPoint(objectMapper())));
 
-    httpSecurity
-        .csrf(AbstractHttpConfigurer::disable);
+    httpSecurity.csrf(AbstractHttpConfigurer::disable);
 
     return httpSecurity.build();
   }
@@ -69,6 +101,14 @@ public class SecurityConfig {
         .requestMatchers("/css/**", "/js/**", "/images/**");
   }
 
+  /**
+   * Configures and provides a custom {@link AuthenticationProvider} bean to be used in the
+   * authentication process. The method sets up a {@link DaoAuthenticationProvider} with a password
+   * encoder and a user details service.
+   *
+   * @return an instance of {@link AuthenticationProvider} configured with password encoding and
+   * user details service.
+   */
   @Bean
   public AuthenticationProvider authenticationProvider() {
     DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
@@ -88,4 +128,27 @@ public class SecurityConfig {
     return new BCryptPasswordEncoder(10);
   }
 
+  @Bean
+  public ObjectMapper objectMapper() {
+    ObjectMapper objectMapper = new ObjectMapper();
+    SimpleModule module = new SimpleModule();
+    module.addSerializer(
+        LocalDateTime.class,
+        new LocalDateTimeSerializer(DateTimeFormatter.ISO_DATE_TIME)
+    );
+    module.addSerializer(
+        LocalDate.class,
+        new LocalDateSerializer(DateTimeFormatter.ISO_DATE)
+    );
+    module.addDeserializer(
+        LocalDateTime.class,
+        new LocalDateTimeDeserializer(DateTimeFormatter.ISO_DATE_TIME)
+    );
+    module.addDeserializer(
+        LocalDate.class,
+        new LocalDateDeserializer(DateTimeFormatter.ISO_DATE)
+    );
+    objectMapper.registerModule(module);
+    return objectMapper;
+  }
 }

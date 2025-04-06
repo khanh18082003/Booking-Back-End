@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -73,6 +74,18 @@ public class GlobalExceptionHandler {
         .error(errorCode.getStatus().getReasonPhrase())
         .path(req.getDescription(false).replace("uri=", ""))
         .message(mapMessage(Translator.toLocale(errorCode.getErrorCode()), attributes, fieldError))
+        .build();
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  ApiResponse<Void> handleAccessDeniedException(AccessDeniedException e, WebRequest req) {
+    return ApiResponse.<Void>builder()
+        .timeStamp(LocalDateTime.now())
+        .code(ErrorCode.MESSAGE_UN_AUTHORIZATION.getErrorCode())
+        .status(ErrorCode.MESSAGE_UN_AUTHORIZATION.getStatus().value())
+        .error(ErrorCode.MESSAGE_UN_AUTHORIZATION.getStatus().getReasonPhrase())
+        .path(req.getDescription(false).replace("uri=", ""))
+        .message(Translator.toLocale(ErrorCode.MESSAGE_UN_AUTHORIZATION.getErrorCode()))
         .build();
   }
 

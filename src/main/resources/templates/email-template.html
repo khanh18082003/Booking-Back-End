@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Xác nhận email</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background-color: #003580;
+      color: white;
+      padding: 10px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .code {
+      font-size: 36px;
+      font-weight: bold;
+      color: #003580;
+      margin: 20px 0;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    Booking.com
+  </div>
+  <h2>Xác định email và thông tin đăng nhập</h2>
+  <p th:text="'Kính gửi ' + (${name} != null ? ${name} : 'Khách hàng') + ','"></p>
+  <p>Với mã duy nhất này, bạn có thể sử dụng để đăng nhập vào tài khoản Booking.com mà không cần sử dụng mật khẩu.</p>
+  <div class="code">
+    <h1 th:text="${code}"></h1>
+  </div>
+  <p>Xin lưu ý mã này chỉ dùng được một lần và sẽ hết hiệu lực sau 10 phút. Không chia sẻ mã này với người khác.</p>
+  <p>Nếu không yêu cầu mã này, bạn có thể liên hệ với <a th:href="'mailto:' + ${supportEmail}" th:text="${supportEmail}"></a>.</p>
+  <div class="footer">
+    <p>Tiếng Anh &rarr; Tiếng Việt</p>
+    <p>Hiện bạn đang có 12 trợ lý số 1.173</p>
+  </div>
+</div>
+</body>
+</html>
