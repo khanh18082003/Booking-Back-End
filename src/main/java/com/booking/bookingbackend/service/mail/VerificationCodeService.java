@@ -15,9 +15,9 @@ import org.springframework.stereotype.Service;
 public class VerificationCodeService {
   VerificationCodeRepository repository;
 
-  public void saveCode(String code, String userId) {
+  public void saveCode(String code, String email) {
     RedisVerificationCode verificationCode = RedisVerificationCode.builder()
-        .id(userId)
+        .id(email)
         .code(code)
         .build();
     repository.save(verificationCode);

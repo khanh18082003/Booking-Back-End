@@ -82,7 +82,6 @@ public class UserController {
 
     mailService.sendVerificationEmail(
         userResponse.getEmail(),
-        userResponse.getId().toString(),
         name,
         SecurityUtil.generateVerificationCode()
     );
@@ -94,8 +93,5 @@ public class UserController {
         .data(userResponse)
         .build();
   }
-
-
-
 
 }
