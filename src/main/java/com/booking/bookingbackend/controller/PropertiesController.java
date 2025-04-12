@@ -34,4 +34,19 @@ public class PropertiesController {
                 .data(propertiesService.save(request))
                 .build();
     }
+    @GetMapping("/search")
+    ApiResponse<PropertiesResponse> search(
+            @RequestParam(name = "location") String location,
+            @RequestParam(name = "startDate") Long startDate,
+            @RequestParam(name = "endDate") Long endDate,
+            @RequestParam(name = "pageNo", defaultValue = "0") int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = "20") int pageSize
+    ) {
+        return ApiResponse.<PropertiesResponse>builder()
+                .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+                .status(HttpStatus.OK.value())
+                .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+                .data(propertiesService.search(location, startDate, endDate, pageNo, pageSize))
+                .build();
+    }
 }

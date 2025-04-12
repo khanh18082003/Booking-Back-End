@@ -1,5 +1,6 @@
 package com.booking.bookingbackend.data.entity;
 
+import com.booking.bookingbackend.data.base.AbstractIdentifiable;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -14,7 +15,7 @@ import java.sql.Timestamp;
 @Table(name = "tbl_property_type")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class PropertyType {
+public class PropertyType extends AbstractIdentifiable<Integer> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
