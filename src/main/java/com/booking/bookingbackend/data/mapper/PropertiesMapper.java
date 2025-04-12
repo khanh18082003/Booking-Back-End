@@ -5,6 +5,7 @@ import com.booking.bookingbackend.data.dto.request.PropertiesRequest;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
 import com.booking.bookingbackend.data.entity.Properties;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface PropertiesMapper extends EntityDtoMapper<Properties, PropertiesResponse> {

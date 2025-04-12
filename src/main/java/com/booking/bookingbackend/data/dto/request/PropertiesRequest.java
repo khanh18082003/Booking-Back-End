@@ -1,5 +1,7 @@
 package com.booking.bookingbackend.data.dto.request;
 
+import lombok.Getter;
+
 import java.util.Set;
 import java.util.UUID;
 
@@ -16,7 +18,7 @@ public record PropertiesRequest(
         String longitude,
         String checkInTime,
         String checkOutTime,
-        UUID hostId,
+        String email,
         int typeId,
         Set<UUID> amenitiesIds
 ) implements java.io.Serializable {

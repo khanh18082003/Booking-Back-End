@@ -1,6 +1,7 @@
 package com.booking.bookingbackend.data.entity;
 
 import com.booking.bookingbackend.constant.Gender;
+import com.booking.bookingbackend.data.base.AbstractIdentifiable;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -17,7 +18,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "tbl_amenities")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Amenities {
+public class Amenities extends AbstractIdentifiable<Integer> {
     @Id
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     UUID id;

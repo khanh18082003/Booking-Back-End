@@ -6,6 +6,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
+import java.util.Set;
 
 @Builder
 @NoArgsConstructor
@@ -28,4 +29,7 @@ public class PropertiesResponse implements Serializable {
     String longitude;
     String checkInTime;
     String checkOutTime;
+    UserResponse user;
+    PropertyTypeResponse propertyType;
+    Set<AmenitiesResponse> amenities;
 }
