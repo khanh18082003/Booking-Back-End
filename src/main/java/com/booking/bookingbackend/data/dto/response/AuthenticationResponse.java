@@ -22,6 +22,4 @@ import lombok.experimental.FieldDefaults;
 public class AuthenticationResponse implements Serializable {
   @JsonProperty("access_token")
   String accessToken;
-  @JsonProperty("refresh_token")
-  String refreshToken;
 }

@@ -70,7 +70,7 @@ public class JwtServiceImpl implements JwtService {
         .setSubject(username)
         .setIssuer(issuer)
         .setIssuedAt(new Date(System.currentTimeMillis()))
-        .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * expirationTime))
+        .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * expirationTime))
         .setId(UUID.randomUUID().toString())
         .signWith(getKey(TokenType.ACCESS_TOKEN))
         .compact();

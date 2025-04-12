@@ -3,14 +3,25 @@ package com.booking.bookingbackend.service.authentication;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.TokenType;
 import com.booking.bookingbackend.data.dto.request.AuthenticationRequest;
+import com.booking.bookingbackend.data.dto.request.LogoutRequest;
 import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
 import com.booking.bookingbackend.data.dto.request.VerificationEmailRequest;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
+import com.booking.bookingbackend.data.dto.response.ProfileResponse;
 import com.booking.bookingbackend.data.entity.RedisVerificationCode;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.repository.VerificationCodeRepository;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.jwt.JwtService;
+import com.booking.bookingbackend.service.mail.MailService;
+import com.booking.bookingbackend.service.profile.ProfileService;
+import com.booking.bookingbackend.service.user.UserInfoService;
+import com.booking.bookingbackend.util.SecurityUtil;
+import jakarta.mail.MessagingException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.UnsupportedEncodingException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -19,7 +30,9 @@ import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -37,6 +50,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   JwtService jwtService;
   RedisTemplate<String, Object> redisTemplate;
   VerificationCodeRepository verificationCodeRepository;
+  MailService mailService;
+  ProfileService profileService;
+  UserInfoService userInfoService;
+
+  @Value("${jwt.expirationDay}")
+  @NonFinal
+  int expirationDay;
 
   /**
    * Authenticates a user based on the provided authentication request.
@@ -46,14 +66,33 @@ public class AuthenticationServiceImpl implements AuthenticationService {
    * @throws AppException if the authentication process fails due to invalid credentials
    */
   @Override
-  public AuthenticationResponse authenticate(AuthenticationRequest request) {
+  public AuthenticationResponse authenticate(
+      AuthenticationRequest request,
+      HttpServletResponse response
+  ) throws MessagingException, UnsupportedEncodingException {
     log.info("Authentication request received for email: {}", request.email());
     Authentication authentication = authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(
-            request.email(),
+            request.email().strip(),
             request.password()
         )
     );
+
+    User user = (User) authentication.getPrincipal();
+    if (!user.isActive()) {
+      ProfileResponse profileResponse = profileService.findByUserId(user.getId());
+      String firstName = profileResponse.getFirstName();
+      String lastName = profileResponse.getLastName();
+      String name = firstName != null && lastName != null ? firstName + " " + lastName : null;
+
+      log.info("User is not active");
+      mailService.sendVerificationEmail(
+          user.getEmail(),
+          name,
+          SecurityUtil.generateVerificationCode()
+      );
+      throw new AppException(ErrorCode.MESSAGE_USER_NOT_ACTIVE);
+    }
 
     String accessToken;
     String refreshToken;
@@ -67,71 +106,82 @@ public class AuthenticationServiceImpl implements AuthenticationService {
           request.email(),
           authentication.getAuthorities()
       );
+
+      // Store refresh token in HttpOnly cookie
+      Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
+      refreshTokenCookie.setHttpOnly(true);
+      refreshTokenCookie.setSecure(true);
+      refreshTokenCookie.setPath("/");
+      refreshTokenCookie.setMaxAge(expirationDay * 24 * 60 * 60);
+      response.addCookie(refreshTokenCookie);
+
     } else {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
     return AuthenticationResponse.builder()
         .accessToken(accessToken)
-        .refreshToken(refreshToken)
         .build();
   }
+
 
   /**
    * Refreshes the access token using the provided refresh token and access token.
    *
-   * @param request the refresh token request containing the refresh token and access token
-   * @return an authentication response containing the new access token and the reused refresh token
-   * @throws AppException if the refresh token is invalid, expired, or authentication fails
+   * @param refreshTokenRequest the request containing the current access token
+   * @param req                 the HTTP servlet request, used to retrieve cookies
+   * @return an AuthenticationResponse containing the new access token
+   * @throws AppException if the refresh token is missing, invalid, or the user is not
+   *                      authenticated
    */
   @Override
-  public AuthenticationResponse refreshToken(RefreshTokenRequest request) {
-    log.info("Refresh token request received for refresh token: {}", request.refreshToken());
-
-    if (request.refreshToken() == null || request.refreshToken().isEmpty()) {
+  public AuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest,
+      HttpServletRequest req) {
+    // Retrieve the refresh token from cookies
+    log.info("Refresh token request received");
+    String refreshToken = getRefreshTokenFromCookies(req);
+    if (refreshToken == null || refreshToken.isEmpty()) {
+      // Throw an exception if the refresh token is not found or empty
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
 
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String username = jwtService.extractUsername(TokenType.REFRESH_TOKEN, refreshToken);
 
-    if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
-      throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
-    }
+    // Load the user by username
+    User user = (User) userInfoService.loadUserByUsername(username);
 
-    if (!jwtService.validateToken(TokenType.REFRESH_TOKEN, request.refreshToken(), user)
-        && !jwtService.validateToken(TokenType.ACCESS_TOKEN, request.accessToken(), user)
+    // Validate the refresh token and access token
+    if (!jwtService.validateToken(TokenType.REFRESH_TOKEN, refreshToken, user)
+        && !jwtService.validateToken(TokenType.ACCESS_TOKEN, refreshTokenRequest.accessToken(),
+        user)
     ) {
+      // Throw an exception if both tokens are invalid
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
 
+    // Generate a new access token for the authenticated user
     String newAccessToken = jwtService.generateAccessToken(
         user.getUsername(),
         user.getAuthorities()
     );
 
-    invalidateToken(request.accessToken(), TokenType.ACCESS_TOKEN);
+    // Invalidate the old access token
+    invalidateToken(refreshTokenRequest.accessToken(), TokenType.ACCESS_TOKEN);
 
+    // Return the new access token in the response
     return AuthenticationResponse.builder()
         .accessToken(newAccessToken)
-        .refreshToken(request.refreshToken()) // Reuse the same refresh token
         .build();
   }
 
-  /**
-   * Logs out a user by invalidating their access and refresh tokens.
-   *
-   * @param accessToken  the access token to be invalidated
-   * @param refreshToken the refresh token to be invalidated; can be null or empty
-   */
-  @Override
-  public void logout(String accessToken, String refreshToken) {
-    // Invalidate access token
-    invalidateToken(accessToken, TokenType.ACCESS_TOKEN);
-
-    // Invalidate refresh token
-    if (refreshToken != null && !refreshToken.isEmpty()) {
-      invalidateToken(refreshToken, TokenType.REFRESH_TOKEN);
+  private String getRefreshTokenFromCookies(HttpServletRequest request) {
+    if (request.getCookies() != null) {
+      for (Cookie cookie : request.getCookies()) {
+        if ("refresh_token".equals(cookie.getName())) {
+          return cookie.getValue();
+        }
+      }
     }
-
+    return null; // Return null if the cookie is not found
   }
 
   /**
@@ -149,7 +199,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
       return;
     }
     Optional<RedisVerificationCode> redisCodeOpt = verificationCodeRepository.findById(
-        request.userId());
+        request.email());
     if (redisCodeOpt.isEmpty()) {
       log.error("Token not found");
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
@@ -161,6 +211,38 @@ public class AuthenticationServiceImpl implements AuthenticationService {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
     log.info("Token verified successfully");
+  }
+
+  /**
+   * Logs out a user by invalidating their access and refresh tokens.
+   * <p>
+   * This method retrieves the refresh token from the cookies in the HTTP request, invalidates the
+   * provided access token, and optionally invalidates the refresh token if it is present and not
+   * empty.
+   *
+   * @param logoutRequest the request containing the access token to be invalidated
+   * @param req           the HTTP servlet request, used to retrieve cookies containing the refresh
+   *                      token
+   */
+  @Override
+  public void logout(LogoutRequest logoutRequest, HttpServletRequest req, HttpServletResponse res) {
+    // Retrieve the refresh token from cookies
+    String refreshToken = getRefreshTokenFromCookies(req);
+
+    // Invalidate access token
+    invalidateToken(logoutRequest.accessToken(), TokenType.ACCESS_TOKEN);
+
+    // Invalidate refresh token if it exists and is not empty
+    if (refreshToken != null && !refreshToken.isEmpty()) {
+      invalidateToken(refreshToken, TokenType.REFRESH_TOKEN);
+      // Remove the refresh_token cookie
+      Cookie refreshTokenCookie = new Cookie("refresh_token", null);
+      refreshTokenCookie.setHttpOnly(true);
+      refreshTokenCookie.setSecure(true); // Set to true in production
+      refreshTokenCookie.setPath("/"); // Match the original path
+      refreshTokenCookie.setMaxAge(0); // Expire the cookie immediately
+      res.addCookie(refreshTokenCookie);
+    }
   }
 
   /**

@@ -15,8 +15,11 @@ import com.booking.bookingbackend.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import java.util.UUID;
+import java.io.UnsupportedEncodingException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -35,7 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationController {
 
   AuthenticationService authenticationService;
-  private final UserService userService;
+  UserService userService;
 
   @PostMapping("/login")
   @Operation(
@@ -63,12 +66,16 @@ public class AuthenticationController {
                               """))),
       }
   )
-  ApiResponse<AuthenticationResponse> login(@Valid @RequestBody AuthenticationRequest request) {
+  ApiResponse<AuthenticationResponse> login(
+      @Valid @RequestBody AuthenticationRequest request,
+      HttpServletResponse response
+  ) throws MessagingException, UnsupportedEncodingException {
+
     return ApiResponse.<AuthenticationResponse>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .data(authenticationService.authenticate(request))
+        .data(authenticationService.authenticate(request, response))
         .build();
   }
 
@@ -109,9 +116,12 @@ public class AuthenticationController {
                               """)))
       }
   )
-  ApiResponse<Void> logout(@Valid @RequestBody LogoutRequest request) {
+  ApiResponse<Void> logout(
+      @Valid @RequestBody LogoutRequest logoutRequest,
+      HttpServletRequest req,
+      HttpServletResponse res) {
     try {
-      authenticationService.logout(request.accessToken(), request.refreshToken());
+      authenticationService.logout(logoutRequest, req, res);
       return ApiResponse.<Void>builder()
           .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
           .status(HttpStatus.OK.value())
@@ -165,14 +175,15 @@ public class AuthenticationController {
       }
   )
   ApiResponse<AuthenticationResponse> refreshToken(
-      @Valid @RequestBody RefreshTokenRequest request
+      @Valid @RequestBody RefreshTokenRequest refreshTokenRequest,
+      HttpServletRequest req
   ) {
-    log.info("Refreshing token: {}", request.refreshToken());
+
     return ApiResponse.<AuthenticationResponse>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .data(authenticationService.refreshToken(request))
+        .data(authenticationService.refreshToken(refreshTokenRequest, req))
         .build();
   }
 
@@ -217,7 +228,7 @@ public class AuthenticationController {
     log.info("Verifying email: {}", request.code());
     authenticationService.verifyTokenEmail(request);
 
-    userService.activeUser(UUID.fromString(request.userId()));
+    userService.activeUser(request.email());
 
     return ApiResponse.<Void>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
