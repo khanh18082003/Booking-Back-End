@@ -5,7 +5,6 @@ import com.booking.bookingbackend.data.dto.request.PropertiesRequest;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.mapper.PropertiesMapper;
-import com.booking.bookingbackend.data.mapper.RoleMapper;
 import com.booking.bookingbackend.data.repository.AmenitiesRepository;
 import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.data.repository.PropertyTypeRepository;
