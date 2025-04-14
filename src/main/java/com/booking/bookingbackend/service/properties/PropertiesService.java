@@ -13,5 +13,7 @@ public interface PropertiesService extends BaseEntityService<UUID, Properties, P
     @Override
     default Class<?> getEntityClass(){return Properties.class;}
     PropertiesResponse save(PropertiesRequest request);
-    PropertiesResponse search(String location, Long startDate, Long endDate);
+    PropertiesResponse search(String location, Long startDate, Long endDate, int pageNo, int pageSize);
+    void changeStatus(UUID id);
+    PropertiesResponse update(UUID id, PropertiesRequest request);
 }
