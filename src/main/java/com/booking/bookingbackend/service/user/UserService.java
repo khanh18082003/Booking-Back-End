@@ -1,6 +1,7 @@
 package com.booking.bookingbackend.service.user;
 
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
+import com.booking.bookingbackend.data.dto.response.UserProfileDto;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.repository.UserRepository;
@@ -23,6 +24,8 @@ public interface UserService extends BaseEntityService<
   UserResponse findByEmail(String email);
 
   void activeUser(String email);
+
+  UserProfileDto getMyProfile();
 
   boolean changePassword();
 }

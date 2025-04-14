@@ -7,6 +7,7 @@ import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.ProfileResponse;
+import com.booking.bookingbackend.data.dto.response.UserProfileDto;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
 import com.booking.bookingbackend.service.mail.MailService;
 import com.booking.bookingbackend.service.profile.ProfileService;
@@ -23,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -91,6 +93,52 @@ public class UserController {
         .status(HttpStatus.CREATED.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .data(userResponse)
+        .build();
+  }
+
+  @GetMapping("/my-profile")
+  @Operation(
+      summary = "Get My Profile",
+      description = "Retrieve the profile of the currently authenticated user",
+      responses = {
+          @io.swagger.v3.oas.annotations.responses.ApiResponse(
+              responseCode = CommonConstant.MESSAGE_SUCCESS,
+              description = "User profile retrieved successfully",
+              content =
+              @Content(
+                  examples =
+                  @ExampleObject(
+                      value =
+                          """
+                              {
+                                "code": "M000",
+                                "status": "200",
+                                "message": "Success",
+                                "data": {
+                                  "id": "550e8400-e29b-41d4-a716-446655440000",
+                                  "email": "host@gmail.com",
+                                  "isActive": true,
+                                  "profileId": "550e8400-e29b-41d4-a716-446655440001",
+                                  "avatar": "https://example.com/avatar.jpg",
+                                  "phone": "+1234567890",
+                                  "dob": "1990-01-01",
+                                  "gender": "MALE",
+                                  "address": "123 Main St, City, Country",
+                                  "firstName": "John",
+                                  "lastName": "Doe",
+                                  "countryCode": "+84"
+                                }
+                              }
+                              """))),
+      }
+  )
+  ApiResponse<UserProfileDto> getMyProfile() {
+
+    return ApiResponse.<UserProfileDto>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.CREATED.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(userService.getMyProfile())
         .build();
   }
 

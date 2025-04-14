@@ -1,7 +1,9 @@
 package com.booking.bookingbackend.service.user;
 
 import com.booking.bookingbackend.constant.ErrorCode;
+import com.booking.bookingbackend.constant.Gender;
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
+import com.booking.bookingbackend.data.dto.response.UserProfileDto;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
 import com.booking.bookingbackend.data.entity.Profile;
 import com.booking.bookingbackend.data.entity.User;
@@ -10,12 +12,19 @@ import com.booking.bookingbackend.data.repository.ProfileRepository;
 import com.booking.bookingbackend.data.repository.RoleRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
+import jakarta.persistence.Tuple;
+import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.Objects;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -82,6 +91,56 @@ public class UserServiceImpl implements UserService {
     if (!user.isActive()) {
       user.setActive(true);
       repository.save(user);
+    }
+  }
+
+  @Override
+  public UserProfileDto getMyProfile() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication != null) {
+      UUID userId = authentication.getPrincipal() instanceof User
+          ? ((User) authentication.getPrincipal()).getId()
+          : null;
+      if (userId == null) {
+        throw new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            getEntityClass().getSimpleName());
+      }
+      log.info("User ID: {}", userId);
+
+      // Fetch user profile using the repository
+      Tuple userProfileTuple = repository.findByUserProfile(userId)
+          .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+              getEntityClass().getSimpleName())
+
+          );
+
+      // validate gender
+      String gender = userProfileTuple.get("gender", String.class);
+      Gender genderValidated = null;
+      if (gender != null) {
+        try {
+          genderValidated = Gender.valueOf(gender);
+        } catch (IllegalArgumentException e) {
+          throw new AppException(ErrorCode.MESSAGE_INVALID_FORMAT, "Invalid gender value");
+        }
+      }
+
+      return new UserProfileDto(
+          UUID.fromString(userProfileTuple.get("id", String.class)),
+          userProfileTuple.get("email", String.class),
+          userProfileTuple.get("isActive", Boolean.class),
+          UUID.fromString(userProfileTuple.get("profileId", String.class)),
+          userProfileTuple.get("avatar", String.class),
+          userProfileTuple.get("phone", String.class),
+          userProfileTuple.get("dob", LocalDate.class),
+          genderValidated,
+          userProfileTuple.get("address", String.class),
+          userProfileTuple.get("firstName", String.class),
+          userProfileTuple.get("lastName", String.class),
+          userProfileTuple.get("countryCode", String.class)
+      );
+    } else {
+      throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
   }
 

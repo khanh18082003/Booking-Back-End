@@ -15,8 +15,6 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
-
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_PROPERTY)
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -48,18 +46,7 @@ public class PropertiesController {
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
                 .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-                .data(propertiesService.search(location, startDate, endDate))
-                .build();
-    }
-    @PatchMapping("/id")
-    ApiResponse<Void> changeStatus(
-            @PathVariable UUID id
-    ) {
-        propertiesService.changeStatus(id);
-        return ApiResponse.<Void>builder()
-                .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-                .status(HttpStatus.OK.value())
-                .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+                .data(propertiesService.search(location, startDate, endDate, pageNo, pageSize))
                 .build();
     }
 }
