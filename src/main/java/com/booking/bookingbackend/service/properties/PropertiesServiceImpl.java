@@ -47,10 +47,11 @@ public class PropertiesServiceImpl implements PropertiesService {
 
     @Override
     public PropertiesResponse search(String location, Long startDate, Long endDate, int pageNo, int pageSize) {
-        List<Properties> propertiesList = repository.findByLocationAndDateBetween(location, startDate, endDate);
-        return (PropertiesResponse) propertiesList.stream()
-                .map(mapper::toDtoResponse)
-                .collect(Collectors.toList());
+//        List<Properties> propertiesList = repository.findByLocationAndDateBetween(location, startDate, endDate);
+//        return (PropertiesResponse) propertiesList.stream()
+//                .map(mapper::toDtoResponse)
+//                .collect(Collectors.toList());
+        return null;
     }
 
     @Override
