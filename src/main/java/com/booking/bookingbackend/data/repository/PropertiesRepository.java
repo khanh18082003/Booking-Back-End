@@ -8,7 +8,6 @@ import java.util.UUID;
 
 public interface PropertiesRepository extends BaseRepository<Properties, UUID> {
     Properties findByName(String name);
-
     Properties findByIdAndHostId(UUID id, UUID hostId);
 
 }
