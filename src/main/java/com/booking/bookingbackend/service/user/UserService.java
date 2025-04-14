@@ -20,7 +20,9 @@ public interface UserService extends BaseEntityService<
 
   UserResponse save(UserCreationRequest request);
 
-  void activeUser(UUID id);
+  UserResponse findByEmail(String email);
+
+  void activeUser(String email);
 
   boolean changePassword();
 }

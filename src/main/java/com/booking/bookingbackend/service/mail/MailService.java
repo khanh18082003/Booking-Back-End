@@ -78,7 +78,7 @@ public class MailService {
   }
 
   @Transactional
-  public void sendVerificationEmail(String to, String userId, String name, String code)
+  public void sendVerificationEmail(String to, String name, String code)
       throws MessagingException, UnsupportedEncodingException {
     // Tạo MimeMessage
     MimeMessage message = mailSender.createMimeMessage();
@@ -100,9 +100,9 @@ public class MailService {
     helper.setText(htmlContent, true);
 
     // store code into redis
-    log.info("Store key {} with value {}", userId, code);
+    log.info("Store key {} with value {}", to, code);
     RedisVerificationCode verificationCode = RedisVerificationCode.builder()
-        .id(userId)
+        .id(to)
         .code(code)
         .build();
     verificationCodeRepository.save(verificationCode);

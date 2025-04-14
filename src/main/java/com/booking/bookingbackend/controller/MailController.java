@@ -65,7 +65,7 @@ public class MailController {
   ApiResponse<Void> resendVerificationCode(
       @Valid @RequestBody ResendVerificationRequest request
   ) throws MessagingException, UnsupportedEncodingException {
-    UserResponse user = userService.findById(request.userId());
+    UserResponse user = userService.findByEmail(request.email().strip());
     ProfileResponse userProfile = profileService.findByUserId(user.getId());
 
     String firstName = userProfile.getFirstName();
@@ -73,11 +73,10 @@ public class MailController {
     String name = firstName != null && lastName != null ? firstName + " " + lastName : null;
 
     String newVerifyCode = SecurityUtil.generateVerificationCode();
-    verificationCodeService.saveCode(newVerifyCode, String.valueOf(request.userId()));
+    verificationCodeService.saveCode(newVerifyCode, user.getEmail());
 
     mailService.sendVerificationEmail(
         user.getEmail(),
-        String.valueOf(request.userId()),
         name,
         newVerifyCode
     );

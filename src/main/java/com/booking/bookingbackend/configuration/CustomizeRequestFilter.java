@@ -32,6 +32,7 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
       @NonNull HttpServletResponse response,
       @NonNull FilterChain filterChain
   ) throws ServletException, IOException {
+    log.info("Filter request: {}", request.getRequestURI());
     String authHeader = request.getHeader("Authorization");
     String token = null;
     String username = null;
@@ -52,6 +53,7 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
             userDetails.getAuthorities()
         );
         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        // Set the authentication in the security context
         SecurityContextHolder.getContext().setAuthentication(authToken);
       }
     }

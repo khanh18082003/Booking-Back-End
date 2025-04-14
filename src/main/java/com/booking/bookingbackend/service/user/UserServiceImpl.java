@@ -11,7 +11,6 @@ import com.booking.bookingbackend.data.repository.RoleRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
 import java.util.HashSet;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -37,8 +36,13 @@ public class UserServiceImpl implements UserService {
   @Transactional
   @Override
   public UserResponse save(UserCreationRequest request) {
-    if (repository.existsByEmail(request.email())) {
+    if (repository.existsByEmail(request.email().strip())) {
       throw new AppException(ErrorCode.MESSAGE_EMAIL_EXISTED);
+    }
+
+    if (request.confirmPassword() == null || !request.confirmPassword()
+        .equals(request.password())) {
+      throw new AppException(ErrorCode.MESSAGE_INVALID_CONFIRM_PASSWORD);
     }
 
     User entity = mapper.toEntity(request);
@@ -57,10 +61,24 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public void activeUser(UUID id) {
-    User user = repository.findById(id).orElseThrow(
-        () -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-            getEntityClass().getSimpleName()));
+  public UserResponse findByEmail(String email) {
+    return mapper.toDtoResponse(
+        repository
+            .findByEmail(email)
+            .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+                getEntityClass().getSimpleName())
+
+            ));
+  }
+
+  @Override
+  public void activeUser(String email) {
+    User user = repository.findByEmail(email).orElseThrow(
+        () -> new AppException(
+            ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            getEntityClass().getSimpleName()
+        )
+    );
     if (!user.isActive()) {
       user.setActive(true);
       repository.save(user);

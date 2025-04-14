@@ -48,7 +48,7 @@ public class PropertiesController {
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
                 .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-                .data(propertiesService.search(location, startDate, endDate, pageNo, pageSize))
+                .data(propertiesService.search(location, startDate, endDate))
                 .build();
     }
     @PatchMapping("/id")
