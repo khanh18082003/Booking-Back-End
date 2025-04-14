@@ -1,5 +1,7 @@
 package com.booking.bookingbackend.data.dto.request;
 
+import java.math.BigDecimal;
+import java.time.LocalTime;
 import lombok.Getter;
 
 import java.util.Set;
@@ -12,12 +14,12 @@ public record PropertiesRequest(
         String city,
         String country,
         String district,
-        String rating,
+        BigDecimal rating,
         boolean status,
-        String latitude,
-        String longitude,
-        String checkInTime,
-        String checkOutTime,
+        BigDecimal latitude,
+        BigDecimal longitude,
+        LocalTime checkInTime,
+        LocalTime checkOutTime,
         String email,
         int typeId,
         Set<UUID> amenitiesIds

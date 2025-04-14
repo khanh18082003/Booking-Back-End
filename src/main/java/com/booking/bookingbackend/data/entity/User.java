@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.io.Serial;
@@ -73,6 +74,19 @@ public class User extends UUIDJpaEntity implements UserDetails {
       inverseJoinColumns = @JoinColumn(name = "role_id")
   )
   Set<Role> roles;
+
+  @ToString.Exclude
+  @OneToMany(mappedBy = "host")
+  Set<Properties> properties;
+
+  @ToString.Exclude
+  @OneToMany(mappedBy = "user")
+  Set<Review> reviews;
+
+  @ToString.Exclude
+  @OneToMany(mappedBy = "user")
+  Set<Booking> bookings;
+
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {

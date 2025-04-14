@@ -1,16 +1,35 @@
 package com.booking.bookingbackend.data.entity;
 
 import com.booking.bookingbackend.data.base.UUIDJpaEntity;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import java.io.Serial;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalTime;
+import java.util.Set;
+import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Set;
-import java.util.UUID;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.UuidGenerator.Style;
 
 @Getter
 @Setter
@@ -21,42 +40,93 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class Properties extends UUIDJpaEntity {
-    @Id
-    UUID id;
-    String name;
-    String description;
-    String address;
-    String city;
-    String country;
-    String district;
-    String rating;
-    boolean status;
-    String latitude;
-    String longitude;
-    @Column(name = "check_in_time")
-    Time checkInTime;
-    @Column(name = "check_out_time")
-    Time checkOutTime;
-    @Column(name = "created_at")
-    @CreationTimestamp
-    Timestamp createdAt;
-    @Column(name = "updated_at")
-    @UpdateTimestamp
-    Timestamp updatedAt;
 
-    @ManyToMany
-    @JoinTable(
-            name = "tbl_properties_amenities",
-            joinColumns = @JoinColumn(name = "properties_id"),
-            inverseJoinColumns = @JoinColumn(name = "amenities_id")
-    )
-    Set<Amenities> amenities;
+  @Serial
+  private static final long serialVersionUID = -7289484180496429846L;
 
-    @ManyToOne
-    @JoinColumn(name = "host_id", nullable = false)
-    User host;
+  @Id
+  @UuidGenerator(style = Style.TIME)
+  UUID id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "type_id")
-    PropertyType propertyType;
+  @Column(name = "name", nullable = false)
+  String name;
+
+  @Column(name = "description")
+  String description;
+
+  @Column(name = "address", nullable = false)
+  String address;
+
+  @Column(name = "city")
+  String city;
+
+  @Column(name = "country")
+  String country;
+
+  @Column(name = "district")
+  String district;
+
+  @Column(name = "rating", precision = 2, scale = 1, nullable = false)
+  BigDecimal rating;
+
+  @Column(name = "status")
+  boolean status;
+
+  @Column(name = "latitude", precision = 9, scale = 6)
+  BigDecimal latitude;
+
+  @Column(name = "longitude", precision = 9, scale = 6)
+  BigDecimal longitude;
+
+  @Column(name = "check_in_time")
+  LocalTime checkInTime;
+
+  @Column(name = "check_out_time")
+  LocalTime checkOutTime;
+
+  @Column(name = "created_at")
+  @CreationTimestamp
+  Timestamp createdAt;
+
+  @Column(name = "updated_at")
+  @UpdateTimestamp
+  Timestamp updatedAt;
+
+  @ToString.Exclude
+  @ManyToMany
+  @JoinTable(
+      name = "tbl_properties_amenities",
+      joinColumns = @JoinColumn(name = "properties_id"),
+      inverseJoinColumns = @JoinColumn(name = "amenities_id")
+  )
+  Set<Amenities> amenities;
+
+  @ToString.Exclude
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(
+      name = "host_id",
+      referencedColumnName = "id",
+      nullable = false)
+  User host;
+
+  @ToString.Exclude
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(
+      name = "type_id",
+      referencedColumnName = "id",
+      nullable = false
+  )
+  PropertyType propertyType;
+
+  @ToString.Exclude
+  @OneToMany(mappedBy = "properties")
+  Set<Accommodation> accommodations;
+
+  @ToString.Exclude
+  @OneToMany(mappedBy = "properties")
+  Set<Review> reviews;
+
+  @ToString.Exclude
+  @OneToMany(mappedBy = "properties")
+  Set<Booking> bookings;
 }
