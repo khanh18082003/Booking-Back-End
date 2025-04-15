@@ -15,8 +15,13 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -46,9 +51,14 @@ public class PropertiesServiceImpl implements PropertiesService {
     }
 
     @Override
-    public PropertiesResponse search(String location, Long startDate, Long endDate, int pageNo, int pageSize) {
-        List<Properties> propertiesList = repository.findByLocationAndDateBetween(location, startDate, endDate);
-        return (PropertiesResponse) propertiesList.stream()
+    public List<PropertiesResponse> search(String location, LocalDate startDate, LocalDate endDate, int pageNo, int pageSize) {
+        if (startDate.isAfter(endDate)) {
+            throw new AppException(ErrorCode.MESSAGE_INVALID_DATE_RANGE, "Start date must be before end date");
+        }
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        Page<Properties> page = repository.findAvailableProperties(location, startDate, endDate, pageable);
+        List<Properties> propertiesList = page.getContent();
+        return propertiesList.stream()
                 .map(mapper::toDtoResponse)
                 .collect(Collectors.toList());
     }

@@ -22,6 +22,7 @@ public record PropertiesRequest(
         LocalTime checkOutTime,
         String email,
         int typeId,
-        Set<UUID> amenitiesIds
+        Set<UUID> amenitiesIds,
+        Set<String> urls
 ) implements java.io.Serializable {
 }

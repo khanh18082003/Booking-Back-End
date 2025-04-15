@@ -1,6 +1,7 @@
 package com.booking.bookingbackend.data.dto.response;
 
 import com.booking.bookingbackend.data.entity.User;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
@@ -31,12 +32,13 @@ public class PropertiesResponse implements Serializable {
     boolean status;
     BigDecimal latitude;
     BigDecimal longitude;
+    @JsonFormat(pattern = "HH:mm")
     @JsonProperty("check_in_time") LocalTime checkInTime;
+    @JsonFormat(pattern = "HH:mm")
     @JsonProperty("check_out_time") LocalTime checkOutTime;
     @JsonProperty("created_at") Timestamp createdAt;
     @JsonProperty("updated_at") Timestamp updatedAt;
     UserResponse user;
     PropertyTypeResponse propertyType;
     Set<AmenitiesResponse> amenities;
-
 }
