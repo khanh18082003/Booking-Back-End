@@ -2,6 +2,8 @@ package com.booking.bookingbackend.data.dto.response;
 
 import com.booking.bookingbackend.constant.AmenityType;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
+import java.io.Serializable;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -18,7 +20,7 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AmenitiesResponse {
+public class AmenitiesResponse implements Serializable {
 
   UUID id;
 
