@@ -1,5 +1,6 @@
 package com.booking.bookingbackend.service.amenities;
 
+import com.booking.bookingbackend.constant.AmenityType;
 import com.booking.bookingbackend.data.dto.request.AmenitiesRequest;
 import com.booking.bookingbackend.data.dto.response.AmenitiesResponse;
 import com.booking.bookingbackend.data.entity.Amenities;
@@ -18,7 +19,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
-public class AmenitiesServiceImpl implements AmenitiesService{
+public class AmenitiesServiceImpl implements AmenitiesService {
     AmenitiesRepository repository;
     AmenitiesMapper mapper;
 
@@ -27,9 +28,7 @@ public class AmenitiesServiceImpl implements AmenitiesService{
     @Transactional
     public AmenitiesResponse save(AmenitiesRequest request) {
         Amenities amenities = mapper.toEntity(request);
-        amenities.setName(request.name());
-        amenities.setIcon(request.icon());
-        amenities.setType(request.type());
+        amenities.setType(AmenityType.valueOf(request.type()));
         Amenities savedAmenities = repository.save(amenities);
         return mapper.toDtoResponse(savedAmenities);
     }

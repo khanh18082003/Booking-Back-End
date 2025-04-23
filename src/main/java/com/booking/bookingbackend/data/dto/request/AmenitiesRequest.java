@@ -5,10 +5,11 @@ import jakarta.validation.constraints.NotBlank;
 
 import java.io.Serializable;
 
-public record AmenitiesRequest (
+public record AmenitiesRequest(
         @NotBlank(message = "MESSAGE_NOT_BLANK")
         String name,
         String icon,
         @NotBlank(message = "MESSAGE_NOT_BLANK")
-        AmenityType type
-) implements Serializable{};
+        String type
+) implements Serializable {
+};
