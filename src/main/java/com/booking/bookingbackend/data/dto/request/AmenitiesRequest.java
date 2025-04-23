@@ -10,5 +10,5 @@ public record AmenitiesRequest (
         String name,
         String icon,
         @NotBlank(message = "MESSAGE_NOT_BLANK")
-        AmenityType type
+        String type
 ) implements Serializable{};
