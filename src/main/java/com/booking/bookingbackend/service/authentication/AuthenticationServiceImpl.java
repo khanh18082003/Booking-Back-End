@@ -37,7 +37,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -151,12 +150,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     // Validate the refresh token and access token
     if (!jwtService.validateToken(TokenType.REFRESH_TOKEN, refreshToken, user)
-        && !jwtService.validateToken(TokenType.ACCESS_TOKEN, refreshTokenRequest.accessToken(),
-        user)
-    ) {
+    && !jwtService.extractUsername(TokenType.ACCESS_TOKEN, refreshTokenRequest.accessToken()).equals(username)) {
       // Throw an exception if both tokens are invalid
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
+
+    // Invalidate the old access token
+    invalidateToken(refreshTokenRequest.accessToken(), TokenType.ACCESS_TOKEN);
 
     // Generate a new access token for the authenticated user
     String newAccessToken = jwtService.generateAccessToken(
@@ -164,8 +164,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         user.getAuthorities()
     );
 
-    // Invalidate the old access token
-    invalidateToken(refreshTokenRequest.accessToken(), TokenType.ACCESS_TOKEN);
 
     // Return the new access token in the response
     return AuthenticationResponse.builder()
@@ -255,6 +253,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   private void invalidateToken(String token, TokenType tokenType) {
     String jit = jwtService.extractId(tokenType, token);
     Date expireTime = jwtService.extractExpiration(tokenType, token);
+
     if (jit == null || expireTime == null) {
       log.error("Invalid token");
       return;

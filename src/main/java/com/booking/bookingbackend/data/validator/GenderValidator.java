@@ -16,12 +16,13 @@ public class GenderValidator implements ConstraintValidator<GenderValid, String>
 
   @Override
   public boolean isValid(String value, ConstraintValidatorContext context) {
-    Gender gender;
+    if (value == null) return true; // Cho phép bỏ qua nếu không có dữ liệu
+
     try {
-      gender = Gender.valueOf(value);
+      Gender gender = Gender.valueOf(value.toUpperCase());
+      return genders.contains(gender);
     } catch (IllegalArgumentException e) {
       return false;
     }
-    return genders.contains(gender);
   }
 }

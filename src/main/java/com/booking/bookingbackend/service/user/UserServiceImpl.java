@@ -13,16 +13,15 @@ import com.booking.bookingbackend.data.repository.RoleRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
 import jakarta.persistence.Tuple;
-import java.time.LocalDate;
+import java.sql.Date;
 import java.util.HashSet;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -94,6 +93,7 @@ public class UserServiceImpl implements UserService {
     }
   }
 
+
   @Override
   public UserProfileDto getMyProfile() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -119,7 +119,7 @@ public class UserServiceImpl implements UserService {
       Gender genderValidated = null;
       if (gender != null) {
         try {
-          genderValidated = Gender.valueOf(gender);
+          genderValidated = Gender.valueOf(gender.toUpperCase());
         } catch (IllegalArgumentException e) {
           throw new AppException(ErrorCode.MESSAGE_INVALID_FORMAT, "Invalid gender value");
         }
@@ -132,12 +132,16 @@ public class UserServiceImpl implements UserService {
           UUID.fromString(userProfileTuple.get("profileId", String.class)),
           userProfileTuple.get("avatar", String.class),
           userProfileTuple.get("phone", String.class),
-          userProfileTuple.get("dob", LocalDate.class),
+          Optional.ofNullable(userProfileTuple.get("dob", Date.class))
+              .map(Date::toLocalDate)
+              .orElse(null),
           genderValidated,
           userProfileTuple.get("address", String.class),
           userProfileTuple.get("firstName", String.class),
           userProfileTuple.get("lastName", String.class),
-          userProfileTuple.get("countryCode", String.class)
+          userProfileTuple.get("name", String.class),
+          userProfileTuple.get("countryCode", String.class),
+          userProfileTuple.get("nationality", String.class)
       );
     } else {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);

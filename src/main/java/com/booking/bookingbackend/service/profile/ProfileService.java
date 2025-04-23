@@ -20,5 +20,7 @@ public interface ProfileService extends BaseEntityService<
 
   void update(UUID id, ProfileUpdateRequest request);
 
+  void updateMyProfile(ProfileUpdateRequest request);
+
   ProfileResponse findByUserId(UUID userId);
 }
