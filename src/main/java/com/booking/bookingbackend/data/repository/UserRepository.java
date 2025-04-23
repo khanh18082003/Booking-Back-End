@@ -30,9 +30,11 @@ public interface UserRepository extends BaseRepository<User, UUID> {
              p.address AS address,
              p.first_name AS firstName,
              p.last_name AS lastName,
-             p.country_code AS countryCode
-        FROM (SELECT id, email, is_active FROM tbl_user WHERE id = :id) u
-        JOIN tbl_profile p ON p.user_id = u.id
+             CONCAT(p.first_name, ' ', p.last_name) AS name,
+             p.country_code AS countryCode,
+            p.nationality as nationality
+      FROM (SELECT id, email, is_active FROM tbl_user WHERE id = :id) u
+               JOIN tbl_profile p ON p.user_id = u.id
       """, nativeQuery = true)
   Optional<Tuple> findByUserProfile(@Param("id") UUID id);
 }

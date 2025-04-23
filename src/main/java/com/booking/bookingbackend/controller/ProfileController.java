@@ -19,10 +19,12 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -60,6 +62,39 @@ public class ProfileController {
       @PathVariable UUID id,
       @Valid @RequestBody ProfileUpdateRequest request) {
     profileService.update(id, request);
+
+    return ApiResponse.<Void>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.ACCEPTED.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .build();
+  }
+
+  @PatchMapping
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  @Operation(
+      summary = "Update Profile",
+      description = "Update profile through id",
+      responses = {
+          @io.swagger.v3.oas.annotations.responses.ApiResponse(
+              responseCode = CommonConstant.MESSAGE_OK,
+              description = "Profile update",
+              content =
+              @Content(
+                  examples =
+                  @ExampleObject(
+                      value =
+                          """
+                              {
+                                "code": "M000",
+                                "status": "202",
+                                "message": "Success",
+                              }
+                              """))),
+      }
+  )
+  ApiResponse<Void> updateMyProfile(@Valid @RequestBody ProfileUpdateRequest request) {
+    profileService.updateMyProfile(request);
 
     return ApiResponse.<Void>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())

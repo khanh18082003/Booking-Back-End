@@ -123,7 +123,7 @@ public class JwtServiceImpl implements JwtService {
 
   private boolean isBlacklisted(String jit) {
     String key = "invalid_token:" + jit;
-    return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    return redisTemplate.hasKey(key);
   }
 
   private boolean isTokenExpired(TokenType type, String token) {
@@ -137,7 +137,9 @@ public class JwtServiceImpl implements JwtService {
           .build()
           .parseClaimsJws(token)
           .getBody();
-    } catch (ExpiredJwtException | SignatureException ex) {
+    } catch (ExpiredJwtException ex) {
+      return ex.getClaims();
+    } catch (SignatureException ex) {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
   }

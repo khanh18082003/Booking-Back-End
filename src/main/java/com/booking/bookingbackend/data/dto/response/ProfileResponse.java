@@ -38,4 +38,5 @@ public class ProfileResponse implements Serializable {
   String firstName;
   @JsonProperty("last_name")
   String lastName;
+  String nationality;
 }

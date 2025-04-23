@@ -3,7 +3,6 @@ package com.booking.bookingbackend.data.validator;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import com.booking.bookingbackend.constant.Gender;
-import com.booking.bookingbackend.constant.Method;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 import java.lang.annotation.Documented;
@@ -16,7 +15,8 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 @Constraint(validatedBy = GenderValidator.class)
 public @interface GenderValid {
-  Gender[] anyOf() default {Gender.Male, Gender.Female, Gender.Other};
+
+  Gender[] anyOf() default {Gender.MALE, Gender.FEMALE, Gender.OTHER};
 
   String message() default "must be any of {anyOf}";
 

@@ -37,7 +37,7 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
     String token = null;
     String username = null;
 
-    // Check if the header starts with "Bearer "
+    // Check if the header starts with "Bearer"
     if (authHeader != null && authHeader.startsWith("Bearer")) {
       token = authHeader.substring(7); // extract token
       username = jwtService.extractUsername(TokenType.ACCESS_TOKEN, token); // extract username
@@ -55,6 +55,7 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         // Set the authentication in the security context
         SecurityContextHolder.getContext().setAuthentication(authToken);
+        log.info("User {} authenticated successfully", username);
       }
     }
     filterChain.doFilter(request, response);

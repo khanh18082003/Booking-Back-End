@@ -122,6 +122,7 @@ public class AuthenticationController {
       HttpServletResponse res) {
     try {
       authenticationService.logout(logoutRequest, req, res);
+      log.info("User logged out successfully");
       return ApiResponse.<Void>builder()
           .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
           .status(HttpStatus.OK.value())

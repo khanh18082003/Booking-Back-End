@@ -67,6 +67,9 @@ public class Profile extends UUIDJpaEntity {
   @Enumerated(EnumType.STRING)
   Gender gender;
 
+  @Column(name = "nationality")
+  String nationality;
+
   @ToString.Exclude
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id")

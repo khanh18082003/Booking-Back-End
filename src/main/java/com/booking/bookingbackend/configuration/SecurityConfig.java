@@ -51,22 +51,21 @@ public class SecurityConfig {
       EndpointConstant.ENDPOINT_AUTH + "/login",
       EndpointConstant.ENDPOINT_AUTH + "/verify-email",
       EndpointConstant.ENDPOINT_AUTH + "/refresh-token",
+      EndpointConstant.ENDPOINT_AUTH + "/logout",
       EndpointConstant.ENDPOINT_MAIL,
   };
 
   @Bean
-  public WebMvcConfigurer webMvcConfigurer() {
-    return new WebMvcConfigurer() {
-      @Override
-      public void addCorsMappings(@NonNull CorsRegistry registry) {
-        registry.addMapping("/**")
-            .allowCredentials(true)
-            .allowedHeaders("*")
-            .allowedMethods("*")
-            .allowedOrigins("http://localhost:5173");
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(List.of("*"));
+    configuration.setAllowCredentials(true);
 
-      }
-    };
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
   }
 
   @Bean
@@ -96,19 +95,6 @@ public class SecurityConfig {
     httpSecurity
         .cors(cors -> cors.configurationSource(corsConfigurationSource())); // cấu hình CORS
     return httpSecurity.build();
-  }
-
-  @Bean
-  public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(List.of("http://localhost:5173")); // Origin front-end
-    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-    config.setAllowedHeaders(List.of("*"));
-    config.setAllowCredentials(true);
-
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", config);
-    return source;
   }
 
   // Config resource from swagger
