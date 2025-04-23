@@ -19,7 +19,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
-public class AmenitiesServiceImpl implements AmenitiesService{
+public class AmenitiesServiceImpl implements AmenitiesService {
     AmenitiesRepository repository;
     AmenitiesMapper mapper;
 

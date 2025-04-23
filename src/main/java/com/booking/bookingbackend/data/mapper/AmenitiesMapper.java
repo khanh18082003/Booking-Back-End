@@ -12,5 +12,6 @@ import org.mapstruct.MappingTarget;
 public interface AmenitiesMapper extends EntityDtoMapper<Amenities, AmenitiesResponse> {
     @Mapping(target = "type", ignore = true)
     Amenities toEntity(AmenitiesRequest request);
+
     void merge(AmenitiesResponse response, @MappingTarget Amenities entity);
 }
