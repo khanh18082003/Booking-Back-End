@@ -9,4 +9,5 @@ public class EndpointConstant {
   public static final String ENDPOINT_PROPERTY = "/properties";
   public static final String ENDPOINT_MAIL = "/re-send-mail";
   public static final String ENDPOINT_AMENITIES = "/amenities";
+  public static final String ENDPOINT_BOOKING = "/bookings";
 }
