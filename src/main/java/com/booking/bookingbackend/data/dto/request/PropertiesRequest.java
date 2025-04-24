@@ -20,8 +20,9 @@ public record PropertiesRequest(
         BigDecimal longitude,
         LocalTime checkInTime,
         LocalTime checkOutTime,
-        String email,
+        UUID hostId,
         int typeId,
-        Set<UUID> amenitiesIds
+        Set<UUID> amenitiesIds,
+        Set<String> urls
 ) implements java.io.Serializable {
 }

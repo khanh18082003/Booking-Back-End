@@ -6,6 +6,8 @@ import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.service.BaseEntityService;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public interface PropertiesService extends BaseEntityService<UUID, Properties, PropertiesRepository, PropertiesResponse> { ;
@@ -13,7 +15,9 @@ public interface PropertiesService extends BaseEntityService<UUID, Properties, P
     @Override
     default Class<?> getEntityClass(){return Properties.class;}
     PropertiesResponse save(PropertiesRequest request);
-    PropertiesResponse search(String location, Long startDate, Long endDate, int pageNo, int pageSize);
+
+    List<PropertiesResponse> search(String location, LocalDate startDate, LocalDate endDate, int pageNo, int pageSize);
+
     void changeStatus(UUID id);
     PropertiesResponse update(UUID id, PropertiesRequest request);
 }

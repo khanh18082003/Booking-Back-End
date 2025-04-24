@@ -6,12 +6,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -54,6 +58,9 @@ public class SecurityConfig {
       EndpointConstant.ENDPOINT_AUTH + "/logout",
       EndpointConstant.ENDPOINT_MAIL,
   };
+  private static final String[] GET_LIST_API = {
+          EndpointConstant.ENDPOINT_PROPERTY + "/search",
+  };
 
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
@@ -80,6 +87,7 @@ public class SecurityConfig {
                     "/booking-api/v1/v3/api-docs/**"
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST, WHITE_LIST_API).permitAll()
+                .requestMatchers(HttpMethod.GET, GET_LIST_API).permitAll()
                 .anyRequest().authenticated()
         ).sessionManagement(
             manager -> manager
@@ -151,6 +159,14 @@ public class SecurityConfig {
     module.addDeserializer(
         LocalDate.class,
         new LocalDateDeserializer(DateTimeFormatter.ISO_DATE)
+    );
+    module.addSerializer(
+            LocalTime.class,
+            new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm"))
+    );
+    module.addDeserializer(
+            LocalTime.class,
+            new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm"))
     );
     objectMapper.registerModule(module);
     return objectMapper;

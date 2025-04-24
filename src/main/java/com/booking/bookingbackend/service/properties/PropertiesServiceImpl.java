@@ -15,8 +15,13 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -36,7 +41,7 @@ public class PropertiesServiceImpl implements PropertiesService {
     @Transactional
     public PropertiesResponse save(PropertiesRequest request) {
         Properties properties = mapper.toEntity(request);
-        properties.setHost(userRepository.findByEmail(request.email())
+        properties.setHost(userRepository.findById(request.hostId())
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName())));
         properties.setPropertyType(propertyTypeRepository.findById(request.typeId())
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName())));
@@ -68,7 +73,7 @@ public class PropertiesServiceImpl implements PropertiesService {
         Properties properties = repository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName()));
         mapper.merge(request, properties);
-        properties.setHost(userRepository.findByEmail(request.email())
+        properties.setHost(userRepository.findById(request.hostId())
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName())));
         properties.setPropertyType(propertyTypeRepository.findById(request.typeId())
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName())));
