@@ -29,8 +29,8 @@ public class PropertiesResponse implements Serializable {
     String district;
     BigDecimal rating;
     boolean status;
-    BigDecimal latitude;
-    BigDecimal longitude;
+    Double latitude;
+    Double longitude;
     @JsonProperty("check_in_time") LocalTime checkInTime;
     @JsonProperty("check_out_time") LocalTime checkOutTime;
     @JsonProperty("created_at") Timestamp createdAt;
