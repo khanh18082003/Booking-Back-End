@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(EndpointConstant.ENDPOINT_PROPERTY)
+@RequestMapping(EndpointConstant.ENDPOINT_BOOKING)
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 @Slf4j(topic = "BOOKING-CONTROLLER")
