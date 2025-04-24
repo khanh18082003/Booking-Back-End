@@ -6,7 +6,7 @@ spring:
       on-profile: dev
 
   datasource:
-    url: jdbc:mysql://${JDBC-ADDRESS}:3306/booking_db
+    url: jdbc:mysql://${JDBC_ADDRESS:localhost}:3306/booking_db
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${USERNAME:root}
     password: ${PASSWORD:root}

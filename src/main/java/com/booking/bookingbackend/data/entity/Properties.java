@@ -73,11 +73,11 @@ public class Properties extends UUIDJpaEntity {
   @Column(name = "status")
   boolean status;
 
-  @Column(name = "latitude", precision = 9, scale = 6)
-  BigDecimal latitude;
+  @Column(name = "latitude")
+  Double latitude;
 
-  @Column(name = "longitude", precision = 9, scale = 6)
-  BigDecimal longitude;
+  @Column(name = "longitude")
+  Double longitude;
 
   @Column(name = "check_in_time")
   LocalTime checkInTime;
