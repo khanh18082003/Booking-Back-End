@@ -24,6 +24,6 @@ public class UserInfoService implements UserDetailsService {
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     return userRepository.findByEmail(username)
-        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID));
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION));
   }
 }

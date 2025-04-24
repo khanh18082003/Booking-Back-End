@@ -51,16 +51,12 @@ public class PropertiesServiceImpl implements PropertiesService {
     }
 
     @Override
-    public List<PropertiesResponse> search(String location, LocalDate startDate, LocalDate endDate, int pageNo, int pageSize) {
-        if (startDate.isAfter(endDate)) {
-            throw new AppException(ErrorCode.MESSAGE_INVALID_DATE_RANGE, "Start date must be before end date");
-        }
-        Pageable pageable = PageRequest.of(pageNo, pageSize);
-        Page<Properties> page = repository.findAvailableProperties(location, startDate, endDate, pageable);
-        List<Properties> propertiesList = page.getContent();
-        return propertiesList.stream()
-                .map(mapper::toDtoResponse)
-                .collect(Collectors.toList());
+    public PropertiesResponse search(String location, Long startDate, Long endDate, int pageNo, int pageSize) {
+//        List<Properties> propertiesList = repository.findByLocationAndDateBetween(location, startDate, endDate);
+//        return (PropertiesResponse) propertiesList.stream()
+//                .map(mapper::toDtoResponse)
+//                .collect(Collectors.toList());
+        return null;
     }
 
     @Override
