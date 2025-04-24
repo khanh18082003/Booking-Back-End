@@ -41,7 +41,7 @@ public class PropertiesServiceImpl implements PropertiesService {
     @Transactional
     public PropertiesResponse save(PropertiesRequest request) {
         Properties properties = mapper.toEntity(request);
-        properties.setHost(userRepository.findByEmail(request.email())
+        properties.setHost(userRepository.findById(request.hostId())
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName())));
         properties.setPropertyType(propertyTypeRepository.findById(request.typeId())
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName())));
@@ -77,7 +77,7 @@ public class PropertiesServiceImpl implements PropertiesService {
         Properties properties = repository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName()));
         mapper.merge(request, properties);
-        properties.setHost(userRepository.findByEmail(request.email())
+        properties.setHost(userRepository.findById(request.hostId())
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName())));
         properties.setPropertyType(propertyTypeRepository.findById(request.typeId())
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName())));

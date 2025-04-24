@@ -38,7 +38,8 @@ public class PropertiesResponse implements Serializable {
     @JsonProperty("check_out_time") LocalTime checkOutTime;
     @JsonProperty("created_at") Timestamp createdAt;
     @JsonProperty("updated_at") Timestamp updatedAt;
-    UserResponse user;
+    UserResponse host;
+    @JsonProperty("property_type")
     PropertyTypeResponse propertyType;
     Set<AmenitiesResponse> amenities;
 }
