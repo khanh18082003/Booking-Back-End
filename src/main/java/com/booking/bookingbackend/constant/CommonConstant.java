@@ -39,4 +39,6 @@ public class CommonConstant {
         "message": "error message"
       }
       """;
+
+  public static final String SORT_BY = "(\\w+?)(:)(.*)";
 }

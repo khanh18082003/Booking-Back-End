@@ -52,11 +52,8 @@ public class Accommodation extends UUIDJpaEntity {
   @Column(name = "base_price", precision = 10, scale = 2, nullable = false)
   BigDecimal basePrice;
 
-  @Column(name = "capacity_adult", nullable = false)
-  int capacityAdult;
-
-  @Column(name = "capacity_children", nullable = false)
-  int capacityChildren;
+  @Column(name = "capacity")
+  int capacity;
 
   @Column(name = "total_units")
   int totalUnits;
