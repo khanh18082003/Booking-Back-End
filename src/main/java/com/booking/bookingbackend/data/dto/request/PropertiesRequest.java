@@ -21,7 +21,6 @@ public record PropertiesRequest(
         Double longitude,
         @JsonProperty("check_in_time") LocalTime checkInTime,
         @JsonProperty("check_out_time") LocalTime checkOutTime,
-        @JsonProperty("host_id") UUID hostId,
         @JsonProperty("type_id") int typeId,
         @JsonProperty("amenities_id") Set<UUID> amenitiesIds,
         Set<String> urls
