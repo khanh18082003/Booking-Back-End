@@ -35,8 +35,18 @@ public class AmenitiesServiceImpl implements AmenitiesService {
 
     @Override
     public AmenitiesResponse update(UUID id, AmenitiesRequest request) {
-        //can viet
-        return null;
+        Amenities amenities = repository.findById(id).orElseThrow(() -> new RuntimeException("Amenities not found"));
+        amenities.setName(request.name());
+        amenities.setType(AmenityType.valueOf(request.type()));
+        Amenities updatedAmenities = repository.save(amenities);
+        return mapper.toDtoResponse(updatedAmenities);
+    }
+
+    @Override
+    public boolean delete(UUID id) {
+        Amenities amenities = repository.findById(id).orElseThrow(() -> new RuntimeException("Amenities not found"));
+        repository.delete(amenities);
+        return true;
     }
 
 }
