@@ -1,9 +1,11 @@
 package com.booking.bookingbackend.data.entity;
 
-import com.booking.bookingbackend.data.base.UUIDJpaEntity;
+import com.booking.bookingbackend.data.base.AbstractIdentifiable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -11,7 +13,6 @@ import jakarta.persistence.Table;
 import java.io.Serial;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,8 +21,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.UuidGenerator;
-import org.hibernate.annotations.UuidGenerator.Style;
 
 @Entity
 @Table(name = "tbl_available")
@@ -31,23 +30,26 @@ import org.hibernate.annotations.UuidGenerator.Style;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Available extends UUIDJpaEntity {
+public class Available extends AbstractIdentifiable<Integer> {
 
   @Serial
   private static final long serialVersionUID = 1666931288627522644L;
 
   @Id
-  @UuidGenerator(style = Style.TIME)
-  UUID id;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  Integer id;
 
   @Column(name = "date", nullable = false)
   LocalDate date;
 
-  @Column(name = "available_units", nullable = false)
-  int availableUnits;
-
   @Column(name = "price", nullable = false, precision = 10, scale = 2)
   BigDecimal price;
+
+  @Column(name = "total_inventory", nullable = false)
+  int totalInventory;
+
+  @Column(name = "total_reserved", nullable = false)
+  int totalReserved;
 
   @ToString.Exclude
   @ManyToOne(fetch = FetchType.LAZY)
