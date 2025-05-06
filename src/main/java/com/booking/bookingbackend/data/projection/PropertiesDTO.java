@@ -21,11 +21,11 @@ public record PropertiesDTO(
     @JsonProperty("properties_type")
     String propertiesType,
     @JsonProperty("nights")
-    Integer nights,
+    Long nights,
     @JsonProperty("adults")
-    Integer adults,
+    Long adults,
     @JsonProperty("children")
-    Integer children,
+    Long children,
     List<AccommodationDTO> accommodations
 ) {
 

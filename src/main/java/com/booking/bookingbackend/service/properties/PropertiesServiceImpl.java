@@ -189,9 +189,9 @@ public class PropertiesServiceImpl implements PropertiesService {
             row.get("distance", Double.class),
             totalPrice,
             row.get("propertiesType", String.class),
-            row.get("nights", Integer.class),
-            row.get("adults", Integer.class),
-            row.get("children", Integer.class),
+            row.get("nights", Long.class),
+            row.get("adults", Long.class),
+            row.get("children", Long.class),
             best
         );
       } catch (Exception e) {
