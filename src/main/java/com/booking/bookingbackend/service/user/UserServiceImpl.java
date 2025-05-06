@@ -2,15 +2,18 @@ package com.booking.bookingbackend.service.user;
 
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.Gender;
+import com.booking.bookingbackend.data.dto.request.ResetPasswordRequest;
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
 import com.booking.bookingbackend.data.dto.response.UserProfileDto;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
 import com.booking.bookingbackend.data.entity.Profile;
+import com.booking.bookingbackend.data.entity.RedisVerificationCode;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.mapper.UserMapper;
 import com.booking.bookingbackend.data.repository.ProfileRepository;
 import com.booking.bookingbackend.data.repository.RoleRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
+import com.booking.bookingbackend.data.repository.VerificationCodeRepository;
 import com.booking.bookingbackend.exception.AppException;
 import jakarta.persistence.Tuple;
 import java.sql.Date;
@@ -40,6 +43,7 @@ public class UserServiceImpl implements UserService {
   ProfileRepository profileRepository;
   UserMapper mapper;
   PasswordEncoder passwordEncoder;
+  VerificationCodeRepository verificationCodeRepository;
 
   @Transactional
   @Override
@@ -150,8 +154,19 @@ public class UserServiceImpl implements UserService {
 
   @Transactional
   @Override
-  public boolean changePassword() {
-    return false;
+  public void changePassword(ResetPasswordRequest request) {
+    Optional<RedisVerificationCode> redisCodeOpt = verificationCodeRepository.findById(
+            request.email());
+//    log.info("Redis code: {}", redisCodeOpt.get().getCode());
+    if (redisCodeOpt.isPresent()) {
+      log.error("Token not found");
+      throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
+    }
+
+    User user = repository.findByEmail(request.email())
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_USER_NOT_FOUND));
+    user.setPassword(passwordEncoder.encode(request.newPassword()));
+    repository.save(user);
   }
 
 }

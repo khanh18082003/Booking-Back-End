@@ -1,5 +1,6 @@
 package com.booking.bookingbackend.service.user;
 
+import com.booking.bookingbackend.data.dto.request.ResetPasswordRequest;
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
 import com.booking.bookingbackend.data.dto.response.UserProfileDto;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
@@ -27,5 +28,6 @@ public interface UserService extends BaseEntityService<
 
   UserProfileDto getMyProfile();
 
-  boolean changePassword();
+  void changePassword(ResetPasswordRequest request);
+
 }

@@ -209,6 +209,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
     log.info("Token verified successfully");
+    //delete token
+    verificationCodeRepository.deleteById(request.email());
   }
 
   /**
