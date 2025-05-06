@@ -11,6 +11,7 @@ import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.mapper.PropertiesMapper;
+import com.booking.bookingbackend.data.projection.AccommodationDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDTO;
 import com.booking.bookingbackend.data.repository.AmenitiesRepository;
 import com.booking.bookingbackend.data.repository.PropertiesRepository;
@@ -18,7 +19,11 @@ import com.booking.bookingbackend.data.repository.PropertyTypeRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.util.GeometryUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.Tuple;
 import jakarta.transaction.Transactional;
+import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +37,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -143,7 +149,7 @@ public class PropertiesServiceImpl implements PropertiesService {
         transformedCoordinates[0],
         transformedCoordinates[1]
     );
-    Page<PropertiesDTO> propertiesPage = repository.searchProperties(
+    List<Tuple> raw = repository.searchProperties(
         transformedCoordinates[1],
         transformedCoordinates[0],
         request.radius(),
@@ -151,18 +157,154 @@ public class PropertiesServiceImpl implements PropertiesService {
         endDate,
         nights,
         request.adults() + request.children(),
-        pageable
+        request.adults(),
+        request.children(),
+        request.rooms()
     );
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    List<PropertiesDTO> dtos = raw.stream().map(row -> {
+      try {
+        List<AccommodationDTO> accommodations = objectMapper.readValue(
+            row.get("accommodations", String.class),
+            new TypeReference<>() {
+            }
+        );
+
+        // TODO: Insert combination logic here to choose best accommodations set
+        List<AccommodationDTO> best = selectBestCombination(
+            accommodations,
+            request.adults() + request.children(),
+            request.rooms()
+        );
+        double totalPrice = best.stream().mapToDouble(AccommodationDTO::totalPrice).sum();
+        return new PropertiesDTO(
+            UUID.fromString(row.get("propertiesId", String.class)),
+            row.get("propertiesName", String.class),
+            row.get("image", String.class),
+            row.get("address", String.class),
+            row.get("city", String.class),
+            row.get("district", String.class),
+            row.get("rating", BigDecimal.class),
+            row.get("distance", Double.class),
+            totalPrice,
+            row.get("propertiesType", String.class),
+            row.get("nights", Integer.class),
+            row.get("adults", Integer.class),
+            row.get("children", Integer.class),
+            best
+        );
+      } catch (Exception e) {
+        throw new RuntimeException("Failed to map accommodations JSON", e);
+      }
+    }).toList();
+
+    // You may optionally sort or filter further in Java
+
+    long total = raw.size(); // or call countQuery if accuracy needed
+    Page<PropertiesDTO> page = new PageImpl<>(dtos, pageable, total);
 
     return PaginationResponse.<PropertiesDTO>builder()
         .meta(Meta.builder()
-            .page(propertiesPage.getNumber() + 1)
-            .pageSize(propertiesPage.getSize())
-            .pages(propertiesPage.getTotalPages())
-            .total(propertiesPage.getTotalElements())
+            .page(page.getNumber() + 1)
+            .pageSize(page.getSize())
+            .pages(page.getTotalPages())
+            .total(page.getTotalElements())
             .build())
-        .data(propertiesPage.getContent())
+        .data(page.getContent())
         .build();
+  }
+
+  private List<AccommodationDTO> selectBestCombination(
+      List<AccommodationDTO> all,
+      int requiredGuests,
+      int requiredRooms
+  ) {
+    List<AccommodationDTO> bestCombination = new ArrayList<>();
+    double minTotalPrice = Double.MAX_VALUE;
+
+    int n = all.size();
+    for (int mask = 1; mask < (1 << n); mask++) {
+      // Bước 1: Chọn danh sách acc trong tổ hợp hiện tại
+      List<AccommodationDTO> selected = new ArrayList<>();
+      for (int i = 0; i < n; i++) {
+        if ((mask & (1 << i)) != 0) {
+          selected.add(all.get(i)); // mask: 1 -> selected [Phong Deluxe]
+        }
+      }
+      log.info("Selected: {}", selected);
+      // Bước 2: Sinh mọi cách phân phối số phòng cho danh sách selected
+      List<List<Integer>> allocations = allocateRooms(selected, requiredRooms);
+      log.info("Allocations: {}", allocations);
+
+      for (List<Integer> allocation : allocations) {
+        int totalCapacity = 0;
+        double totalPrice = 0;
+        int totalBeds = 0;
+
+        List<AccommodationDTO> current = new ArrayList<>();
+
+        for (int i = 0; i < selected.size(); i++) {
+          AccommodationDTO acc = selected.get(i);
+          int quantity = allocation.get(i);
+          int totalCapacity1 = acc.totalCapacity() / acc.suggestedQuantity() * quantity;
+          totalCapacity += totalCapacity1;
+          double totalPrice1 = acc.totalPrice() / acc.suggestedQuantity() * quantity;
+          totalPrice += totalPrice1;
+          int totalBeds1 = acc.totalBeds() / acc.suggestedQuantity() * quantity;
+          totalBeds += totalBeds1;
+
+          current.add(new AccommodationDTO(
+              acc.accommodationId(),
+              acc.accommodationName(),
+              quantity,
+              totalCapacity1,
+              totalBeds1,
+              // Có thể sửa nếu cần scale theo quantity
+              totalPrice1,
+              acc.bedNames()
+          ));
+        }
+
+        if (totalCapacity >= requiredGuests && totalPrice < minTotalPrice) {
+          minTotalPrice = totalPrice;
+          bestCombination = current;
+        }
+      }
+    }
+
+    return bestCombination;
+  }
+
+
+  private List<List<Integer>> allocateRooms(List<AccommodationDTO> accs, int requiredRooms) {
+    List<List<Integer>> result = new ArrayList<>();
+    backtrack(accs, 0, requiredRooms, new ArrayList<>(), result);
+    return result;
+  }
+
+  private void backtrack(
+      List<AccommodationDTO> accs,
+      int idx,
+      int roomsLeft,
+      List<Integer> current,
+      List<List<Integer>> result
+  ) {
+    if (idx == accs.size()) {
+      if (roomsLeft == 0) {
+        result.add(new ArrayList<>(current));
+      }
+      return;
+    }
+
+    AccommodationDTO acc = accs.get(idx);
+    int max = Math.min(acc.suggestedQuantity(), roomsLeft);
+
+    for (int q = 0; q <= max; q++) {
+      current.add(q);
+      backtrack(accs, idx + 1, roomsLeft - q, current, result);
+      current.remove(current.size() - 1);
+    }
   }
 
 

@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -120,6 +119,7 @@ public class PropertiesController {
       @RequestParam(name = "end_date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
       @RequestParam(name = "adults") Integer adults,
       @RequestParam(name = "children") Integer children,
+      @RequestParam(name = "rooms") Integer rooms,
       @RequestParam(name = "pageNo", defaultValue = "1") int pageNo,
       @RequestParam(name = "pageSize", defaultValue = "20") int pageSize,
       @RequestParam(name = "filter", required = false) String[] filter,
@@ -132,6 +132,7 @@ public class PropertiesController {
         .endDate(endDate)
         .adults(adults)
         .children(children)
+        .rooms(rooms)
         .build();
 
     return ApiResponse.<PaginationResponse<PropertiesDTO>>builder()
