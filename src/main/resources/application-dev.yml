@@ -69,3 +69,7 @@ admin-profile:
   phone: +84378277559
   gender: MALE
   address: 40/4 Hang Tre, Long Thanh My, TP.Thu Duc, TP.Ho Chi Minh
+
+google:
+  map:
+    api-key: ${GOOGLE_MAPS_API_KEY}

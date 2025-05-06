@@ -12,7 +12,8 @@ public record PropertiesSearchRequest(
     LocalDate startDate,
     LocalDate endDate,
     Integer adults,
-    Integer children
+    Integer children,
+    Integer rooms
 ) implements Serializable {
 
 }
