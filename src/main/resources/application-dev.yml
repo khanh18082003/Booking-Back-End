@@ -6,7 +6,7 @@ spring:
       on-profile: dev
 
   datasource:
-    url: jdbc:mysql://${JDBC-ADDRESS}:3306/booking_db
+    url: jdbc:mysql://${JDBC_ADDRESS:localhost}:3306/booking_db
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${USERNAME:root}
     password: ${PASSWORD:root}
@@ -69,3 +69,7 @@ admin-profile:
   phone: +84378277559
   gender: MALE
   address: 40/4 Hang Tre, Long Thanh My, TP.Thu Duc, TP.Ho Chi Minh
+
+google:
+  map:
+    api-key: ${GOOGLE_MAPS_API_KEY}

@@ -30,8 +30,8 @@ public class PropertiesResponse implements Serializable {
     String district;
     BigDecimal rating;
     boolean status;
-    BigDecimal latitude;
-    BigDecimal longitude;
+    Double latitude;
+    Double longitude;
     @JsonFormat(pattern = "HH:mm")
     @JsonProperty("check_in_time") LocalTime checkInTime;
     @JsonFormat(pattern = "HH:mm")
@@ -39,7 +39,7 @@ public class PropertiesResponse implements Serializable {
     @JsonProperty("created_at") Timestamp createdAt;
     @JsonProperty("updated_at") Timestamp updatedAt;
     UserResponse host;
-    @JsonProperty("property_type")
-    PropertyTypeResponse propertyType;
+    @JsonProperty("property_type") PropertyTypeResponse propertyType;
     Set<AmenitiesResponse> amenities;
+
 }

@@ -12,4 +12,6 @@ public class EndpointConstant {
     public static final String ENDPOINT_BOOKING = "/bookings";
     public static final String ENDPOINT_PAYMENT = "/payments";
     public static final String ENDPOINT_GUEST_BOOKING = "/guest-bookings";
+    public static final String ENDPOINT_ACCOMMODATION = "/accommodations";
+    public static final String ENDPOINT_LOCATION = "/locations";
 }

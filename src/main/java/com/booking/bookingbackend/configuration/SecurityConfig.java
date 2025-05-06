@@ -9,14 +9,12 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,8 +36,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableMethodSecurity
@@ -56,11 +52,10 @@ public class SecurityConfig {
       EndpointConstant.ENDPOINT_AUTH + "/verify-email",
       EndpointConstant.ENDPOINT_AUTH + "/refresh-token",
       EndpointConstant.ENDPOINT_AUTH + "/logout",
-      EndpointConstant.ENDPOINT_MAIL,
+      EndpointConstant.ENDPOINT_MAIL
   };
   private static final String[] GET_LIST_API = {
           EndpointConstant.ENDPOINT_PROPERTY + "/search",
-          EndpointConstant.ENDPOINT_PAYMENT + "/check-payment-status",
   };
 
   @Bean
@@ -162,12 +157,12 @@ public class SecurityConfig {
         new LocalDateDeserializer(DateTimeFormatter.ISO_DATE)
     );
     module.addSerializer(
-            LocalTime.class,
-            new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm"))
+        LocalTime.class,
+        new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm"))
     );
     module.addDeserializer(
-            LocalTime.class,
-            new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm"))
+        LocalTime.class,
+        new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm"))
     );
     objectMapper.registerModule(module);
     return objectMapper;

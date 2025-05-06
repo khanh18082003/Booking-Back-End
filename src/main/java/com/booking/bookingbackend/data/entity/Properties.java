@@ -33,6 +33,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.UuidGenerator.Style;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.Point;
 
 @Getter
 @Setter
@@ -78,11 +80,14 @@ public class Properties extends UUIDJpaEntity {
     @Column(name = "status")
     boolean status;
 
-    @Column(name = "latitude", precision = 9, scale = 6)
-    BigDecimal latitude;
+  @Column(name = "latitude")
+  Double latitude;
 
-    @Column(name = "longitude", precision = 9, scale = 6)
-    BigDecimal longitude;
+  @Column(name = "longitude")
+  Double longitude;
+
+  @Column(name = "geom")
+  Point geom;
 
     @Column(name = "check_in_time")
     LocalTime checkInTime;
