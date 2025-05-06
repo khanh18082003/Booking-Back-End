@@ -10,7 +10,7 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface BookingMapper extends EntityDtoMapper<Booking, BookingResponse> {
 
-    Booking toEntity(BookingRequest bookingResponse);
+    Booking toEntity(BookingRequest bookingRequest);
 
-    void merge(BookingRequest bookingResponse,@MappingTarget Booking entity);
+    void merge(BookingRequest bookingRequest,@MappingTarget Booking entity);
 }
