@@ -52,10 +52,10 @@ public class SecurityConfig {
       EndpointConstant.ENDPOINT_AUTH + "/verify-email",
       EndpointConstant.ENDPOINT_AUTH + "/refresh-token",
       EndpointConstant.ENDPOINT_AUTH + "/logout",
-      EndpointConstant.ENDPOINT_MAIL,
+      EndpointConstant.ENDPOINT_MAIL
   };
   private static final String[] GET_LIST_API = {
-      EndpointConstant.ENDPOINT_PROPERTY + "/search",
+      EndpointConstant.ENDPOINT_PROPERTY + "/search"
   };
 
   @Bean

@@ -142,5 +142,4 @@ public class UserController {
         .data(userService.getMyProfile())
         .build();
   }
-
 }

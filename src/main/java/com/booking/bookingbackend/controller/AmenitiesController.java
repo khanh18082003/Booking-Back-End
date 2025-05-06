@@ -1,6 +1,7 @@
 package com.booking.bookingbackend.controller;
 
 
+import com.booking.bookingbackend.configuration.Translator;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.AmenitiesRequest;
@@ -78,7 +79,7 @@ public class AmenitiesController {
         return ApiResponse.<PaginationResponse<AmenitiesResponse>>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
-                .message("Success")
+                .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
                 .data(result)
                 .build();
     }

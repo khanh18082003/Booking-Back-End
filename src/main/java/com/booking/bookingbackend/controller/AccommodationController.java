@@ -4,9 +4,8 @@ import com.booking.bookingbackend.configuration.Translator;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.AccommodationCreationRequest;
-import com.booking.bookingbackend.data.dto.response.AccommodationResponse;
-import com.booking.bookingbackend.data.dto.response.ApiResponse;
-import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
+import com.booking.bookingbackend.data.dto.request.AccommodationUpdateRequest;
+import com.booking.bookingbackend.data.dto.response.*;
 import com.booking.bookingbackend.service.accommodation.AccommodationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,12 +14,15 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Set;
+import java.util.UUID;
 
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_ACCOMMODATION)
@@ -95,4 +97,49 @@ public class AccommodationController {
         .data(accommodationService.save(request))
         .build();
   }
+  @PutMapping("/{id}")
+  ApiResponse<AccommodationResponse> update(@PathVariable UUID id,@Valid @RequestBody AccommodationUpdateRequest request){
+    return ApiResponse.<AccommodationResponse>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(accommodationService.update(id, request))
+        .build();
+  }
+
+  @GetMapping
+  ApiResponse<PaginationResponse<AccommodationResponse>> findAll(
+          @RequestParam(defaultValue = "1") int pageNo,
+            @RequestParam(defaultValue = "20") int pageSize
+  ){
+      Sort.Order order=new Sort.Order(Sort.Direction.ASC,"name");
+      Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(order));
+      Page<AccommodationResponse> page= accommodationService.findAll(pageable);
+      PaginationResponse<AccommodationResponse> result=PaginationResponse.<AccommodationResponse>builder()
+              .meta(Meta.builder()
+                      .page(pageNo)
+                      .pageSize(pageSize)
+                      .pages(page.getTotalPages())
+                      .total(page.getTotalPages())
+                      .build())
+              .data(page.getContent())
+              .build();
+      return ApiResponse.<PaginationResponse<AccommodationResponse>>builder()
+              .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+              .status(HttpStatus.OK.value())
+              .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+              .data(result)
+              .build();
+  }
+
+  @GetMapping("/{id}")
+  ApiResponse<AccommodationResponse> findById(@PathVariable UUID id){
+    return ApiResponse.<AccommodationResponse>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(accommodationService.findById(id))
+        .build();
+  }
 }
+
