@@ -1,4 +1,10 @@
 package com.booking.bookingbackend.data.repository;
 
-public interface PaymentRepository {
+import com.booking.bookingbackend.data.base.BaseRepository;
+import com.booking.bookingbackend.data.entity.Payment;
+
+import java.util.UUID;
+
+public interface PaymentRepository extends BaseRepository<Payment, UUID> {
+
 }

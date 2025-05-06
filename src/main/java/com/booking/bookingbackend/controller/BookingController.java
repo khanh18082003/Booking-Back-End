@@ -1,6 +1,7 @@
 package com.booking.bookingbackend.controller;
 
 import com.booking.bookingbackend.configuration.Translator;
+import com.booking.bookingbackend.constant.BookingStatus;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.BookingRequest;
@@ -13,10 +14,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_BOOKING)
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class BookingController {
     BookingService bookingService;
 
-    @PostMapping()
+    @PostMapping("/save")
     ApiResponse<BookingResponse> save(
             @Valid @RequestBody BookingRequest request
     ) {
@@ -40,13 +41,25 @@ public class BookingController {
 
     @PostMapping("/change-status")
     ApiResponse<BookingResponse> changeStatus(
-            @Valid @RequestBody BookingRequest request
+            @Valid @RequestBody BookingStatus status,
+            @Valid @RequestBody UUID id
     ) {
         return ApiResponse.<BookingResponse>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
                 .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-                .data(bookingService.changeStatus(request.guestBookingID(), request))
+                .data(bookingService.changeStatus(id, status))
+                .build();
+    }
+    @GetMapping("/booing-history")
+    ApiResponse<List<BookingResponse>> bookingHistory(
+            @RequestParam("userId") UUID userId
+    ) {
+        return ApiResponse.<List<BookingResponse>>builder()
+                .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+                .status(HttpStatus.OK.value())
+                .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+                .data(bookingService.BookingHistory(userId))
                 .build();
     }
 }

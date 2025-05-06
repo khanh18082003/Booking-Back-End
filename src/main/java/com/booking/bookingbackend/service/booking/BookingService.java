@@ -1,5 +1,6 @@
 package com.booking.bookingbackend.service.booking;
 
+import com.booking.bookingbackend.constant.BookingStatus;
 import com.booking.bookingbackend.data.dto.request.BookingRequest;
 import com.booking.bookingbackend.data.dto.response.BookingResponse;
 import com.booking.bookingbackend.data.entity.Booking;
@@ -15,6 +16,6 @@ public interface BookingService extends BaseEntityService<UUID, Booking, Booking
         return Booking.class;
     }
     BookingResponse save(BookingRequest bookingRequest);
-    BookingResponse changeStatus(UUID id, BookingRequest bookingRequest);
+    BookingResponse changeStatus(UUID id, BookingStatus status);
     List<BookingResponse> BookingHistory(UUID userId);
 }
