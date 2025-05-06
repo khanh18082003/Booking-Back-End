@@ -55,7 +55,7 @@ public class SecurityConfig {
       EndpointConstant.ENDPOINT_MAIL
   };
   private static final String[] GET_LIST_API = {
-      EndpointConstant.ENDPOINT_PROPERTY + "/search"
+          EndpointConstant.ENDPOINT_PROPERTY + "/search",
   };
 
   @Bean

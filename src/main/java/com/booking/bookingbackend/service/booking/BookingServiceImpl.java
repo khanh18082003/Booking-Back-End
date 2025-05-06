@@ -1,5 +1,6 @@
 package com.booking.bookingbackend.service.booking;
 
+import com.booking.bookingbackend.constant.BookingStatus;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.BookingRequest;
 import com.booking.bookingbackend.data.dto.response.BookingResponse;
@@ -48,10 +49,10 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingResponse changeStatus(UUID id, BookingRequest bookingRequest) {
+    public BookingResponse changeStatus(UUID id, BookingStatus status) {
         Booking booking = repository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName()));
-        booking.setStatus(bookingRequest.status());
+        booking.setStatus(status);
         Booking updatedBooking = repository.save(booking);
         return mapper.toDtoResponse(updatedBooking);
     }
