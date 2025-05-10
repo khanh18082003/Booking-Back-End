@@ -143,7 +143,7 @@ public class PropertiesController {
         .build();
   }
 
-  @PatchMapping("/id")
+  @PatchMapping("/{id}")
   ApiResponse<Void> changeStatus(
       @PathVariable UUID id
   ) {
@@ -155,7 +155,7 @@ public class PropertiesController {
         .build();
   }
 
-  @PutMapping("/id")
+  @PutMapping("/{id}")
   ApiResponse<PropertiesResponse> update(
       @PathVariable UUID id,
       @Valid @RequestBody PropertiesRequest request

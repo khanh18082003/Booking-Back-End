@@ -55,13 +55,19 @@ public class Accommodation extends UUIDJpaEntity {
   @Column(name = "capacity")
   int capacity;
 
+  @Column(name = "total_rooms", nullable = false)
+  int totalRooms;
+
   @Column(name = "total_units")
   int totalUnits;
 
+  @Column(name = "description")
   String description;
 
+  @Column(name = "size")
   float size;
 
+  @Column(name = "unit")
   String unit;
 
   @Column(name = "created_at")

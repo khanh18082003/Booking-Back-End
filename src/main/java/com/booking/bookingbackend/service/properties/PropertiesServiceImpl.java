@@ -186,6 +186,7 @@ public class PropertiesServiceImpl implements PropertiesService {
             row.get("city", String.class),
             row.get("district", String.class),
             row.get("rating", BigDecimal.class),
+            row.get("totalRating", Integer.class),
             row.get("distance", Double.class),
             totalPrice,
             row.get("propertiesType", String.class),

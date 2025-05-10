@@ -11,6 +11,7 @@ import java.util.UUID;
 public record PropertiesRequest(
         String name,
         String description,
+        String image,
         String address,
         String city,
         String country,

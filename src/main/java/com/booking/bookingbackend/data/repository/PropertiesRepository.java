@@ -71,6 +71,7 @@ public interface PropertiesRepository extends BaseRepository<Properties, UUID> {
             fp.city AS city,
             fp.district AS district,
             fp.rating AS rating,
+            fp.total_rating AS totalRating,
             fp.distance AS distance,
             fp.properties_type AS propertiesType,
             :nights AS nights,

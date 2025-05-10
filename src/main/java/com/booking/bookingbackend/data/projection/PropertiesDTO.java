@@ -15,6 +15,8 @@ public record PropertiesDTO(
     String city,
     String district,
     BigDecimal rating,
+    @JsonProperty("total_rating")
+    Integer totalRating,
     Double distance,
     @JsonProperty("total_price")
     Double totalPrice,
