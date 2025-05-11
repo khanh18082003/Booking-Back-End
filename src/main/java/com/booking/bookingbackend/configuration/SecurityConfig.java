@@ -57,7 +57,8 @@ public class SecurityConfig {
       EndpointConstant.ENDPOINT_USER + "/reset-password",
   };
   private static final String[] GET_LIST_API = {
-      EndpointConstant.ENDPOINT_PROPERTY + "/search"
+      EndpointConstant.ENDPOINT_PROPERTY + "/search",
+      EndpointConstant.ENDPOINT_PROPERTY + "/{id}",
   };
 
   @Bean

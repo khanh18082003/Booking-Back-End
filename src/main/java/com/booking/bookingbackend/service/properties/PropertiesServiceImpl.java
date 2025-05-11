@@ -3,27 +3,34 @@ package com.booking.bookingbackend.service.properties;
 import static com.booking.bookingbackend.constant.CommonConstant.SORT_BY;
 
 import com.booking.bookingbackend.constant.ErrorCode;
+import com.booking.bookingbackend.constant.ImageReferenceType;
 import com.booking.bookingbackend.data.dto.request.PropertiesRequest;
 import com.booking.bookingbackend.data.dto.request.PropertiesSearchRequest;
 import com.booking.bookingbackend.data.dto.response.Meta;
 import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
+import com.booking.bookingbackend.data.entity.Image;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.mapper.PropertiesMapper;
 import com.booking.bookingbackend.data.projection.AccommodationDTO;
+import com.booking.bookingbackend.data.projection.AmenityDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDTO;
+import com.booking.bookingbackend.data.projection.PropertiesDetailDTO;
 import com.booking.bookingbackend.data.repository.AmenitiesRepository;
+import com.booking.bookingbackend.data.repository.ImageRepository;
 import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.data.repository.PropertyTypeRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
+import com.booking.bookingbackend.service.googlemap.GoogleMapService;
 import com.booking.bookingbackend.util.GeometryUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.Tuple;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
+import java.sql.Time;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +50,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -60,7 +68,9 @@ public class PropertiesServiceImpl implements PropertiesService {
   UserRepository userRepository;
   PropertyTypeRepository propertyTypeRepository;
   AmenitiesRepository amenitiesRepository;
+  ImageRepository imageRepository;
   PropertiesMapper mapper;
+  GoogleMapService googleMapService;
 
   @Override
   @Transactional
@@ -90,8 +100,16 @@ public class PropertiesServiceImpl implements PropertiesService {
       Point geom = GeometryUtil.toWebMercator(request.longitude(), request.latitude());
       properties.setGeom(geom);
     }
-
     Properties savedProperties = repository.save(properties);
+    // Save extra-images
+    List<Image> imageList = request.extraImages().stream()
+        .map(url -> Image.builder()
+            .referenceId(properties.getId().toString())
+            .referenceType(ImageReferenceType.PROPERTIES.name())
+            .url(url)
+            .build()).toList();
+    imageRepository.saveAll(imageList);
+
     return mapper.toDtoResponse(savedProperties);
   }
 
@@ -141,14 +159,12 @@ public class PropertiesServiceImpl implements PropertiesService {
 
     log.info("nights: {}", nights);
 
-    double[] transformedCoordinates = GeometryUtil.transformLatLong(
-        request.longitude(),
-        request.latitude()
-    );
+    double[] transformedCoordinates = googleMapService.getLatLng(request.location());
     log.info("Transformed coordinates: longitude: {}, latitude: {}",
         transformedCoordinates[0],
         transformedCoordinates[1]
     );
+
     List<Tuple> raw = repository.searchProperties(
         transformedCoordinates[1],
         transformedCoordinates[0],
@@ -182,6 +198,8 @@ public class PropertiesServiceImpl implements PropertiesService {
             UUID.fromString(row.get("propertiesId", String.class)),
             row.get("propertiesName", String.class),
             row.get("image", String.class),
+            row.get("latitude", Double.class),
+            row.get("longitude", Double.class),
             row.get("address", String.class),
             row.get("city", String.class),
             row.get("district", String.class),
@@ -319,6 +337,8 @@ public class PropertiesServiceImpl implements PropertiesService {
     repository.save(properties);
   }
 
+  @PreAuthorize(value = "hasRole('HOST')")
+  @PostAuthorize(value = "returnObject.host.email == authentication.name")
   @Transactional
   @Override
   public PropertiesResponse update(UUID id, PropertiesRequest request) {
@@ -327,11 +347,96 @@ public class PropertiesServiceImpl implements PropertiesService {
             getEntityClass().getSimpleName()));
     mapper.merge(request, properties);
 
-    properties.setPropertyType(propertyTypeRepository.findById(request.typeId())
-        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-            getEntityClass().getSimpleName())));
-    properties.setAmenities(amenitiesRepository.findAllById(request.amenitiesIds()));
+    if (request.typeId() != null) {
+      properties.setPropertyType(propertyTypeRepository.findById(request.typeId())
+          .orElseThrow(
+              () -> new AppException(
+                  ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+                  getEntityClass().getSimpleName()
+              )
+          )
+      );
+    }
+
+    if (request.amenitiesIds() != null) {
+      properties.setAmenities(amenitiesRepository.findAllById(request.amenitiesIds()));
+    }
+
+    // Update geom if latitude and longitude are provided
+    if (request.latitude() != null && request.longitude() != null) {
+      Point geom = GeometryUtil.toWebMercator(request.longitude(), request.latitude());
+      properties.setGeom(geom);
+    }
+
     Properties updatedProperties = repository.save(properties);
+
+    // Handle image updates
+    List<Image> existingImages = imageRepository.findAllByReferenceId(id.toString());
+    List<String> existingUrls = existingImages.stream().map(Image::getUrl).toList();
+
+    // 1. Delete images that are no longer in the request
+    existingImages.forEach(image -> {
+      if (!request.extraImages().contains(image.getUrl())) {
+        imageRepository.delete(image);
+      }
+    });
+
+    // 2. Add new images that don't exist yet
+    List<Image> newImages = request.extraImages().stream()
+        .filter(url -> !existingUrls.contains(url))
+        .map(url -> Image.builder()
+            .referenceId(id.toString())
+            .referenceType(ImageReferenceType.PROPERTIES.name())
+            .url(url)
+            .build())
+        .toList();
+
+    if (!newImages.isEmpty()) {
+      imageRepository.saveAll(newImages);
+    }
+
     return mapper.toDtoResponse(updatedProperties);
+  }
+
+  @Override
+  public PropertiesDetailDTO getPropertiesDetail(UUID id) {
+    Tuple raw = repository.findPropertiesDetail(id);
+    ObjectMapper objectMapper = new ObjectMapper();
+    try {
+      List<String> imageUrls = objectMapper.readValue(
+          raw.get("image_urls", String.class),
+          new TypeReference<>() {
+          }
+      );
+      List<AmenityDTO> amenities = objectMapper.readValue(
+          raw.get("amenities", String.class),
+          new TypeReference<>() {
+          }
+      );
+      return new PropertiesDetailDTO(
+          UUID.fromString(raw.get("id", String.class)),
+          raw.get("name", String.class),
+          raw.get("description", String.class),
+          raw.get("image", String.class),
+          raw.get("address", String.class),
+          raw.get("rating", BigDecimal.class),
+          raw.get("totalRating", Integer.class),
+          raw.get("status", Boolean.class),
+          raw.get("latitude", Double.class),
+          raw.get("longitude", Double.class),
+          raw.get("checkInTime", Time.class).toLocalTime(),
+          raw.get("checkOutTime", Time.class).toLocalTime(),
+          raw.get("propertyType", String.class),
+          amenities,
+          imageUrls
+      );
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to map accommodations JSON", e);
+    }
+  }
+
+  @Override
+  public PaginationResponse<PropertiesDTO> getPropertiesReviews(UUID id) {
+    return null;
   }
 }

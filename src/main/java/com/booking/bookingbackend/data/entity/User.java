@@ -57,7 +57,7 @@ public class User extends UUIDJpaEntity implements UserDetails {
   String password;
 
   @Column(name = "is_active", nullable = false)
-  boolean isActive;
+  boolean active;
 
   @Column(name = "created_at")
   @CreationTimestamp

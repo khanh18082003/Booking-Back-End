@@ -11,6 +11,8 @@ public record PropertiesDTO(
     @JsonProperty("properties_name")
     String propertiesName,
     String image,
+    Double latitude,
+    Double longitude,
     String address,
     String city,
     String district,

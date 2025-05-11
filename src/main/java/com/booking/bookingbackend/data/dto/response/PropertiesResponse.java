@@ -30,6 +30,8 @@ public class PropertiesResponse implements Serializable {
     String country;
     String district;
     BigDecimal rating;
+    @JsonProperty("total_rating")
+    Integer totalRating;
     boolean status;
     Double latitude;
     Double longitude;
