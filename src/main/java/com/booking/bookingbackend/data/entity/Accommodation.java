@@ -1,16 +1,8 @@
 package com.booking.bookingbackend.data.entity;
 
 import com.booking.bookingbackend.data.base.UUIDJpaEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.io.Serial;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -96,4 +88,8 @@ public class Accommodation extends UUIDJpaEntity {
   @ToString.Exclude
   @OneToMany(mappedBy = "accommodation")
   Set<Available> available;
+
+  @ToString.Exclude
+  @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+  Set<AccommodationHasRoom> accommodationHasRooms;
 }

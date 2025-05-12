@@ -13,9 +13,10 @@ public record AccommodationUpdateRequest(
         @JsonProperty("base_price") BigDecimal basePrice,
         Integer capacity,
         @JsonProperty("total_units") Integer totalUnits,
+        @JsonProperty("total_rooms") Integer totalRooms,
         String description,
         Float size,
-        @JsonProperty("properties_id") UUID propertiesId,
-        @JsonProperty("amenities_ids") Set<UUID> amenitiesIds
+        @JsonProperty("amenities_ids") Set<UUID> amenitiesIds,
+        @JsonProperty("rooms") Set<RoomCreationRequest> rooms
 ) implements Serializable {
 }

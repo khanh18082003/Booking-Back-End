@@ -12,6 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serial;
+import java.sql.Timestamp;
 import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -21,9 +22,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.*;
 
 @Getter
 @Setter
@@ -63,10 +62,12 @@ public class RoomHasBed extends AbstractIdentifiable<Integer> {
 
   @ColumnDefault("CURRENT_TIMESTAMP")
   @Column(name = "created_at")
-  Instant createdAt;
+  @CreationTimestamp
+  Timestamp createdAt;
 
   @ColumnDefault("CURRENT_TIMESTAMP")
   @Column(name = "updated_at")
-  Instant updatedAt;
+  @UpdateTimestamp
+  Timestamp updatedAt;
 
 }

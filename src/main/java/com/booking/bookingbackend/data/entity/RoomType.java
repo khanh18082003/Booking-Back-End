@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serial;
+import java.sql.Timestamp;
 import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Getter
 @Setter
@@ -50,10 +52,12 @@ public class RoomType extends AbstractIdentifiable<Integer> {
 
   @ColumnDefault("CURRENT_TIMESTAMP")
   @Column(name = "created_at")
-  Instant createdAt;
+  @UpdateTimestamp
+  Timestamp createdAt;
 
   @ColumnDefault("CURRENT_TIMESTAMP")
   @Column(name = "updated_at")
-  Instant updatedAt;
+  @UpdateTimestamp
+  Timestamp updatedAt;
 
 }
