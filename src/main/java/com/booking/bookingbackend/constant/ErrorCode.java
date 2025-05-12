@@ -26,6 +26,9 @@ public enum ErrorCode {
   MESSAGE_UN_AUTHORIZATION(HttpStatus.FORBIDDEN, "M0403"),
   MESSAGE_USER_NOT_ACTIVE(HttpStatus.UNAUTHORIZED, "M0404"),
 
+  // Internal Server Error
+  MESSAGE_INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "M0500"),
+
   ;
 
 

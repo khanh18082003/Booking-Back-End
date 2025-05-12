@@ -78,7 +78,7 @@ public class InitApplicationService {
       User user = User.builder()
           .email(adminEmail)
           .password(passwordEncoder.encode(adminPassword))
-          .isActive(true)
+          .active(true)
           .roles(new HashSet<>(roles))
           .build();
 

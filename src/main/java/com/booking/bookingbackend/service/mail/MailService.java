@@ -83,7 +83,7 @@ public class MailService {
     // Tạo MimeMessage
     MimeMessage message = mailSender.createMimeMessage();
     MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
+    System.out.println("to = " + to);
     // Thiết lập thông tin email
     helper.setTo(to);
     helper.setSubject("Xác định email và thông tin đăng nhập");
@@ -111,5 +111,7 @@ public class MailService {
     mailSender.send(message);
     log.info("Email sent");
   }
+
+
 
 }

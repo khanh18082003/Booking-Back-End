@@ -4,6 +4,8 @@ import com.booking.bookingbackend.configuration.Translator;
 import com.booking.bookingbackend.constant.CommonConstant;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
+import com.booking.bookingbackend.data.dto.request.ForgotPasswordRequest;
+import com.booking.bookingbackend.data.dto.request.ResetPasswordRequest;
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.ProfileResponse;
@@ -42,6 +44,7 @@ public class UserController {
   UserService userService;
   MailService mailService;
   ProfileService profileService;
+
 
   @PostMapping("/register")
   @ResponseStatus(HttpStatus.CREATED)
@@ -140,6 +143,39 @@ public class UserController {
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .data(userService.getMyProfile())
+        .build();
+  }
+  @PostMapping("/forgot-password")
+  ApiResponse<Void> forgotPassword(@RequestBody ForgotPasswordRequest request){
+    String code = SecurityUtil.generateVerificationCode();
+    try {
+      mailService.sendVerificationEmail(
+          request.email().trim(),
+          null,
+          code
+      );
+    } catch (MessagingException | UnsupportedEncodingException e) {
+      log.error("Error sending verification email", e);
+      return ApiResponse.<Void>builder()
+          .code(ErrorCode.MESSAGE_INTERNAL_SERVER_ERROR.getErrorCode())
+          .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+          .message(Translator.toLocale(ErrorCode.MESSAGE_INTERNAL_SERVER_ERROR.getErrorCode()))
+          .build();
+    }
+    return ApiResponse.<Void>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .build();
+  }
+  @PostMapping("/reset-password")
+  ApiResponse<Void> resetPassword(@RequestBody ResetPasswordRequest request){
+
+    userService.changePassword(request);
+    return ApiResponse.<Void>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .build();
   }
 }

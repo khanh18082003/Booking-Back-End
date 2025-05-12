@@ -3,6 +3,7 @@ package com.booking.bookingbackend.data.dto.request;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.List;
 import lombok.Getter;
 
 import java.util.Set;
@@ -11,17 +12,22 @@ import java.util.UUID;
 public record PropertiesRequest(
         String name,
         String description,
+        String image,
+        @JsonProperty("extra_images")
+        List<String> extraImages,
         String address,
         String city,
         String country,
         String district,
         BigDecimal rating,
-        boolean status,
+        @JsonProperty("total_rating")
+        Integer totalRating,
+        Boolean status,
         Double latitude,
         Double longitude,
         @JsonProperty("check_in_time") LocalTime checkInTime,
         @JsonProperty("check_out_time") LocalTime checkOutTime,
-        @JsonProperty("type_id") int typeId,
+        @JsonProperty("type_id") Integer typeId,
         @JsonProperty("amenities_id") Set<UUID> amenitiesIds,
         Set<String> urls
 ) implements java.io.Serializable {

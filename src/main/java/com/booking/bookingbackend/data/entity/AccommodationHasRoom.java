@@ -57,9 +57,8 @@ public class AccommodationHasRoom extends AbstractIdentifiable<Integer> {
   @JoinColumn(name = "room_type_id", nullable = false)
   RoomType roomType;
 
-  @ColumnDefault("1")
-  @Column(name = "quantity")
-  Integer quantity;
+  @Column(name = "room_name", nullable = false)
+  String roomName;
 
   @ColumnDefault("CURRENT_TIMESTAMP")
   @Column(name = "created_at")

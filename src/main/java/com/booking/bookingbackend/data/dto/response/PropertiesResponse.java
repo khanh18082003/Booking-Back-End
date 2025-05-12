@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalTime;
+import java.util.UUID;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -21,7 +22,7 @@ import java.util.Set;
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PropertiesResponse implements Serializable {
-
+    UUID id;
     String name;
     String description;
     String address;
@@ -29,6 +30,8 @@ public class PropertiesResponse implements Serializable {
     String country;
     String district;
     BigDecimal rating;
+    @JsonProperty("total_rating")
+    Integer totalRating;
     boolean status;
     Double latitude;
     Double longitude;

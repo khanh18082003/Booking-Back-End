@@ -9,6 +9,7 @@ import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
 import com.booking.bookingbackend.data.projection.PropertiesDTO;
+import com.booking.bookingbackend.data.projection.PropertiesDetailDTO;
 import com.booking.bookingbackend.service.properties.PropertiesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -112,8 +113,7 @@ public class PropertiesController {
 
   @GetMapping("/search")
   ApiResponse<PaginationResponse<PropertiesDTO>> search(
-      @RequestParam(name = "latitude") Double latitude,
-      @RequestParam(name = "longitude") Double longitude,
+      @RequestParam(name = "location") String location,
       @RequestParam(name = "radius", defaultValue = "10000") Double radius,
       @RequestParam(name = "start_date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
       @RequestParam(name = "end_date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
@@ -125,8 +125,7 @@ public class PropertiesController {
       @RequestParam(name = "filter", required = false) String[] filter,
       @RequestParam(name = "sort", required = false) String... sort) {
     var request = PropertiesSearchRequest.builder()
-        .latitude(latitude)
-        .longitude(longitude)
+        .location(location)
         .radius(radius)
         .startDate(startDate)
         .endDate(endDate)
@@ -143,7 +142,7 @@ public class PropertiesController {
         .build();
   }
 
-  @PatchMapping("/id")
+  @PatchMapping("/{id}")
   ApiResponse<Void> changeStatus(
       @PathVariable UUID id
   ) {
@@ -155,7 +154,7 @@ public class PropertiesController {
         .build();
   }
 
-  @PutMapping("/id")
+  @PutMapping("/{id}")
   ApiResponse<PropertiesResponse> update(
       @PathVariable UUID id,
       @Valid @RequestBody PropertiesRequest request
@@ -167,16 +166,29 @@ public class PropertiesController {
         .data(propertiesService.update(id, request))
         .build();
   }
-    @GetMapping("/{id}")
-    ApiResponse<PropertiesResponse> getById(
-        @PathVariable UUID id
-    ) {
-        return ApiResponse.<PropertiesResponse>builder()
-                .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-                .status(HttpStatus.OK.value())
-                .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-                .data(propertiesService.getById(id))
-                .build();
-    }
+
+  @GetMapping("/{id}")
+  ApiResponse<PropertiesDetailDTO> getPropertiesDetail(
+      @PathVariable UUID id
+  ) {
+    return ApiResponse.<PropertiesDetailDTO>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(propertiesService.getPropertiesDetail(id))
+        .build();
+  }
+
+  @GetMapping("/{id}/reviews")
+  ApiResponse<PaginationResponse<PropertiesDTO>> getPropertiesReviews(
+      @PathVariable UUID id
+  ) {
+    return ApiResponse.<PaginationResponse<PropertiesDTO>>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(propertiesService.getPropertiesReviews(id))
+        .build();
+  }
 
 }

@@ -6,8 +6,7 @@ import lombok.Builder;
 
 @Builder
 public record PropertiesSearchRequest(
-    Double latitude,
-    Double longitude,
+    String location,
     Double radius,
     LocalDate startDate,
     LocalDate endDate,

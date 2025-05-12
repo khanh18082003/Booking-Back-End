@@ -6,15 +6,13 @@ import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.projection.PropertiesDTO;
+import com.booking.bookingbackend.data.projection.PropertiesDetailDTO;
 import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.service.BaseEntityService;
-import java.util.List;
 import java.util.UUID;
 
 public interface PropertiesService extends
     BaseEntityService<UUID, Properties, PropertiesRepository, PropertiesResponse> {
-
-  ;
 
   @Override
   default Class<?> getEntityClass() {
@@ -34,5 +32,8 @@ public interface PropertiesService extends
   void changeStatus(UUID id);
 
   PropertiesResponse update(UUID id, PropertiesRequest request);
-  PropertiesResponse getById(UUID id);
+
+  PropertiesDetailDTO getPropertiesDetail(UUID id);
+
+  PaginationResponse<PropertiesDTO> getPropertiesReviews(UUID id);
 }
