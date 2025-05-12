@@ -58,6 +58,7 @@ public class SecurityConfig {
   };
   private static final String[] GET_LIST_API = {
       EndpointConstant.ENDPOINT_PROPERTY + "/search",
+      EndpointConstant.ENDPOINT_LOCATION,
       EndpointConstant.ENDPOINT_PROPERTY + "/{id}",
   };
 

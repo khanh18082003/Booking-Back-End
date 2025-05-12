@@ -5,6 +5,7 @@ import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.service.googlemap.GoogleMapService;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -24,13 +25,13 @@ public class GoogleMapController {
   GoogleMapService googleMapService;
 
   @GetMapping
-  ApiResponse<String> getLocation(
+  ApiResponse<JsonNode> getLocation(
       @RequestParam("location") String location,
       @RequestParam(value = "limit", defaultValue = "5") String limit
   ) {
     log.info("Get location: {}", location);
-    String result = googleMapService.getLocation(location, limit);
-    return ApiResponse.<String>builder()
+    JsonNode result = googleMapService.getLocation(location, limit);
+    return ApiResponse.<JsonNode>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))

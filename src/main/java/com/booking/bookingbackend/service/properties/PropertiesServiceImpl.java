@@ -159,7 +159,8 @@ public class PropertiesServiceImpl implements PropertiesService {
 
     log.info("nights: {}", nights);
 
-    double[] transformedCoordinates = googleMapService.getLatLng(request.location());
+    double[] latLng = googleMapService.getLatLng(request.location());
+    double[] transformedCoordinates = GeometryUtil.transformLatLong(latLng[1], latLng[0]);
     log.info("Transformed coordinates: longitude: {}, latitude: {}",
         transformedCoordinates[0],
         transformedCoordinates[1]
