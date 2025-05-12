@@ -29,8 +29,7 @@ public record PropertiesRequest(
     @JsonProperty("check_in_time") LocalTime checkInTime,
     @JsonProperty("check_out_time") LocalTime checkOutTime,
     @JsonProperty("type_id") Integer typeId,
-    @JsonProperty("amenities_id") Set<UUID> amenitiesIds,
-    Set<String> urls
+    @JsonProperty("amenities_id") Set<UUID> amenitiesIds
 ) implements java.io.Serializable {
 
 }
