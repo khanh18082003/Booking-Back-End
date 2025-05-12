@@ -34,4 +34,5 @@ public interface PropertiesService extends
   void changeStatus(UUID id);
 
   PropertiesResponse update(UUID id, PropertiesRequest request);
+  PropertiesResponse getById(UUID id);
 }

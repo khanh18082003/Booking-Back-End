@@ -167,4 +167,16 @@ public class PropertiesController {
         .data(propertiesService.update(id, request))
         .build();
   }
+    @GetMapping("/{id}")
+    ApiResponse<PropertiesResponse> getById(
+        @PathVariable UUID id
+    ) {
+        return ApiResponse.<PropertiesResponse>builder()
+                .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+                .status(HttpStatus.OK.value())
+                .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+                .data(propertiesService.getById(id))
+                .build();
+    }
+
 }
