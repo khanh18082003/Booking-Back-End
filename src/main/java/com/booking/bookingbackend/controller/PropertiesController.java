@@ -24,6 +24,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -106,17 +107,23 @@ public class PropertiesController {
       @Valid @RequestBody PropertiesRequest request
   ) {
     StringBuilder address = new StringBuilder();
-    address.append(request.address()).append(", ");
-    if (request.city() != null) {
-      address.append(request.city()).append(", ");
+    address.append(request.name()).append(", ");
+    if (StringUtils.hasLength(request.ward())) {
+      address.append(request.ward()).append(", ");
     }
-    if (request.district() != null) {
+    if (StringUtils.hasLength(request.district())) {
       address.append(request.district()).append(", ");
     }
-    if (request.country() != null) {
+    if (StringUtils.hasLength(request.city())) {
+      address.append(request.city()).append(", ");
+    }
+    if (StringUtils.hasLength(request.province())) {
+      address.append(request.province()).append(", ");
+    }
+    if (StringUtils.hasLength(request.country())) {
       address.append(request.country());
     }
-
+    log.info("Address: {}", address);
     var location = googleMapService.getLatLng(address.toString());
     PropertiesRequest latLngRequest = request.withLatitude(location[0]).withLongitude(location[1]);
 

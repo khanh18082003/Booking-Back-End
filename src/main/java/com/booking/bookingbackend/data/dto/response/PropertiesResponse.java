@@ -26,9 +26,11 @@ public class PropertiesResponse implements Serializable {
     String name;
     String description;
     String address;
-    String city;
-    String country;
+    String ward;
     String district;
+    String city;
+    String province;
+    String country;
     BigDecimal rating;
     @JsonProperty("total_rating")
     Integer totalRating;

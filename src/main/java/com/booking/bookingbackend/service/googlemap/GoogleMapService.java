@@ -69,7 +69,6 @@ public class GoogleMapService {
           .uri(URI.create(url))
           .GET()
           .build();
-
       HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
       var responseBody = response.body();
 

@@ -59,17 +59,23 @@ public class Properties extends UUIDJpaEntity {
   @Column(name = "description")
   String description;
 
-  @Column(name = "address", nullable = false)
+  @Column(name = "address")
   String address;
+
+  @Column(name = "ward")
+  String ward;
+
+  @Column(name = "district")
+  String district;
 
   @Column(name = "city")
   String city;
 
+  @Column(name = "province")
+  String province;
+
   @Column(name = "country")
   String country;
-
-  @Column(name = "district")
-  String district;
 
   @Column(name = "rating", precision = 2, scale = 1, nullable = false)
   BigDecimal rating;

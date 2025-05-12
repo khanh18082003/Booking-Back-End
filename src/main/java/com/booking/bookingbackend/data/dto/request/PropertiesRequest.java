@@ -15,9 +15,11 @@ public record PropertiesRequest(
     @JsonProperty("extra_images")
     List<String> extraImages,
     String address,
-    String city,
-    String country,
+    String ward,
     String district,
+    String city,
+    String province,
+    String country,
     BigDecimal rating,
     @JsonProperty("total_rating")
     Integer totalRating,
