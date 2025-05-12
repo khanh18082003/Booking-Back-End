@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Set;
 import java.util.UUID;
 
 public record AccommodationCreationRequest(
@@ -14,7 +15,10 @@ public record AccommodationCreationRequest(
     String description,
     Float size,
     String unit,
-    @JsonProperty("properties_id") UUID propertiesId
+    @JsonProperty("total_rooms") Integer totalRooms,
+    @JsonProperty("properties_id") UUID propertiesId,
+    @JsonProperty("amenities_ids") Set<UUID> amenitiesIds,
+    @JsonProperty("rooms") Set<RoomCreationRequest> rooms
 ) implements Serializable {
 
 }

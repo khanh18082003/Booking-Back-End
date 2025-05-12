@@ -3,10 +3,13 @@ package com.booking.bookingbackend.data.dto.response;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.Set;
 import java.util.UUID;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,21 +27,27 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(Include.NON_NULL)
 public class AccommodationResponse implements Serializable {
 
-  UUID id;
-  String name;
-  String description;
-  @JsonProperty("base_price")
-  BigDecimal basePrice;
-  Integer capacity;
-  @JsonProperty("total_units")
-  Integer totalUnits;
-  Float size;
-  String unit;
-  @JsonProperty("properties_name")
-  String propertiesName;
-  @JsonProperty("created_at")
-  Timestamp createdAt;
-  @JsonProperty("updated_at")
-  Timestamp updatedAt;
+    UUID id;
+    String name;
+    String description;
+    @JsonProperty("base_price")
+    BigDecimal basePrice;
+    Integer capacity;
+    @JsonProperty("total_units")
+    Integer totalUnits;
+    Float size;
+    String unit;
+    @JsonProperty("total_rooms")
+    Integer totalRooms;
+    @JsonProperty("amenities")
+    Set<AmenitiesResponse> amenities;
+    @JsonProperty("rooms")
+    Set<RoomResponse> rooms;
+    @JsonProperty("properties_name")
+    String propertiesName;
+    @JsonProperty("created_at")
+    Timestamp createdAt;
+    @JsonProperty("updated_at")
+    Timestamp updatedAt;
 
 }

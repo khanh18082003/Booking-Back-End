@@ -29,4 +29,9 @@ public class AmenitiesResponse implements Serializable {
   String icon;
 
   AmenityType type;
+
+  public AmenitiesResponse(UUID id, String name) {
+    this.id = id;
+    this.name = name;
+  }
 }
