@@ -27,7 +27,7 @@ public class GoogleMapService {
   @Value("${google.map.api-key}")
   String GOOGLE_MAPS_API_KEY;
 
-  public String getLocation(String q, String limit) {
+  public JsonNode getLocation(String q, String limit) {
     try {
       String input = URLEncoder.encode(q, StandardCharsets.UTF_8);
 
@@ -46,7 +46,7 @@ public class GoogleMapService {
           .build();
 
       HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      return response.body();
+      return response.body() != null ? new ObjectMapper().readTree(response.body()) : null;
 
     } catch (Exception e) {
       log.error("Error while calling Google Maps API: {}", e.getMessage());
@@ -81,7 +81,8 @@ public class GoogleMapService {
           JsonNode locationNode = rootNode.path("results").get(0).path("geometry").path("location");
           double lat = locationNode.path("lat").asDouble();
           double lng = locationNode.path("lng").asDouble();
-          return GeometryUtil.transformLatLong(lng, lat);
+          log.info("Latitude: {}, Longitude: {}", lat, lng);
+          return new double[]{lat, lng};
         } else if (status.equals("ZERO_RESULTS")) {
           log.error("No results found for the given location: {}", location);
           return null;

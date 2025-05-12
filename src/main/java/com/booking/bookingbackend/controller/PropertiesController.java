@@ -10,6 +10,7 @@ import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
 import com.booking.bookingbackend.data.projection.PropertiesDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDetailDTO;
+import com.booking.bookingbackend.service.googlemap.GoogleMapService;
 import com.booking.bookingbackend.service.properties.PropertiesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -42,6 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PropertiesController {
 
   PropertiesService propertiesService;
+  GoogleMapService googleMapService;
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
@@ -103,11 +105,26 @@ public class PropertiesController {
   ApiResponse<PropertiesResponse> save(
       @Valid @RequestBody PropertiesRequest request
   ) {
+    StringBuilder address = new StringBuilder();
+    address.append(request.address()).append(", ");
+    if (request.city() != null) {
+      address.append(request.city()).append(", ");
+    }
+    if (request.district() != null) {
+      address.append(request.district()).append(", ");
+    }
+    if (request.country() != null) {
+      address.append(request.country());
+    }
+
+    var location = googleMapService.getLatLng(address.toString());
+    PropertiesRequest latLngRequest = request.withLatitude(location[0]).withLongitude(location[1]);
+
     return ApiResponse.<PropertiesResponse>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .data(propertiesService.save(request))
+        .data(propertiesService.save(latLngRequest))
         .build();
   }
 

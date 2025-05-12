@@ -57,10 +57,10 @@ public class SecurityConfig {
       EndpointConstant.ENDPOINT_USER + "/reset-password",
   };
   private static final String[] GET_LIST_API = {
-          EndpointConstant.ENDPOINT_PROPERTY + "/search",
-          EndpointConstant.ENDPOINT_PAYMENT + "/check-payment-status",
-          EndpointConstant.ENDPOINT_PROPERTY + "/{propertyId}",
+      EndpointConstant.ENDPOINT_PROPERTY + "/search",
       EndpointConstant.ENDPOINT_PROPERTY + "/{id}",
+      EndpointConstant.ENDPOINT_PAYMENT + "/check-payment-status",
+      EndpointConstant.ENDPOINT_LOCATION,
   };
 
   @Bean
