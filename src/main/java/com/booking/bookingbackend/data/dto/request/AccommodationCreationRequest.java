@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -13,6 +14,8 @@ public record AccommodationCreationRequest(
     Integer capacity,
     @JsonProperty("total_units") Integer totalUnits,
     String description,
+    @JsonProperty("extra_images")
+    List<String> extraImages,
     Float size,
     String unit,
     @JsonProperty("total_rooms") Integer totalRooms,
