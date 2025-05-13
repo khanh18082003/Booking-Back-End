@@ -14,6 +14,8 @@ public record AccommodationUpdateRequest(
         Integer capacity,
         @JsonProperty("total_units") Integer totalUnits,
         @JsonProperty("total_rooms") Integer totalRooms,
+        @JsonProperty("extra_images")
+        List<String> extraImages,
         String description,
         Float size,
         @JsonProperty("amenities_ids") Set<UUID> amenitiesIds,

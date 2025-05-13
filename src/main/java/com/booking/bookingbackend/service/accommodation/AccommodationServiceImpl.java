@@ -1,6 +1,7 @@
 package com.booking.bookingbackend.service.accommodation;
 
 import com.booking.bookingbackend.constant.ErrorCode;
+import com.booking.bookingbackend.constant.ImageReferenceType;
 import com.booking.bookingbackend.data.dto.request.AccommodationCreationRequest;
 import com.booking.bookingbackend.data.dto.request.AccommodationUpdateRequest;
 import com.booking.bookingbackend.data.dto.response.AccommodationResponse;
@@ -40,6 +41,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     RoomTypeRepository roomTypeRepository;
     BedTypeRepository bedTypeRepository;
     RoomHasBedRepository roomHasBedRepository;
+    ImageRepository imageRepository;
 
     @Transactional
     @Override
@@ -102,12 +104,26 @@ public class AccommodationServiceImpl implements AccommodationService {
             entity.setAccommodationHasRooms(accommodationHasRooms);
         }
 
+
         // Lưu thực thể
         Accommodation savedEntity = repository.save(entity);
-
         // Map sang response
         AccommodationResponse response = mapper.toDtoResponse(savedEntity);
         response.setPropertiesName(properties.getName());
+        // Lưu danh sách ảnh
+        List<Image> imageList = request.extraImages().stream()
+                .map(url -> Image.builder()
+                        .referenceId(savedEntity.getId().toString())
+                        .referenceType(ImageReferenceType.ACCOMMODATION.name())
+                        .url(url)
+                        .build()).toList();
+        imageRepository.saveAll(imageList);
+
+        response.setImages(
+                imageList.stream()
+                        .map(Image::getUrl)
+                        .collect(Collectors.toList())
+        );
 
         // Set amenities cho response
         response.setAmenities(
@@ -155,6 +171,31 @@ public class AccommodationServiceImpl implements AccommodationService {
         if (request.amenitiesIds() != null) {
             Set<Amenities> amenities = amenitiesRepository.findAllById(request.amenitiesIds());
             accommodation.setAmenities(amenities);
+        }
+
+        // Handle image updates
+        List<Image> existingImages = imageRepository.findAllByReferenceId(id.toString());
+        List<String> existingUrls = existingImages.stream().map(Image::getUrl).toList();
+
+        // 1. Delete images that are no longer in the request
+        existingImages.forEach(image -> {
+            if (!request.extraImages().contains(image.getUrl())) {
+                imageRepository.delete(image);
+            }
+        });
+
+        // 2. Add new images that don't exist yet
+        List<Image> newImages = request.extraImages().stream()
+                .filter(url -> !existingUrls.contains(url))
+                .map(url -> Image.builder()
+                        .referenceId(id.toString())
+                        .referenceType(ImageReferenceType.ACCOMMODATION.name())
+                        .url(url)
+                        .build())
+                .toList();
+
+        if (!newImages.isEmpty()) {
+            imageRepository.saveAll(newImages);
         }
 
         // Cập nhật room và bed nếu có
@@ -228,6 +269,12 @@ public class AccommodationServiceImpl implements AccommodationService {
                                 .name(a.getName())
                                 .build())
                         .collect(Collectors.toSet())
+        );
+
+        response.setImages(
+                imageRepository.findAllByReferenceId(id.toString()).stream()
+                        .map(Image::getUrl)
+                        .collect(Collectors.toList())
         );
         return response;
     }

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -45,6 +46,8 @@ public class AccommodationResponse implements Serializable {
     Set<RoomResponse> rooms;
     @JsonProperty("properties_name")
     String propertiesName;
+    @JsonProperty("images")
+    List<String> images;
     @JsonProperty("created_at")
     Timestamp createdAt;
     @JsonProperty("updated_at")
