@@ -4,10 +4,7 @@ import com.booking.bookingbackend.configuration.Translator;
 import com.booking.bookingbackend.constant.CommonConstant;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
-import com.booking.bookingbackend.data.dto.request.AuthenticationRequest;
-import com.booking.bookingbackend.data.dto.request.LogoutRequest;
-import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
-import com.booking.bookingbackend.data.dto.request.VerificationEmailRequest;
+import com.booking.bookingbackend.data.dto.request.*;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
 import com.booking.bookingbackend.service.authentication.AuthenticationService;
@@ -238,4 +235,55 @@ public class AuthenticationController {
         .build();
   }
 
+  @PostMapping("/check-exist-email")
+  @Operation(
+        summary = "Check if email exists",
+        description = "Check if the email already exists in the system",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = CommonConstant.MESSAGE_OK,
+                description = "Email exists",
+                content =
+                @Content(
+                    examples =
+                    @ExampleObject(
+                        value =
+                            """
+                                {
+                                    "code": "M000",
+                                    "status": "200",
+                                    "message": "Success"
+                                }
+                                """))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = CommonConstant.MESSAGE_NOT_FOUND,
+                description = "Email does not exist",
+                content =
+                @Content(
+                    examples =
+                    @ExampleObject(
+                        value =
+                            """
+                                {
+                                    "code": "M0404",
+                                    "status": "404",
+                                    "message": "Not Found"
+                                }
+                                """)))
+        }
+    )
+    ApiResponse<Void> checkExistEmail(@Valid @RequestBody CheckExistEmailRequest request) {
+      String email = request.email();
+      if (userService.findByEmail(email) != null) {
+          return ApiResponse.<Void>builder()
+              .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+              .status(HttpStatus.OK.value())
+              .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+              .build();
+      }
+      return ApiResponse.<Void>builder().code(ErrorCode.MESSAGE_USER_NOT_FOUND.getErrorCode())
+          .status(HttpStatus.NOT_FOUND.value())
+          .message(Translator.toLocale(ErrorCode.MESSAGE_USER_NOT_FOUND.getErrorCode()))
+          .build();
+    }
 }
