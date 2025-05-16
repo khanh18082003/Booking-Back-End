@@ -34,7 +34,7 @@ public interface AccommodationRepository extends BaseRepository<Accommodation, U
                          ahroom.room_name,
                          JSON_ARRAYAGG(
                                  JSON_OBJECT(
-                                         'bed_type', bt.name,
+                                         'bed_type_name', bt.name,
                                          'quantity', rhbed.quantity
                                  )
                          ) AS beds

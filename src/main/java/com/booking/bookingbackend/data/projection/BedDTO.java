@@ -1,7 +1,11 @@
 package com.booking.bookingbackend.data.projection;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public record BedDTO(
-        String bed_type,
-        int quantity
+    @JsonProperty("bed_type_name")
+    String bedTypeName,
+    int quantity
 ) {
+
 }

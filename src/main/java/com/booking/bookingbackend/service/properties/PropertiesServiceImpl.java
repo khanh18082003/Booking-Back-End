@@ -254,7 +254,7 @@ public class PropertiesServiceImpl implements PropertiesService {
       }
       log.info("Selected: {}", selected);
       // Bước 2: Sinh mọi cách phân phối số phòng cho danh sách selected
-      List<List<Integer>> allocations = allocateRooms(selected, requiredRooms);
+      List<List<Integer>> allocations = allocateRooms(selected, requiredRooms, requiredGuests);
       log.info("Allocations: {}", allocations);
 
       for (List<Integer> allocation : allocations) {
@@ -280,7 +280,6 @@ public class PropertiesServiceImpl implements PropertiesService {
               quantity,
               totalCapacity1,
               totalBeds1,
-              // Có thể sửa nếu cần scale theo quantity
               totalPrice1,
               acc.bedNames()
           ));
@@ -297,9 +296,12 @@ public class PropertiesServiceImpl implements PropertiesService {
   }
 
 
-  private List<List<Integer>> allocateRooms(List<AccommodationDTO> accs, int requiredRooms) {
+  private List<List<Integer>> allocateRooms(
+      List<AccommodationDTO> accs,
+      int requiredRooms,
+      int requiredCapacity) {
     List<List<Integer>> result = new ArrayList<>();
-    backtrack(accs, 0, requiredRooms, new ArrayList<>(), result);
+    backtrack(accs, 0, requiredRooms, requiredCapacity, new ArrayList<>(), result);
     return result;
   }
 
@@ -307,11 +309,12 @@ public class PropertiesServiceImpl implements PropertiesService {
       List<AccommodationDTO> accs,
       int idx,
       int roomsLeft,
+      int requiredCapacity,
       List<Integer> current,
       List<List<Integer>> result
   ) {
     if (idx == accs.size()) {
-      if (roomsLeft == 0) {
+      if (roomsLeft == 0 || accs.get(idx - 1).totalCapacity() >= requiredCapacity) {
         result.add(new ArrayList<>(current));
       }
       return;
@@ -322,7 +325,7 @@ public class PropertiesServiceImpl implements PropertiesService {
 
     for (int q = 0; q <= max; q++) {
       current.add(q);
-      backtrack(accs, idx + 1, roomsLeft - q, current, result);
+      backtrack(accs, idx + 1, roomsLeft - q, requiredCapacity, current, result);
       current.remove(current.size() - 1);
     }
   }
@@ -402,6 +405,13 @@ public class PropertiesServiceImpl implements PropertiesService {
   @Override
   public PropertiesDetailDTO getPropertiesDetail(UUID id) {
     Tuple raw = repository.findPropertiesDetail(id);
+    if (raw == null) {
+      throw new AppException(
+          ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+          getEntityClass().getSimpleName()
+      );
+    }
+
     ObjectMapper objectMapper = new ObjectMapper();
     try {
       List<String> imageUrls = objectMapper.readValue(
