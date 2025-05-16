@@ -4,16 +4,27 @@ import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.ImageReferenceType;
 import com.booking.bookingbackend.data.dto.request.AccommodationCreationRequest;
 import com.booking.bookingbackend.data.dto.request.AccommodationUpdateRequest;
+import com.booking.bookingbackend.data.dto.request.AccommodationsSearchRequest;
 import com.booking.bookingbackend.data.dto.response.AccommodationResponse;
 import com.booking.bookingbackend.data.dto.response.AmenitiesResponse;
 import com.booking.bookingbackend.data.dto.response.BedTypeResponse;
 import com.booking.bookingbackend.data.dto.response.RoomResponse;
 import com.booking.bookingbackend.data.entity.*;
 import com.booking.bookingbackend.data.mapper.AccommodationMapper;
+import com.booking.bookingbackend.data.projection.AccommodationDTO;
+import com.booking.bookingbackend.data.projection.AccommodationSearchDTO;
+import com.booking.bookingbackend.data.projection.AmenityDTO;
+import com.booking.bookingbackend.data.projection.RoomDTO;
 import com.booking.bookingbackend.data.repository.*;
 import com.booking.bookingbackend.exception.AppException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.Tuple;
 import jakarta.transaction.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -279,4 +290,49 @@ public class AccommodationServiceImpl implements AccommodationService {
         return response;
     }
 
+    @Override
+    public List<AccommodationSearchDTO> findAccommodationByPropertyId(AccommodationsSearchRequest request) {
+        var id = request.id();
+        var rooms = request.rooms();
+        var startDate = request.startDate();
+        var endDate = request.endDate();
+        var nights = (int) ChronoUnit.DAYS.between(startDate, endDate);
+        endDate = endDate.minusDays(1);
+
+        List<Tuple> tuples = repository.findAllByPropertyId(
+                id.toString(), startDate, endDate, rooms, nights, request.children() + request.adults()
+        );
+        log.info("Tuples: {}", tuples);
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        List<AccommodationSearchDTO> accommodationSearchDTOList = tuples.stream().map(row -> {
+            try {
+                // Parse JSON chuỗi sang list đối tượng
+                String roomsJson = row.get("rooms", String.class);
+                String amenitiesJson = row.get("amenities", String.class);
+                List<RoomDTO> roomList = objectMapper.readValue(roomsJson, new TypeReference<List<RoomDTO>>() {});
+                List<AmenityDTO> amenityList = objectMapper.readValue(amenitiesJson, new TypeReference<List<AmenityDTO>>() {});
+                BigDecimal totalPriceDecimal = row.get("total_price", BigDecimal.class);
+                double totalPrice = totalPriceDecimal != null ? totalPriceDecimal.doubleValue() : 0.0;
+
+                // Trả về DTO
+                return new AccommodationSearchDTO(
+                        UUID.fromString(row.get("accommodation_id", String.class)), //
+                        row.get("name", String.class),
+                        row.get("capacity", Integer.class),
+                        row.get("size", Float.class),
+                        row.get("available_rooms", Long.class),
+                        totalPrice,
+                        roomList,
+                        amenityList
+                );
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse tuple data", e);
+            }
+        }).toList();
+
+
+        log.info("AccommodationSearchDTOList: {}", accommodationSearchDTOList);
+        return accommodationSearchDTOList;
+    }
 }
