@@ -18,7 +18,7 @@ public record AccommodationDTO(
     @JsonProperty("total_price")
     double totalPrice,
     @JsonProperty("bed_names")
-    List<String> bedNames
+    List<BedDTO> bedNames
 ) {
 
 }
