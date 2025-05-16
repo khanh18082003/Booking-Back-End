@@ -324,12 +324,15 @@ public class AccommodationServiceImpl implements AccommodationService {
             });
         BigDecimal totalPriceDecimal = row.get("total_price", BigDecimal.class);
         double totalPrice = totalPriceDecimal != null ? totalPriceDecimal.doubleValue() : 0.0;
-
+        List<String> imageUrls = objectMapper.readValue(
+            row.get("image_urls", String.class), new TypeReference<>() {
+            });
         // Trả về DTO
         return new AccommodationSearchDTO(
             UUID.fromString(row.get("accommodation_id", String.class)), //
             row.get("name", String.class),
             row.get("capacity", Integer.class),
+            imageUrls,
             row.get("size", Float.class),
             row.get("available_rooms", Long.class),
             totalPrice,

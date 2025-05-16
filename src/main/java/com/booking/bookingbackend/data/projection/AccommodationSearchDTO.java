@@ -11,6 +11,8 @@ public record AccommodationSearchDTO(
         UUID accommodationId,
         String name,
         int capacity,
+        @JsonProperty("image_urls")
+        List<String> imageUrls,
         Float size,
         @JsonProperty("available_rooms")
         Long availableRooms,
