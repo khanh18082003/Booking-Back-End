@@ -40,8 +40,8 @@ public class Review extends AbstractIdentifiable<Integer> {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Integer id;
 
-  @Column(name = "rating", precision = 2, scale = 1)
-  BigDecimal rating;
+  @Column(name = "rating")
+  Integer rating;
 
   @Column(name = "review")
   String review;
