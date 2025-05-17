@@ -9,9 +9,9 @@ import com.booking.bookingbackend.data.dto.request.PropertiesSearchRequest;
 import com.booking.bookingbackend.data.dto.response.Meta;
 import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
+import com.booking.bookingbackend.data.dto.response.ReviewResponse;
 import com.booking.bookingbackend.data.entity.Image;
 import com.booking.bookingbackend.data.entity.Properties;
-import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.mapper.PropertiesMapper;
 import com.booking.bookingbackend.data.projection.AccommodationDTO;
 import com.booking.bookingbackend.data.projection.AmenityDTO;
@@ -21,10 +21,12 @@ import com.booking.bookingbackend.data.repository.AmenitiesRepository;
 import com.booking.bookingbackend.data.repository.ImageRepository;
 import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.data.repository.PropertyTypeRepository;
+import com.booking.bookingbackend.data.repository.ReviewRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.googlemap.GoogleMapService;
 import com.booking.bookingbackend.util.GeometryUtil;
+import com.booking.bookingbackend.util.SecurityUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.Tuple;
@@ -52,8 +54,6 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -71,6 +71,7 @@ public class PropertiesServiceImpl implements PropertiesService {
   ImageRepository imageRepository;
   PropertiesMapper mapper;
   GoogleMapService googleMapService;
+  ReviewRepository reviewRepository;
 
   @Override
   @Transactional
@@ -78,16 +79,7 @@ public class PropertiesServiceImpl implements PropertiesService {
   public PropertiesResponse save(PropertiesRequest request) {
     Properties properties = mapper.toEntity(request);
 
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    // Lấy thông tin người dùng từ Authentication
-    UUID userId = auth.getPrincipal() instanceof User user ? user.getId() : null;
-    if (userId == null) {
-      throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
-    }
-    User userEntity = userRepository.findById(userId)
-        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-            getEntityClass().getSimpleName()));
-    properties.setHost(userEntity);
+    properties.setHost(SecurityUtil.getCurrentUser());
 
     properties.setPropertyType(propertyTypeRepository.findById(request.typeId())
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
@@ -447,8 +439,23 @@ public class PropertiesServiceImpl implements PropertiesService {
   }
 
   @Override
-  public PaginationResponse<PropertiesDTO> getPropertiesReviews(UUID id) {
-    return null;
+  public PaginationResponse<ReviewResponse> getPropertiesReviews(
+      UUID id,
+      int pageNo,
+      int pageSize
+  ) {
+    Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
+    Page<ReviewResponse> page = reviewRepository.findAllByPropertiesId(id, pageable);
+
+    return PaginationResponse.<ReviewResponse>builder()
+        .meta(Meta.builder()
+            .page(page.getNumber() + 1)
+            .pageSize(page.getSize())
+            .pages(page.getTotalPages())
+            .total(page.getTotalElements())
+            .build())
+        .data(page.getContent())
+        .build();
   }
 }
 
