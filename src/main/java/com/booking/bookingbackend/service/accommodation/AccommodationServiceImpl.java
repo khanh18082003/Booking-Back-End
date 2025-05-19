@@ -1,10 +1,13 @@
 package com.booking.bookingbackend.service.accommodation;
 
+import static java.util.stream.Collectors.toList;
+
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.ImageReferenceType;
 import com.booking.bookingbackend.data.dto.request.AccommodationCreationRequest;
 import com.booking.bookingbackend.data.dto.request.AccommodationUpdateRequest;
 import com.booking.bookingbackend.data.dto.request.AccommodationsSearchRequest;
+import com.booking.bookingbackend.data.dto.response.AccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.AccommodationResponse;
 import com.booking.bookingbackend.data.dto.response.AmenitiesResponse;
 import com.booking.bookingbackend.data.dto.response.BedTypeResponse;
@@ -12,15 +15,18 @@ import com.booking.bookingbackend.data.dto.response.RoomResponse;
 import com.booking.bookingbackend.data.entity.Accommodation;
 import com.booking.bookingbackend.data.entity.AccommodationHasRoom;
 import com.booking.bookingbackend.data.entity.Amenities;
+import com.booking.bookingbackend.data.entity.Available;
 import com.booking.bookingbackend.data.entity.Image;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.RoomHasBed;
 import com.booking.bookingbackend.data.mapper.AccommodationMapper;
 import com.booking.bookingbackend.data.projection.AccommodationSearchDTO;
 import com.booking.bookingbackend.data.projection.AmenityDTO;
+import com.booking.bookingbackend.data.projection.AvailableAccommodationDTO;
 import com.booking.bookingbackend.data.projection.RoomDTO;
 import com.booking.bookingbackend.data.repository.AccommodationRepository;
 import com.booking.bookingbackend.data.repository.AmenitiesRepository;
+import com.booking.bookingbackend.data.repository.AvailableRepository;
 import com.booking.bookingbackend.data.repository.BedTypeRepository;
 import com.booking.bookingbackend.data.repository.ImageRepository;
 import com.booking.bookingbackend.data.repository.PropertiesRepository;
@@ -32,7 +38,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.Tuple;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,12 +66,15 @@ public class AccommodationServiceImpl implements AccommodationService {
   AmenitiesRepository amenitiesRepository;
   RoomTypeRepository roomTypeRepository;
   BedTypeRepository bedTypeRepository;
+  AvailableRepository availableRepository;
   RoomHasBedRepository roomHasBedRepository;
   ImageRepository imageRepository;
 
+  private static final int NIGHTS_MAX = 365;
+
   @Transactional
   @Override
-  public AccommodationResponse save(AccommodationCreationRequest request) {
+  public AccommodationResponse save(final AccommodationCreationRequest request) {
     Accommodation entity = mapper.toEntity(request);
 
     // Lấy properties
@@ -139,7 +150,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     response.setImages(
         imageList.stream()
             .map(Image::getUrl)
-            .collect(Collectors.toList())
+            .collect(toList())
     );
 
     // Set amenities cho response
@@ -164,7 +175,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                         .name(bedType.getBedType().getName())
                         .quantity(bedType.getQuantity())
                         .build())
-                    .collect(Collectors.toList()))
+                    .collect(toList()))
                 .build())
             .collect(Collectors.toSet())
     );
@@ -172,9 +183,54 @@ public class AccommodationServiceImpl implements AccommodationService {
     return response;
   }
 
+  @Override
+  public void saveAll(List<AccommodationBookingResponse> aDays) {
+    final List<Available> availabilities = new ArrayList<>();
+    for (var accommodation : aDays) {
+      for (var availableAccommodation : accommodation.getAvailableAccommodations()) {
+        var availableEntity = availableRepository.findById(availableAccommodation.id())
+            .orElseThrow(() -> new AppException(
+                ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+                Available.class.getSimpleName())
+            );
+        availableEntity.setTotalReserved(
+            availableEntity.getTotalReserved() - accommodation.getQuantity()
+        );
+        availabilities.add(availableEntity);
+      }
+    }
+
+    availableRepository.saveAll(availabilities);
+  }
+
+  @Override
+  public List<AvailableAccommodationDTO> checkAvailabilityForBooking(
+      final UUID id,
+      final LocalDate checkInDate,
+      final LocalDate checkOutDate,
+      Integer quantity
+  ) {
+    final int nights = (int) ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+    log.info("nights: {}", nights);
+    if (nights > NIGHTS_MAX) {
+      throw new AppException(ErrorCode.MESSAGE_INVALID_NIGHTS);
+    }
+    final var aDays = availableRepository.findAndLockAvailableAccommodation(
+        id,
+        checkInDate,
+        checkOutDate.minusDays(1),
+        quantity
+    );
+    log.info("aDays: {}", aDays);
+    if (aDays.isEmpty() || aDays.size() < nights) {
+      throw new AppException(ErrorCode.MESSAGE_NO_AVAILABLE_ACCOMMODATION);
+    }
+    return aDays;
+  }
+
   @Transactional
   @Override
-  public AccommodationResponse update(UUID id, AccommodationUpdateRequest request) {
+  public AccommodationResponse update(final UUID id, final AccommodationUpdateRequest request) {
     Accommodation accommodation = repository.findById(id)
         .orElseThrow(() -> new AppException(
             ErrorCode.MESSAGE_INVALID_ENTITY_ID,
@@ -275,7 +331,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                         .name(bedType.getBedType().getName())
                         .quantity(bedType.getQuantity())
                         .build())
-                    .collect(Collectors.toList()))
+                    .collect(toList()))
                 .build())
             .collect(Collectors.toSet())
     );
@@ -291,14 +347,15 @@ public class AccommodationServiceImpl implements AccommodationService {
     response.setImages(
         imageRepository.findAllByReferenceId(id.toString()).stream()
             .map(Image::getUrl)
-            .collect(Collectors.toList())
+            .collect(toList())
     );
     return response;
   }
 
   @Override
   public List<AccommodationSearchDTO> findAccommodationByPropertyId(
-      AccommodationsSearchRequest request) {
+      final AccommodationsSearchRequest request
+  ) {
     var id = request.id();
     var rooms = request.rooms();
     var startDate = request.startDate();
@@ -336,6 +393,7 @@ public class AccommodationServiceImpl implements AccommodationService {
             row.get("size", Float.class),
             row.get("available_rooms", Long.class),
             totalPrice,
+            row.get("description", String.class),
             roomList,
             amenityList
         );

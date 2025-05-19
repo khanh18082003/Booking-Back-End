@@ -118,18 +118,11 @@ public class PropertiesServiceImpl implements PropertiesService {
     List<Sort.Order> orders = new ArrayList<>();
     if (sorts != null) {
       for (String sortBy : sorts) {
-        log.info("SortBy: {}", sortBy);
         if (StringUtils.hasLength(sortBy)) {
           Pattern pattern = Pattern.compile(SORT_BY);
           Matcher matcher = pattern.matcher(sortBy);
 
           if (matcher.find()) {
-            log.info(
-                "Sorting field: {}, direction: {}",
-                matcher.group(1),
-                matcher.group(3)
-            ); // Ghi log
-
             Direction direction = matcher.group(3).equalsIgnoreCase("asc")
                 ? Direction.ASC
                 : Direction.DESC;
@@ -149,14 +142,8 @@ public class PropertiesServiceImpl implements PropertiesService {
     int nights = (int) ChronoUnit.DAYS.between(startDate, endDate);
     endDate = endDate.minusDays(1);
 
-    log.info("nights: {}", nights);
-
     double[] latLng = googleMapService.getLatLng(request.location());
     double[] transformedCoordinates = GeometryUtil.transformLatLong(latLng[1], latLng[0]);
-    log.info("Transformed coordinates: longitude: {}, latitude: {}",
-        transformedCoordinates[0],
-        transformedCoordinates[1]
-    );
 
     List<Tuple> raw = repository.searchProperties(
         transformedCoordinates[1],
@@ -244,10 +231,8 @@ public class PropertiesServiceImpl implements PropertiesService {
           selected.add(all.get(i)); // mask: 1 -> selected [Phong Deluxe]
         }
       }
-      log.info("Selected: {}", selected);
       // Bước 2: Sinh mọi cách phân phối số phòng cho danh sách selected
       List<List<Integer>> allocations = allocateRooms(selected, requiredRooms, requiredGuests);
-      log.info("Allocations: {}", allocations);
 
       for (List<Integer> allocation : allocations) {
         int totalCapacity = 0;

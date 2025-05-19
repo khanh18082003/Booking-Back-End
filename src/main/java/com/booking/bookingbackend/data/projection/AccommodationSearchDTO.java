@@ -18,6 +18,7 @@ public record AccommodationSearchDTO(
         Long availableRooms,
         @JsonProperty("total_price")
         double totalPrice,
+        String description,
         List<RoomDTO> rooms,
         List<AmenityDTO> amenities
 ) {

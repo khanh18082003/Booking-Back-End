@@ -120,10 +120,10 @@ public class UserServiceImpl implements UserService {
 
       // validate gender
       String gender = userProfileTuple.get("gender", String.class);
-      Gender genderValidated = null;
+      String genderValidated = null;
       if (gender != null) {
         try {
-          genderValidated = Gender.valueOf(gender.toUpperCase());
+          genderValidated = Gender.valueOf(gender.toUpperCase()).getValue();
         } catch (IllegalArgumentException e) {
           throw new AppException(ErrorCode.MESSAGE_INVALID_FORMAT, "Invalid gender value");
         }

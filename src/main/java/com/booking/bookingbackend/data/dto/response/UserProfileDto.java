@@ -15,7 +15,7 @@ public record UserProfileDto(
     String avatar,
     String phone,
     LocalDate dob,
-    Gender gender,
+    String gender,
     String address,
     @JsonProperty("first_name") String firstName,
     @JsonProperty("last_name") String lastName,

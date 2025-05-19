@@ -27,7 +27,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -145,8 +144,9 @@ public class UserController {
         .data(userService.getMyProfile())
         .build();
   }
+
   @PostMapping("/forgot-password")
-  ApiResponse<Void> forgotPassword(@RequestBody ForgotPasswordRequest request){
+  ApiResponse<Void> forgotPassword(@RequestBody ForgotPasswordRequest request) {
     String code = SecurityUtil.generateVerificationCode();
     try {
       mailService.sendVerificationEmail(
@@ -168,8 +168,9 @@ public class UserController {
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .build();
   }
+
   @PostMapping("/reset-password")
-  ApiResponse<Void> resetPassword(@RequestBody ResetPasswordRequest request){
+  ApiResponse<Void> resetPassword(@RequestBody ResetPasswordRequest request) {
 
     userService.changePassword(request);
     return ApiResponse.<Void>builder()

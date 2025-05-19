@@ -27,7 +27,7 @@ import java.util.UUID;
 public class BookingController {
     BookingService bookingService;
 
-    @PostMapping("/save")
+    @PostMapping
     ApiResponse<BookingResponse> save(
             @Valid @RequestBody BookingRequest request
     ) {
@@ -35,7 +35,7 @@ public class BookingController {
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
                 .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-                .data(bookingService.save(request))
+                .data(bookingService.book(request))
                 .build();
     }
 

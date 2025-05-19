@@ -1,26 +1,25 @@
 package com.booking.bookingbackend.data.dto.request;
 
-import com.booking.bookingbackend.constant.BookingStatus;
-import com.booking.bookingbackend.data.entity.GuestBooking;
-import com.booking.bookingbackend.data.entity.Payment;
-import com.booking.bookingbackend.data.entity.Properties;
-import com.booking.bookingbackend.data.entity.User;
-import java.math.BigDecimal;
-import java.sql.Timestamp;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public record BookingRequest(
-        LocalDate checkIn,
-        LocalDate checkOut,
-        Integer adultUnits,
-        Integer childUnits,
-        BigDecimal totalPrice,
-        BookingStatus status,
-        Timestamp createdAt,
-        Timestamp updatedAt,
-        UUID userId,
-        UUID propertiesID,
-        UUID guestBookingID
-)implements java.io.Serializable {
+    @JsonProperty("check_in")
+    LocalDate checkIn,
+    @JsonProperty("check_out")
+    LocalDate checkOut,
+    Integer adults,
+    Integer children,
+    @JsonProperty("user_id")
+    UUID userId,
+    @JsonProperty("guest_booking_id")
+    UUID guestBookingID,
+    @JsonProperty("properties_id")
+    UUID propertiesID,
+    @JsonProperty("accommodations")
+    List<AccommodationForBookingRequest> accommodations
+) implements java.io.Serializable {
+
 }
