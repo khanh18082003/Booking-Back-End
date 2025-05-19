@@ -54,7 +54,7 @@ springdoc:
 
 # jwt secret key
 jwt:
-  expirationTime: 1
+  expirationTime: 15
   expirationDay: 7
   accessToken: 7SQerx9SoaVXIgymVZCEA3I6kloqfaZt+WJYWPUJ0Qk=
   refreshToken: XES8dv8sa5hTheY+E51IUFcs7xkgm+cLGUNYTEaods8=
