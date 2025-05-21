@@ -194,7 +194,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 Available.class.getSimpleName())
             );
         availableEntity.setTotalReserved(
-            availableEntity.getTotalReserved() - accommodation.getQuantity()
+            availableEntity.getTotalReserved() + accommodation.getQuantity()
         );
         availabilities.add(availableEntity);
       }
@@ -203,6 +203,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     availableRepository.saveAll(availabilities);
   }
 
+  @Transactional
   @Override
   public List<AvailableAccommodationDTO> checkAvailabilityForBooking(
       final UUID id,
@@ -377,7 +378,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         List<RoomDTO> roomList = objectMapper.readValue(roomsJson, new TypeReference<>() {
         });
         List<AmenityDTO> amenityList = objectMapper.readValue(amenitiesJson,
-            new TypeReference<List<AmenityDTO>>() {
+            new TypeReference<>() {
             });
         BigDecimal totalPriceDecimal = row.get("total_price", BigDecimal.class);
         double totalPrice = totalPriceDecimal != null ? totalPriceDecimal.doubleValue() : 0.0;

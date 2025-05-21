@@ -38,9 +38,6 @@ public class BookingDetail extends AbstractIdentifiable<BookingDetailId> {
   @Column(name = "total_nights", nullable = false)
   Integer totalNights;
 
-  @Column(name = "price_per_night", nullable = false, precision = 10, scale = 2)
-  BigDecimal pricePerNight;
-
   @Column(name = "tax", precision = 10, scale = 2)
   BigDecimal tax;
 

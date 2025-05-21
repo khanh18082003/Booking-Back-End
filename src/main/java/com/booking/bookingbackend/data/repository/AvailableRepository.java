@@ -16,7 +16,8 @@ import org.springframework.stereotype.Repository;
 public interface AvailableRepository extends BaseRepository<Available, Integer> {
 
   @Query("""
-      SELECT new com.booking.bookingbackend.data.projection.AvailableAccommodationDTO(a.id, a.date, a.totalInventory, a.price, a.totalReserved) FROM Available a WHERE
+      SELECT new com.booking.bookingbackend.data.projection.AvailableAccommodationDTO(a.id, a.date, a.totalInventory, a.price, a.totalReserved) 
+            FROM Available a WHERE
       a.accommodation.id = :accommodationId AND
       a.date BETWEEN :checkInDate AND :checkOutDate AND
       a.totalInventory - a.totalReserved >= :quantity

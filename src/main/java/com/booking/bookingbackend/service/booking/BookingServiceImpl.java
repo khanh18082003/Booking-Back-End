@@ -6,10 +6,13 @@ import com.booking.bookingbackend.data.dto.request.BookingRequest;
 import com.booking.bookingbackend.data.dto.response.AccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.BookingResponse;
 import com.booking.bookingbackend.data.entity.Booking;
+import com.booking.bookingbackend.data.entity.BookingDetail;
 import com.booking.bookingbackend.data.entity.GuestBooking;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.User;
+import com.booking.bookingbackend.data.entity.ids.BookingDetailId;
 import com.booking.bookingbackend.data.mapper.BookingMapper;
+import com.booking.bookingbackend.data.repository.BookingDetailsRepository;
 import com.booking.bookingbackend.data.repository.BookingRepository;
 import com.booking.bookingbackend.data.repository.GuestBookingRepository;
 import com.booking.bookingbackend.data.repository.PropertiesRepository;
@@ -17,8 +20,10 @@ import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.accommodation.AccommodationService;
 import com.booking.bookingbackend.service.price.PriceService;
+import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -42,11 +47,13 @@ public class BookingServiceImpl implements BookingService {
   PropertiesRepository propertiesRepository;
   UserRepository userRepository;
   GuestBookingRepository guestBookingRepository;
+  BookingDetailsRepository bookingDetailRepository;
   BookingMapper mapper;
   AccommodationService accommodationService;
   PriceService priceService;
   private final AbstractScriptDatabaseInitializer abstractScriptDatabaseInitializer;
 
+  @Transactional
   @Override
   public BookingResponse book(BookingRequest request) {
     // Validate request
@@ -62,6 +69,7 @@ public class BookingServiceImpl implements BookingService {
                   accommodation.quantity()
               );
               return AccommodationBookingResponse.builder()
+                  .id(accommodation.id())
                   .availableAccommodations(availabilities)
                   .quantity(accommodation.quantity())
                   .build();
@@ -80,13 +88,14 @@ public class BookingServiceImpl implements BookingService {
             Properties.class.getSimpleName()
         ))
     );
-    booking.setUser(userRepository.findById(request.userId())
-        .orElseThrow(() -> new AppException(
-            ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-            User.class.getSimpleName()
-        ))
-    );
-    if (request.guestBookingID() != null || booking.getUser() == null) {
+    if (request.userId() != null) {
+      booking.setUser(userRepository.findById(request.userId())
+          .orElseThrow(() -> new AppException(
+              ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+              User.class.getSimpleName()
+          ))
+      );
+    } else {
       booking.setGuestBooking(guestBookingRepository
           .findById(
               Objects.requireNonNull(request.guestBookingID())
@@ -97,13 +106,43 @@ public class BookingServiceImpl implements BookingService {
           ))
       );
     }
+
     booking.setStatus(BookingStatus.Pending);
 
     // Save the available accommodations
     accommodationService.saveAll(aAccommodations);
     // Save the booking
     Booking savedBooking = repository.save(booking);
-    return mapper.toDtoResponse(savedBooking);
+    // Save the booking details
+    List<BookingDetail> bookingDetails = aAccommodations.stream()
+        .map(accommodation -> {
+              BigDecimal price = accommodation.getAvailableAccommodations().stream()
+                  .reduce(
+                      BigDecimal.ZERO,
+                      (acc, availableAccommodation) -> acc.add(availableAccommodation.price()),
+                      BigDecimal::add
+                  );
+              return BookingDetail.builder()
+                  .id(BookingDetailId.builder()
+                      .bookingId(savedBooking.getId())
+                      .accommodationId(accommodation.getId())
+                      .build())
+                  .bookedUnits(accommodation.getQuantity())
+                  .totalNights((int) ChronoUnit.DAYS.between(request.checkIn(), request.checkOut()))
+                  .totalPrice(price)
+                  .build();
+            }
+        ).toList();
+    bookingDetailRepository.saveAll(bookingDetails);
+    BookingResponse response = mapper.toDtoResponse(savedBooking);
+    if (savedBooking.getUser() != null) {
+      response.setUserId(savedBooking.getUser().getId());
+    } else {
+      response.setGuestBookingId(savedBooking.getGuestBooking().getId());
+    }
+    response.setPropertiesId(savedBooking.getProperties().getId());
+    response.setAccommodations(aAccommodations);
+    return response;
   }
 
   private void validateRequest(BookingRequest request) {

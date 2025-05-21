@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.io.Serializable;
 import java.util.List;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +23,7 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(Include.NON_NULL)
 public class AccommodationBookingResponse implements Serializable {
 
+  UUID id;
   List<AvailableAccommodationDTO> availableAccommodations;
   Integer quantity;
 }
