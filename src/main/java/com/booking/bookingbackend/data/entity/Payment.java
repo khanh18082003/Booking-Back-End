@@ -1,7 +1,6 @@
 package com.booking.bookingbackend.data.entity;
 
 import com.booking.bookingbackend.constant.PaymentMethod;
-import com.booking.bookingbackend.constant.PaymentStatus;
 import com.booking.bookingbackend.data.base.UUIDJpaEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -51,9 +50,8 @@ public class Payment extends UUIDJpaEntity {
   @Enumerated(EnumType.STRING)
   PaymentMethod paymentMethod;
 
-  @Column(name = "status", nullable = false)
-  @Enumerated(EnumType.STRING)
-  PaymentStatus status;
+  @Column(name = "status", columnDefinition = "BIT(1) DEFAULT 0", nullable = false)
+  Boolean status;
 
   @Column(name = "transaction_id", nullable = false, unique = true)
   String transactionId;

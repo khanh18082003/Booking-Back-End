@@ -77,7 +77,7 @@ public class Properties extends UUIDJpaEntity {
   @Column(name = "country")
   String country;
 
-  @Column(name = "rating", precision = 2, scale = 1, nullable = false)
+  @Column(name = "rating", precision = 3, scale = 1, nullable = false)
   BigDecimal rating;
 
   @Column(name = "total_rating", nullable = false)

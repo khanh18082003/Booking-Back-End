@@ -2,8 +2,6 @@ package com.booking.bookingbackend.service.payment;
 
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.PaymentMethod;
-import com.booking.bookingbackend.constant.PaymentStatus;
-import com.booking.bookingbackend.data.base.EntityDtoMapper;
 import com.booking.bookingbackend.data.dto.request.PaymentRequest;
 import com.booking.bookingbackend.data.dto.response.PaymentResponse;
 import com.booking.bookingbackend.data.entity.Payment;
@@ -47,10 +45,10 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setBooking(bookingRepository.findById(request.BookingId())
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName())));
         Payment savedPayment = repository.save(payment);
-        if (request.paymentMethod() == PaymentMethod.CREDIT_CARD) {
-            savedPayment.setStatus(PaymentStatus.PENDING);
+        if (request.paymentMethod() == PaymentMethod.ONLINE) {
+            savedPayment.setStatus(true);
         } else {
-            savedPayment.setStatus(PaymentStatus.FAILED);
+            savedPayment.setStatus(false);
         }
         return mapper.toDtoResponse(savedPayment);
     }
@@ -63,7 +61,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public PaymentResponse changStatus(UUID id, PaymentStatus status) {
+    public PaymentResponse changStatus(UUID id, boolean status) {
         Payment payment = repository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName()));
         payment.setStatus(status);
