@@ -4,7 +4,6 @@ package com.booking.bookingbackend.controller;
 import com.booking.bookingbackend.configuration.Translator;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
-import com.booking.bookingbackend.constant.PaymentStatus;
 import com.booking.bookingbackend.data.dto.request.PaymentRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.PaymentResponse;
@@ -54,7 +53,7 @@ public class PaymentController {
     @PostMapping("/change-status")
     ApiResponse<PaymentResponse> changeStatus(
             @Valid @RequestBody UUID id,
-            @Valid @RequestBody PaymentStatus status
+            @Valid @RequestBody Boolean status
     ) {
         return ApiResponse.<PaymentResponse>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())

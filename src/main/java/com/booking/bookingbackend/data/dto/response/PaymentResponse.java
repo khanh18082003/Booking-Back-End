@@ -1,11 +1,9 @@
 package com.booking.bookingbackend.data.dto.response;
 
 import com.booking.bookingbackend.constant.PaymentMethod;
-import com.booking.bookingbackend.constant.PaymentStatus;
 import com.booking.bookingbackend.data.entity.Booking;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -26,7 +24,7 @@ public class PaymentResponse implements Serializable {
     @JsonProperty("payment_method")
     PaymentMethod paymentMethod;
     @JsonProperty("status")
-    PaymentStatus status;
+    boolean status;
     @JsonProperty("transaction_id")
     String transactionId;
     @JsonProperty("paid_at")

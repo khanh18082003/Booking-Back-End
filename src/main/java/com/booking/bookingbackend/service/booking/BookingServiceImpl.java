@@ -2,12 +2,16 @@ package com.booking.bookingbackend.service.booking;
 
 import com.booking.bookingbackend.constant.BookingStatus;
 import com.booking.bookingbackend.constant.ErrorCode;
+import com.booking.bookingbackend.constant.PaymentMethod;
 import com.booking.bookingbackend.data.dto.request.BookingRequest;
 import com.booking.bookingbackend.data.dto.response.AccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.BookingResponse;
+import com.booking.bookingbackend.data.dto.response.PaymentBookingResponse;
+import com.booking.bookingbackend.data.dto.response.UserBookingResponse;
 import com.booking.bookingbackend.data.entity.Booking;
 import com.booking.bookingbackend.data.entity.BookingDetail;
 import com.booking.bookingbackend.data.entity.GuestBooking;
+import com.booking.bookingbackend.data.entity.Profile;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.entity.ids.BookingDetailId;
@@ -25,7 +29,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -96,15 +99,15 @@ public class BookingServiceImpl implements BookingService {
           ))
       );
     } else {
-      booking.setGuestBooking(guestBookingRepository
-          .findById(
-              Objects.requireNonNull(request.guestBookingID())
-          )
-          .orElseThrow(() -> new AppException(
-              ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-              GuestBooking.class.getSimpleName()
-          ))
-      );
+      GuestBooking guest = GuestBooking.builder()
+          .email(request.guest().email())
+          .firstName(request.guest().firstName())
+          .lastName(request.guest().lastName())
+          .phoneNumber(request.guest().phoneNumber())
+          .country(request.guest().country())
+          .build();
+      guestBookingRepository.save(guest);
+      booking.setGuestBooking(guest);
     }
 
     booking.setStatus(BookingStatus.Pending);
@@ -113,6 +116,7 @@ public class BookingServiceImpl implements BookingService {
     accommodationService.saveAll(aAccommodations);
     // Save the booking
     Booking savedBooking = repository.save(booking);
+
     // Save the booking details
     List<BookingDetail> bookingDetails = aAccommodations.stream()
         .map(accommodation -> {
@@ -136,12 +140,30 @@ public class BookingServiceImpl implements BookingService {
     bookingDetailRepository.saveAll(bookingDetails);
     BookingResponse response = mapper.toDtoResponse(savedBooking);
     if (savedBooking.getUser() != null) {
-      response.setUserId(savedBooking.getUser().getId());
+      Profile profile = savedBooking.getUser().getProfile();
+      response.setUserBooking(UserBookingResponse.builder()
+          .email(savedBooking.getUser().getEmail())
+          .firstName(profile.getFirstName())
+          .lastName(profile.getLastName())
+          .phone(profile.getPhone())
+          .country(profile.getNationality())
+          .build());
     } else {
-      response.setGuestBookingId(savedBooking.getGuestBooking().getId());
+      GuestBooking guest = savedBooking.getGuestBooking();
+      response.setUserBooking(UserBookingResponse.builder()
+          .email(guest.getEmail())
+          .firstName(guest.getFirstName())
+          .lastName(guest.getLastName())
+          .phone(guest.getPhoneNumber())
+          .country(guest.getCountry())
+          .build());
     }
     response.setPropertiesId(savedBooking.getProperties().getId());
     response.setAccommodations(aAccommodations);
+    response.setPayment(PaymentBookingResponse.builder()
+        .status(false)
+        .paymentMethod(PaymentMethod.valueOf(request.paymentMethod()))
+        .build());
     return response;
   }
 

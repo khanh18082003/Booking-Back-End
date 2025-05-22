@@ -41,14 +41,12 @@ public class BookingResponse implements Serializable {
   @JsonProperty("total_price")
   BigDecimal totalPrice;
   BookingStatus status;
-  @JsonProperty("user_id")
-  UUID userId;
+  @JsonProperty("user_booking")
+  UserBookingResponse userBooking;
   @JsonProperty("properties_id")
   UUID propertiesId;
   List<AccommodationBookingResponse> accommodations;
-  @JsonProperty("guest_id")
-  UUID guestBookingId;
-  Payment payment;
+  PaymentBookingResponse payment;
   @JsonProperty("created_at")
   Timestamp createdAt;
   @JsonProperty("updated_at")

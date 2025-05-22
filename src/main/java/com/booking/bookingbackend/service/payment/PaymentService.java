@@ -1,6 +1,5 @@
 package com.booking.bookingbackend.service.payment;
 
-import com.booking.bookingbackend.constant.PaymentStatus;
 import com.booking.bookingbackend.data.dto.request.PaymentRequest;
 import com.booking.bookingbackend.data.dto.response.PaymentResponse;
 import com.booking.bookingbackend.data.entity.Payment;
@@ -20,7 +19,7 @@ public interface PaymentService extends BaseEntityService<UUID, Payment, Payment
 
     PaymentResponse getPayment(UUID id);
 
-    PaymentResponse changStatus(UUID id, PaymentStatus status);
+    PaymentResponse changStatus(UUID id, boolean status);
     boolean processPayment(UUID id, BigDecimal amount, String transactionId);
     boolean checkPaymentStatus(int expectedAmount, String expectedTransactionId) throws Exception;
 }

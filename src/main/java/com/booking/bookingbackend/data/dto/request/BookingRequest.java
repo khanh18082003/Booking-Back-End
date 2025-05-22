@@ -12,10 +12,11 @@ public record BookingRequest(
     LocalDate checkOut,
     Integer adults,
     Integer children,
+    @JsonProperty("payment_method")
+    String paymentMethod,
     @JsonProperty("user_id")
     UUID userId,
-    @JsonProperty("guest_booking_id")
-    UUID guestBookingID,
+    GuestCreationRequest guest,
     @JsonProperty("properties_id")
     UUID propertiesID,
     @JsonProperty("accommodations")
