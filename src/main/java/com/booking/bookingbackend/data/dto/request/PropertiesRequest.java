@@ -11,8 +11,10 @@ import lombok.With;
 public record PropertiesRequest(
     String name,
     String description,
+    @With
     String image,
     @JsonProperty("extra_images")
+    @With
     List<String> extraImages,
     String address,
     String ward,
