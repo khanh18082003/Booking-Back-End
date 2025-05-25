@@ -41,4 +41,5 @@ public class CommonConstant {
       """;
 
   public static final String SORT_BY = "(\\w+?)(:)(.*)";
+  public static final String SEARCH_OPERATOR = "([0-9a-fA-F-]+)(:)(\\d+)";
 }

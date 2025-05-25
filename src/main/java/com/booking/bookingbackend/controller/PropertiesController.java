@@ -4,11 +4,13 @@ import com.booking.bookingbackend.configuration.Translator;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.AccommodationsSearchRequest;
+import com.booking.bookingbackend.data.dto.request.CheckAvailableAccommodationsBookingRequest;
 import com.booking.bookingbackend.data.dto.request.PropertiesRequest;
 import com.booking.bookingbackend.data.dto.request.PropertiesSearchRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
+import com.booking.bookingbackend.data.dto.response.PropertyAvailableAccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.ReviewResponse;
 import com.booking.bookingbackend.data.projection.AccommodationSearchDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDTO;
@@ -19,6 +21,7 @@ import com.booking.bookingbackend.service.properties.PropertiesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -248,5 +251,33 @@ public class PropertiesController {
         .data(accommodationService.findAccommodationByPropertyId(request))
         .build();
 
+  }
+
+  @GetMapping("/{id}/accommodations/available")
+  ApiResponse<PropertyAvailableAccommodationBookingResponse> checkAvailableAccommodation(
+      HttpServletResponse httpServletResponse,
+      @PathVariable UUID id,
+      @RequestParam(name = "check_in") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate checkIn,
+      @RequestParam(name = "check_out") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate checkOut,
+      @RequestParam(name = "adults") Integer adults,
+      @RequestParam(name = "children") Integer children,
+      @RequestParam(name = "rooms") Integer rooms,
+      @RequestParam(name = "accommodations") String... accommodations
+  ) {
+    var request = CheckAvailableAccommodationsBookingRequest.builder()
+        .checkIn(checkIn)
+        .checkOut(checkOut)
+        .adults(adults)
+        .children(children)
+        .rooms(rooms)
+        .accommodations(accommodations)
+        .build();
+
+    return ApiResponse.<PropertyAvailableAccommodationBookingResponse>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(propertiesService.checkAvailableAccommodationsBooking(id, request, httpServletResponse))
+        .build();
   }
 }

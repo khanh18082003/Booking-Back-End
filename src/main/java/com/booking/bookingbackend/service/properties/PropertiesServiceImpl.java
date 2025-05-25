@@ -1,44 +1,57 @@
 package com.booking.bookingbackend.service.properties;
 
+import static com.booking.bookingbackend.constant.CommonConstant.SEARCH_OPERATOR;
 import static com.booking.bookingbackend.constant.CommonConstant.SORT_BY;
 
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.ImageReferenceType;
+import com.booking.bookingbackend.data.dto.request.CheckAvailableAccommodationsBookingRequest;
 import com.booking.bookingbackend.data.dto.request.PropertiesRequest;
 import com.booking.bookingbackend.data.dto.request.PropertiesSearchRequest;
+import com.booking.bookingbackend.data.dto.response.CheckedAvailableAccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.Meta;
 import com.booking.bookingbackend.data.dto.response.PaginationResponse;
+import com.booking.bookingbackend.data.dto.response.PropertiesBookingResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
+import com.booking.bookingbackend.data.dto.response.PropertyAvailableAccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.ReviewResponse;
 import com.booking.bookingbackend.data.entity.Image;
 import com.booking.bookingbackend.data.entity.Properties;
+import com.booking.bookingbackend.data.mapper.AmenitiesMapper;
 import com.booking.bookingbackend.data.mapper.PropertiesMapper;
 import com.booking.bookingbackend.data.projection.AccommodationDTO;
 import com.booking.bookingbackend.data.projection.AmenityDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDetailDTO;
 import com.booking.bookingbackend.data.repository.AmenitiesRepository;
+import com.booking.bookingbackend.data.repository.AvailableRepository;
 import com.booking.bookingbackend.data.repository.ImageRepository;
 import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.data.repository.PropertyTypeRepository;
 import com.booking.bookingbackend.data.repository.ReviewRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
+import com.booking.bookingbackend.service.booking.BookingValidationService;
 import com.booking.bookingbackend.service.googlemap.GoogleMapService;
 import com.booking.bookingbackend.util.GeometryUtil;
 import com.booking.bookingbackend.util.SecurityUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.Tuple;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.sql.Time;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -69,9 +82,12 @@ public class PropertiesServiceImpl implements PropertiesService {
   PropertyTypeRepository propertyTypeRepository;
   AmenitiesRepository amenitiesRepository;
   ImageRepository imageRepository;
+  AvailableRepository availableRepository;
   PropertiesMapper mapper;
   GoogleMapService googleMapService;
   ReviewRepository reviewRepository;
+  BookingValidationService bookingValidationService;
+  AmenitiesMapper amenitiesMapper;
 
   @Override
   @Transactional
@@ -441,6 +457,102 @@ public class PropertiesServiceImpl implements PropertiesService {
             .build())
         .data(page.getContent())
         .build();
+  }
+
+  @Override
+  public PropertyAvailableAccommodationBookingResponse checkAvailableAccommodationsBooking(
+      UUID id,
+      CheckAvailableAccommodationsBookingRequest request,
+      HttpServletResponse httpServletResponse
+  ) {
+    bookingValidationService.validateRequest(
+        request.checkIn(),
+        request.checkOut(),
+        request.adults(),
+        request.children()
+    );
+    Map<UUID, Integer> accommodationQuantities = getAccommodationQuantities(
+        request.accommodations()
+    );
+    log.info("Accommodation quantities: {}", accommodationQuantities);
+    List<CheckedAvailableAccommodationBookingResponse> availableAccommodationBooking = accommodationQuantities.entrySet()
+        .stream()
+        .map(v -> {
+              return availableRepository.checkAvailableAccommodation(
+                  v.getKey(),
+                  request.checkIn(),
+                  request.checkOut().minusDays(1),
+                  v.getValue(),
+                  (int) ChronoUnit.DAYS.between(
+                      request.checkIn(),
+                      request.checkOut()
+                  )
+              ).orElseThrow(() -> new AppException(ErrorCode.MESSAGE_NO_AVAILABLE_ACCOMMODATION));
+            }
+        ).toList();
+
+    Properties properties = repository.findById(id)
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            getEntityClass().getSimpleName()));
+    PropertiesBookingResponse propertiesBookingResponse = PropertiesBookingResponse.builder()
+        .id(properties.getId())
+        .name(properties.getName())
+        .description(properties.getDescription())
+        .address(properties.getAddress())
+        .ward(properties.getWard())
+        .district(properties.getDistrict())
+        .city(properties.getCity())
+        .province(properties.getProvince())
+        .country(properties.getCountry())
+        .rating(properties.getRating())
+        .totalRating(properties.getTotalRating())
+        .checkInTime(properties.getCheckInTime())
+        .checkOutTime(properties.getCheckOutTime())
+        .propertiesType(properties.getPropertyType().getName())
+        .amenities(
+            properties.getAmenities()
+                .stream()
+                .map(amenitiesMapper::toDtoResponse)
+                .collect(Collectors.toSet())
+        )
+        .build();
+
+    PropertyAvailableAccommodationBookingResponse res = PropertyAvailableAccommodationBookingResponse.builder()
+        .properties(propertiesBookingResponse)
+        .accommodations(availableAccommodationBooking)
+        .checkIn(request.checkIn())
+        .checkOut(request.checkOut())
+        .adults(request.adults())
+        .children(request.children())
+        .rooms(request.rooms())
+        .totalPrice(availableAccommodationBooking.stream()
+            .map(CheckedAvailableAccommodationBookingResponse::getTotalPrice)
+            .reduce(BigDecimal.ZERO, BigDecimal::add))
+        .build();
+
+    return res;
+  }
+
+  private Map<UUID, Integer> getAccommodationQuantities(
+      String... accommodations
+  ) {
+    Map<UUID, Integer> accommodationQuantities = new HashMap<>();
+    if (accommodations != null) {
+      for (String s : accommodations) {
+        Pattern pattern = Pattern.compile(SEARCH_OPERATOR);
+        Matcher matcher = pattern.matcher(s);
+
+        if (matcher.find()) {
+          accommodationQuantities.put(
+              UUID.fromString(matcher.group(1)),
+              Integer.parseInt(matcher.group(3))
+          );
+        } else {
+          log.warn("Invalid search parameter: {}", s);
+        }
+      }
+    }
+    return accommodationQuantities;
   }
 }
 

@@ -63,6 +63,7 @@ public class SecurityConfig {
       EndpointConstant.ENDPOINT_PROPERTY + "/{id}",
       EndpointConstant.ENDPOINT_PROPERTY + "/{id}/accommodations",
       EndpointConstant.ENDPOINT_PROPERTY + "/{id}/reviews",
+      EndpointConstant.ENDPOINT_PROPERTY + "/{id}/accommodations/available",
       EndpointConstant.ENDPOINT_PAYMENT + "/check-payment-status",
       EndpointConstant.ENDPOINT_LOCATION,
   };
