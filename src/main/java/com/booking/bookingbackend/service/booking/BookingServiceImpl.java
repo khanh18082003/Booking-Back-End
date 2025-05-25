@@ -26,7 +26,6 @@ import com.booking.bookingbackend.service.accommodation.AccommodationService;
 import com.booking.bookingbackend.service.price.PriceService;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
@@ -54,13 +53,20 @@ public class BookingServiceImpl implements BookingService {
   BookingMapper mapper;
   AccommodationService accommodationService;
   PriceService priceService;
+  BookingValidationService bookingValidationService;
+
   private final AbstractScriptDatabaseInitializer abstractScriptDatabaseInitializer;
 
   @Transactional
   @Override
   public BookingResponse book(BookingRequest request) {
     // Validate request
-    validateRequest(request);
+    bookingValidationService.validateRequest(
+        request.checkIn(),
+        request.checkOut(),
+        request.adults(),
+        request.children()
+    );
 
     // Check if the properties exist and available accommodations
     final var aAccommodations = request.accommodations().stream()
@@ -138,6 +144,10 @@ public class BookingServiceImpl implements BookingService {
             }
         ).toList();
     bookingDetailRepository.saveAll(bookingDetails);
+
+    // Create Payment
+
+    // Map the saved booking to response DTO
     BookingResponse response = mapper.toDtoResponse(savedBooking);
     if (savedBooking.getUser() != null) {
       Profile profile = savedBooking.getUser().getProfile();
@@ -167,18 +177,6 @@ public class BookingServiceImpl implements BookingService {
     return response;
   }
 
-  private void validateRequest(BookingRequest request) {
-    final var checkInDate = request.checkIn();
-    final var checkOutDate = request.checkOut();
-    final var currentDate = LocalDate.now();
-
-    if (checkInDate.isAfter(checkOutDate) || checkInDate.isBefore(currentDate)) {
-      throw new AppException(ErrorCode.MESSAGE_INVALID_CHECKIN_DATE);
-    }
-    if (request.adults() <= 0 || request.children() < 0) {
-      throw new AppException(ErrorCode.MESSAGE_INVALID_GUESTS);
-    }
-  }
 
   @Override
   public BookingResponse changeStatus(UUID id, BookingStatus status) {
