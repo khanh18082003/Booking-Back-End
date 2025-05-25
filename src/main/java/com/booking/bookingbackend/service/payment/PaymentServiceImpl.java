@@ -4,6 +4,7 @@ import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.PaymentMethod;
 import com.booking.bookingbackend.data.dto.request.PaymentRequest;
 import com.booking.bookingbackend.data.dto.response.PaymentResponse;
+import com.booking.bookingbackend.data.entity.Booking;
 import com.booking.bookingbackend.data.entity.Payment;
 import com.booking.bookingbackend.data.mapper.PaymentMapper;
 import com.booking.bookingbackend.data.repository.BookingRepository;
@@ -24,6 +25,7 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -38,19 +40,35 @@ public class PaymentServiceImpl implements PaymentService {
     PaymentMapper mapper;
     static String API_URL = "https://my.sepay.vn/userapi/transactions/list?";
     static String AUTHORIZATION_TOKEN = "Bearer CJPN4H68I7XSWHVPGNJ5CYU6H3UVZR24WS5NDT97EV0CXBFUXPFTLGACOM9IIQ1A";
+    static String ACCOUNT_NUMBER = "0396441431";
+    static String ACCOUNT_NAME = "NGUYEN THANH TAM";
 
     @Override
     public PaymentResponse save(PaymentRequest request) {
         Payment payment = mapper.toEntity(request);
-        payment.setBooking(bookingRepository.findById(request.BookingId())
-                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName())));
+        System.out.println("Booking Id: " + request.bookingId());
+        payment.setBooking(bookingRepository.findById(request.bookingId())
+                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , Booking.class.getSimpleName())));
+        String TransactionId = createTransactionId();
+        payment.setTransactionId(TransactionId);
+        payment.setStatus(false);
+        String qrImgSrc = "https://img.vietqr.io/image/970422-" + ACCOUNT_NUMBER
+                + "-compact2.png?amount=" + request.amount()
+                + "&addInfo=" + TransactionId
+                + "&accountName=" + ACCOUNT_NAME.replace(" ", "%20");
+        payment.setUrlImage(qrImgSrc);
         Payment savedPayment = repository.save(payment);
-        if (request.paymentMethod() == PaymentMethod.ONLINE) {
-            savedPayment.setStatus(true);
-        } else {
-            savedPayment.setStatus(false);
-        }
         return mapper.toDtoResponse(savedPayment);
+    }
+
+    private String createTransactionId() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder transactionId = new StringBuilder();
+        for (int i = 0; i < 7; i++) {
+            int randomIndex = (int) (Math.random() * chars.length());
+            transactionId.append(chars.charAt(randomIndex));
+        }
+        return transactionId.toString();
     }
 
     @Override
@@ -69,29 +87,30 @@ public class PaymentServiceImpl implements PaymentService {
         return mapper.toDtoResponse(updatedPayment);
     }
 
-    @Override
-    public boolean processPayment(UUID id, BigDecimal amount, String transactionId) {
-        long startTime = System.currentTimeMillis();
-        long timeout = 5 * 60 * 1000;
+//    @Override
+//    public boolean processPayment(UUID id, BigDecimal amount, String transactionId) {
+//        long startTime = System.currentTimeMillis();
+//        long timeout = 5 * 60 * 1000;
+//
+//        while (System.currentTimeMillis() - startTime < timeout) {
+//            try {
+//                if (checkPaymentOnlineStatus(amount.intValue(), transactionId)) {
+//                    System.out.println("Thanh toán thành công cho giao dịch: " + transactionId);
+//                    return true;
+//                }
+//                Thread.sleep(1000);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        }
+//
+//        System.out.println("Thanh toán thất bại hoặc hết thời gian cho giao dịch: " + transactionId);
+//        return false;
+//    }
 
-        while (System.currentTimeMillis() - startTime < timeout) {
-            try {
-                if (checkPaymentStatus(amount.intValue(), transactionId)) {
-                    System.out.println("Thanh toán thành công cho giao dịch: " + transactionId);
-                    return true;
-                }
-                Thread.sleep(1000);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        System.out.println("Thanh toán thất bại hoặc hết thời gian cho giao dịch: " + transactionId);
-        return false;
-    }
-
-    public boolean checkPaymentStatus(int expectedAmount, String expectedTransactionId) throws IOException {
+    public Boolean checkPaymentOnlineStatus(UUID id ,int expectedAmount, String expectedTransactionId) throws IOException {
         LocalDate localDate = LocalDate.now();
+
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String formattedDate = localDate.format(formatter);
         String apiUrl = API_URL + "transaction_date_min=" + formattedDate;
@@ -120,6 +139,11 @@ public class PaymentServiceImpl implements PaymentService {
             System.out.println("Transaction ID: " + transactionContent);
             System.out.println("Amount: " + amountIn);
             if (transactionContent.contains(expectedTransactionId) && amountIn == expectedAmount) {
+                Payment payment = repository.findById(id)
+                        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName()));
+                payment.setStatus(true);
+                payment.setPaidAt(new Timestamp(System.currentTimeMillis()));
+                repository.save(payment);
                 return true;
             }
         }

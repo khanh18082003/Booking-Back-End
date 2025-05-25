@@ -59,6 +59,9 @@ public class Payment extends UUIDJpaEntity {
   @Column(name = "paid_at", nullable = false)
   Timestamp paidAt;
 
+  @Column(name = "url_image", nullable = false)
+    String urlImage;
+
   @ToString.Exclude
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "booking_id", referencedColumnName = "id", nullable = false)

@@ -10,6 +10,7 @@ import lombok.experimental.FieldDefaults;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.UUID;
 
 @Builder
 @NoArgsConstructor
@@ -19,6 +20,8 @@ import java.sql.Timestamp;
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PaymentResponse implements Serializable {
+    @JsonProperty("id")
+    UUID id;
     @JsonProperty("amount")
     BigDecimal amount;
     @JsonProperty("payment_method")
@@ -29,6 +32,6 @@ public class PaymentResponse implements Serializable {
     String transactionId;
     @JsonProperty("paid_at")
     Timestamp paidAt;
-    @JsonProperty("booking")
-    Booking booking;
+    @JsonProperty("url_image")
+    String urlImage;
 }

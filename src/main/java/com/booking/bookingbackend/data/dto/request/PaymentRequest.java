@@ -1,6 +1,7 @@
 package com.booking.bookingbackend.data.dto.request;
 
 import com.booking.bookingbackend.constant.PaymentMethod;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -8,11 +9,15 @@ import java.util.UUID;
 
 public record PaymentRequest(
         BigDecimal amount,
+        @JsonProperty("payment_method")
         PaymentMethod paymentMethod,
         Boolean status,
+        @JsonProperty("transaction_id")
         String transactionId,
         String description,
+        @JsonProperty("paid_at")
         Timestamp paidAt,
-        UUID BookingId
-) implements java.io.Serializable{
+        @JsonProperty("booking_id")
+        UUID bookingId
+) {
 }

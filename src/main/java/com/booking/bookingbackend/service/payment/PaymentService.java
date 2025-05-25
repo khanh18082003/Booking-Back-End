@@ -20,6 +20,5 @@ public interface PaymentService extends BaseEntityService<UUID, Payment, Payment
     PaymentResponse getPayment(UUID id);
 
     PaymentResponse changStatus(UUID id, boolean status);
-    boolean processPayment(UUID id, BigDecimal amount, String transactionId);
-    boolean checkPaymentStatus(int expectedAmount, String expectedTransactionId) throws Exception;
+    Boolean checkPaymentOnlineStatus(UUID id ,int expectedAmount, String expectedTransactionId) throws Exception;
 }

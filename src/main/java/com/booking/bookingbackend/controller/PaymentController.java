@@ -25,8 +25,7 @@ import java.util.UUID;
 @Slf4j(topic = "PAYMENT-CONTROLLER")
 public class PaymentController {
     PaymentService paymentService;
-
-    @PostMapping("/save")
+    @PostMapping
     ApiResponse<PaymentResponse> save(
             @Valid @RequestBody PaymentRequest request
     ) {
@@ -64,6 +63,7 @@ public class PaymentController {
     }
     @GetMapping("/check-payment-status")
     ApiResponse<Boolean> checkPaymentStatus(
+            @RequestParam("id") UUID id,
             @RequestParam("expectedAmount") int expectedAmount,
             @RequestParam("expectedTransactionId") String expectedTransactionId
     ) throws Exception {
@@ -71,7 +71,7 @@ public class PaymentController {
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
                 .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-                .data(paymentService.checkPaymentStatus(expectedAmount, expectedTransactionId))
+                .data(paymentService.checkPaymentOnlineStatus(id,expectedAmount, expectedTransactionId))
                 .build();
     }
 }
