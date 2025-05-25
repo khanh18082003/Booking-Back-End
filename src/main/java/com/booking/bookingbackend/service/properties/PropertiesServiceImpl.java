@@ -517,7 +517,7 @@ public class PropertiesServiceImpl implements PropertiesService {
         )
         .build();
 
-    PropertyAvailableAccommodationBookingResponse res = PropertyAvailableAccommodationBookingResponse.builder()
+    return PropertyAvailableAccommodationBookingResponse.builder()
         .properties(propertiesBookingResponse)
         .accommodations(availableAccommodationBooking)
         .checkIn(request.checkIn())
@@ -529,8 +529,6 @@ public class PropertiesServiceImpl implements PropertiesService {
             .map(CheckedAvailableAccommodationBookingResponse::getTotalPrice)
             .reduce(BigDecimal.ZERO, BigDecimal::add))
         .build();
-
-    return res;
   }
 
   private Map<UUID, Integer> getAccommodationQuantities(

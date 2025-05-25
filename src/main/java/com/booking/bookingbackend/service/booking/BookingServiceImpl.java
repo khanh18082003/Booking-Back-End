@@ -4,9 +4,11 @@ import com.booking.bookingbackend.constant.BookingStatus;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.PaymentMethod;
 import com.booking.bookingbackend.data.dto.request.BookingRequest;
+import com.booking.bookingbackend.data.dto.request.PaymentRequest;
 import com.booking.bookingbackend.data.dto.response.AccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.BookingResponse;
-import com.booking.bookingbackend.data.dto.response.PaymentBookingResponse;
+import com.booking.bookingbackend.data.dto.response.PaymentResponse;
+import com.booking.bookingbackend.data.dto.response.PropertiesBookingResponse;
 import com.booking.bookingbackend.data.dto.response.UserBookingResponse;
 import com.booking.bookingbackend.data.entity.Booking;
 import com.booking.bookingbackend.data.entity.BookingDetail;
@@ -23,6 +25,7 @@ import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.accommodation.AccommodationService;
+import com.booking.bookingbackend.service.payment.PaymentService;
 import com.booking.bookingbackend.service.price.PriceService;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
@@ -54,6 +57,7 @@ public class BookingServiceImpl implements BookingService {
   AccommodationService accommodationService;
   PriceService priceService;
   BookingValidationService bookingValidationService;
+  PaymentService paymentService;
 
   private final AbstractScriptDatabaseInitializer abstractScriptDatabaseInitializer;
 
@@ -145,7 +149,15 @@ public class BookingServiceImpl implements BookingService {
         ).toList();
     bookingDetailRepository.saveAll(bookingDetails);
 
-    // Create Payment
+    // Create a payment if the payment method is cash
+    PaymentMethod paymentMethod = PaymentMethod.valueOf(request.paymentMethod());
+
+    PaymentRequest paymentRequest = PaymentRequest.builder()
+        .amount(totalPrice)
+        .paymentMethod(paymentMethod)
+        .bookingId(savedBooking.getId())
+        .build();
+    PaymentResponse paymentResponse = paymentService.save(paymentRequest);
 
     // Map the saved booking to response DTO
     BookingResponse response = mapper.toDtoResponse(savedBooking);
@@ -168,12 +180,25 @@ public class BookingServiceImpl implements BookingService {
           .country(guest.getCountry())
           .build());
     }
-    response.setPropertiesId(savedBooking.getProperties().getId());
-    response.setAccommodations(aAccommodations);
-    response.setPayment(PaymentBookingResponse.builder()
-        .status(false)
-        .paymentMethod(PaymentMethod.valueOf(request.paymentMethod()))
+    Properties properties = savedBooking.getProperties();
+    response.setProperties(PropertiesBookingResponse.builder()
+        .id(properties.getId())
+        .name(properties.getName())
+        .description(properties.getDescription())
+        .address(properties.getAddress())
+        .ward(properties.getWard())
+        .district(properties.getDistrict())
+        .city(properties.getCity())
+        .province(properties.getProvince())
+        .country(properties.getCountry())
+        .rating(properties.getRating())
+        .totalRating(properties.getTotalRating())
+        .checkInTime(properties.getCheckInTime())
+        .checkOutTime(properties.getCheckOutTime())
+        .propertiesType(properties.getPropertyType().getName())
         .build());
+    response.setAccommodations(aAccommodations);
+    response.setPayment(paymentResponse);
     return response;
   }
 
