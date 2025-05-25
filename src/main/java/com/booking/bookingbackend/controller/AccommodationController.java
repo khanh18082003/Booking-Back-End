@@ -14,15 +14,25 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -30,11 +40,12 @@ import java.util.UUID;
 @RequestMapping(EndpointConstant.ENDPOINT_ACCOMMODATION)
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
+@Slf4j(topic = "ACCOMMODATION-CONTROLLER")
 public class AccommodationController {
 
     AccommodationService accommodationService;
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
             summary = "Create Property",
@@ -91,12 +102,34 @@ public class AccommodationController {
                     )
             }
     )
-    ApiResponse<AccommodationResponse> create(@Valid @RequestBody AccommodationCreationRequest request) {
+    ApiResponse<AccommodationResponse> create(@RequestPart("request") @Valid AccommodationCreationRequest request,
+                                              @RequestPart(value = "extra_image", required = false) MultipartFile[] images) {
+        List<String> imageUrls= new ArrayList<>();
+        if (images != null) {
+            for (MultipartFile i : images) {
+                if (!i.isEmpty()) {
+                    try {
+                        String fileName = UUID.randomUUID() + "_" + i.getOriginalFilename();
+                        Path uploadPath = Paths.get("uploads/accommodation/", fileName);
+                        Files.createDirectories(uploadPath.getParent());
+                        Files.write(uploadPath, i.getBytes());
+                        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+                        String imageUrl = baseUrl + "/uploads/accommodation/" + fileName;
+                        imageUrls.add(imageUrl); // URL tương đối
+                    } catch (IOException e) {
+                        log.error("Lỗi khi lưu ảnh", e);
+                        throw new RuntimeException("Lỗi khi upload ảnh", e);
+                    }
+                }
+            }
+        }
+        AccommodationCreationRequest result=request.withExtraImages(imageUrls);
+
         return ApiResponse.<AccommodationResponse>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
                 .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-                .data(accommodationService.save(request))
+                .data(accommodationService.save(result))
                 .build();
     }
 

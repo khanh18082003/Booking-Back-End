@@ -10,6 +10,9 @@ spring:
     name: booking-back-end-service
   profiles:
     active: @spring.profiles.active@
+  web:
+    resources:
+      static-locations: file:uploads/
 
 management:
   endpoints:

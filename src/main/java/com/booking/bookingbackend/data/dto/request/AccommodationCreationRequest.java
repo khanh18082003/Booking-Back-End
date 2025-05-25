@@ -2,6 +2,8 @@ package com.booking.bookingbackend.data.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
+import lombok.With;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
@@ -15,6 +17,7 @@ public record AccommodationCreationRequest(
     @JsonProperty("total_units") Integer totalUnits,
     String description,
     @JsonProperty("extra_images")
+    @With
     List<String> extraImages,
     Float size,
     String unit,
