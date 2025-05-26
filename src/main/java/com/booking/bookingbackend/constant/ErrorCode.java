@@ -35,6 +35,8 @@ public enum ErrorCode {
   // Internal Server Error
   MESSAGE_INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "M0500"),
 
+
+  MESSAGE_USER_ALREADY_REGISTERED(HttpStatus.BAD_REQUEST, "M0501"),
   ;
 
 

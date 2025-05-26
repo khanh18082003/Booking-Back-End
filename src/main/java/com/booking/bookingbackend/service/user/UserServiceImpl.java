@@ -168,5 +168,12 @@ public class UserServiceImpl implements UserService {
     user.setPassword(passwordEncoder.encode(request.newPassword()));
     repository.save(user);
   }
+  public void AddRoleHost(UUID userId, String roleName) {
+    User user = repository.findById(userId)
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            getEntityClass().getSimpleName()));
+    user.getRoles().add(roleRepository.findByName(roleName));
+    repository.save(user);
+  }
 
 }

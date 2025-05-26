@@ -60,7 +60,8 @@ public class SecurityConfig {
             EndpointConstant.ENDPOINT_USER + "/forgot-password",
             EndpointConstant.ENDPOINT_USER + "/reset-password",
             EndpointConstant.ENDPOINT_PAYMENT,
-            EndpointConstant.ENDPOINT_BOOKING
+            EndpointConstant.ENDPOINT_BOOKING,
+            EndpointConstant.ENDPOINT_USER + "/host/check-email",
     };
     private static final String[] GET_LIST_API = {
             EndpointConstant.ENDPOINT_PROPERTY + "/search",

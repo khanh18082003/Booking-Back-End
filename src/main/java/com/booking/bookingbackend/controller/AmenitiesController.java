@@ -21,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -60,6 +61,7 @@ public class AmenitiesController {
                 .build();
     }
     @GetMapping
+    @PreAuthorize("hasRole('HOST')")
     ApiResponse<PaginationResponse<AmenitiesResponse>> findAll(
             @RequestParam(defaultValue = "1") int pageNo,
             @RequestParam(defaultValue = "20") int pageSize)

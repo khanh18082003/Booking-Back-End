@@ -30,4 +30,6 @@ public interface UserService extends BaseEntityService<
 
   void changePassword(ResetPasswordRequest request);
 
+  void AddRoleHost(UUID userId, String roleName);
+
 }
