@@ -30,7 +30,7 @@ public interface PropertiesService extends
       int pageNo,
       int pageSize,
       String[] filters,
-      String... sorts
+      String... sort
   );
 
   void changeStatus(UUID id);

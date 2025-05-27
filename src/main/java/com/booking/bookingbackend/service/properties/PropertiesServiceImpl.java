@@ -1,7 +1,6 @@
 package com.booking.bookingbackend.service.properties;
 
-import static com.booking.bookingbackend.constant.CommonConstant.SEARCH_OPERATOR;
-import static com.booking.bookingbackend.constant.CommonConstant.SORT_BY;
+import static com.booking.bookingbackend.constant.CommonConstant.ACCOMMODATION_ID;
 
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.ImageReferenceType;
@@ -30,6 +29,7 @@ import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.data.repository.PropertyTypeRepository;
 import com.booking.bookingbackend.data.repository.ReviewRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
+import com.booking.bookingbackend.data.repository.criteria.PropertiesRepositoryCustom;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.booking.BookingValidationService;
 import com.booking.bookingbackend.service.googlemap.GoogleMapService;
@@ -38,13 +38,13 @@ import com.booking.bookingbackend.util.SecurityUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.Tuple;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.sql.Time;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,13 +62,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.domain.Sort.Order;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 @Getter
 @Service
@@ -78,6 +74,7 @@ import org.springframework.util.StringUtils;
 public class PropertiesServiceImpl implements PropertiesService {
 
   PropertiesRepository repository;
+  PropertiesRepositoryCustom propertiesRepositoryCustom;
   UserRepository userRepository;
   PropertyTypeRepository propertyTypeRepository;
   AmenitiesRepository amenitiesRepository;
@@ -127,30 +124,28 @@ public class PropertiesServiceImpl implements PropertiesService {
       PropertiesSearchRequest request,
       int pageNo,
       int pageSize,
-      String[] filters,
-      String... sorts
+      String[] filters, // e.g., "amenities:pool", "type:apartment"
+      String... sort
   ) {
-    // sorts: [rating:asc, rating:desc]
-    List<Sort.Order> orders = new ArrayList<>();
-    if (sorts != null) {
-      for (String sortBy : sorts) {
-        if (StringUtils.hasLength(sortBy)) {
-          Pattern pattern = Pattern.compile(SORT_BY);
-          Matcher matcher = pattern.matcher(sortBy);
+    Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
 
-          if (matcher.find()) {
-            Direction direction = matcher.group(3).equalsIgnoreCase("asc")
-                ? Direction.ASC
-                : Direction.DESC;
-            orders.add(new Order(direction, matcher.group(1)));
-          } else {
-            log.warn("Invalid sort parameter: {}", sortBy);
-          }
+    String[] filteredSort = null;
+    String totalPriceDirection = null;
+    String ratingDirection = null;
+    if (sort != null) {
+      List<String> filteredSortList = new ArrayList<>();
+      for (String s : sort) {
+        if (s.startsWith("total_price")) {
+          // Extract direction for later use
+          totalPriceDirection = s.contains("desc") ? "desc" : "asc";
+        } else if (s.startsWith("rating")) {
+          ratingDirection = s.contains("desc") ? "desc" : "asc";
+        } else {
+          filteredSortList.add(s);
         }
       }
+      filteredSort = filteredSortList.isEmpty() ? null : filteredSortList.toArray(new String[0]);
     }
-
-    Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(orders));
 
     var startDate = request.startDate();
     var endDate = request.endDate();
@@ -161,7 +156,7 @@ public class PropertiesServiceImpl implements PropertiesService {
     double[] latLng = googleMapService.getLatLng(request.location());
     double[] transformedCoordinates = GeometryUtil.transformLatLong(latLng[1], latLng[0]);
 
-    List<Tuple> raw = repository.searchProperties(
+    List<Tuple> raw = propertiesRepositoryCustom.searchPropertiesCustom(
         transformedCoordinates[1],
         transformedCoordinates[0],
         request.radius(),
@@ -171,11 +166,13 @@ public class PropertiesServiceImpl implements PropertiesService {
         request.adults() + request.children(),
         request.adults(),
         request.children(),
-        request.rooms()
+        request.rooms(),
+        filters,
+        filteredSort
     );
 
     ObjectMapper objectMapper = new ObjectMapper();
-    List<PropertiesDTO> dtos = raw.stream().map(row -> {
+    List<PropertiesDTO> dtos = new ArrayList<>(raw.stream().map(row -> {
       try {
         List<AccommodationDTO> accommodations = objectMapper.readValue(
             row.get("accommodations", String.class),
@@ -212,12 +209,31 @@ public class PropertiesServiceImpl implements PropertiesService {
       } catch (Exception e) {
         throw new RuntimeException("Failed to map accommodations JSON", e);
       }
-    }).toList();
+    }).toList());
 
-    // You may optionally sort or filter further in Java
+    Comparator<PropertiesDTO> comparator = Comparator.comparing(p -> 0);
+    if (ratingDirection != null) {
+      comparator = Comparator
+          .comparing(
+              PropertiesDTO::rating,
+              ratingDirection.equals("desc")
+                  ? Comparator.reverseOrder()
+                  : Comparator.naturalOrder()
+          );
+    }
+    if (totalPriceDirection != null) {
+      Comparator<PropertiesDTO> priceComparator = Comparator
+          .comparing(
+              PropertiesDTO::totalPrice,
+              totalPriceDirection.equals("desc")
+                  ? Comparator.reverseOrder()
+                  : Comparator.naturalOrder()
+          );
+      comparator = comparator.thenComparing(priceComparator);
+    }
+    dtos.sort(comparator);
 
-    long total = raw.size(); // or call countQuery if accuracy needed
-    Page<PropertiesDTO> page = new PageImpl<>(dtos, pageable, total);
+    Page<PropertiesDTO> page = new PageImpl<>(dtos, pageable, raw.size());
 
     return PaginationResponse.<PropertiesDTO>builder()
         .meta(Meta.builder()
@@ -537,7 +553,7 @@ public class PropertiesServiceImpl implements PropertiesService {
     Map<UUID, Integer> accommodationQuantities = new HashMap<>();
     if (accommodations != null) {
       for (String s : accommodations) {
-        Pattern pattern = Pattern.compile(SEARCH_OPERATOR);
+        Pattern pattern = Pattern.compile(ACCOMMODATION_ID);
         Matcher matcher = pattern.matcher(s);
 
         if (matcher.find()) {

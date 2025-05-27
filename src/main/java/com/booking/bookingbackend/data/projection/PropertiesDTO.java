@@ -1,6 +1,7 @@
 package com.booking.bookingbackend.data.projection;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -31,6 +32,6 @@ public record PropertiesDTO(
     @JsonProperty("children")
     Long children,
     List<AccommodationDTO> accommodations
-) {
+) implements Serializable {
 
 }
