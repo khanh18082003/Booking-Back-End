@@ -155,7 +155,7 @@ public class PropertiesController {
       @RequestParam(name = "rooms") Integer rooms,
       @RequestParam(name = "pageNo", defaultValue = "1") int pageNo,
       @RequestParam(name = "pageSize", defaultValue = "20") int pageSize,
-      @RequestParam(name = "filter", required = false) String[] filter,
+      @RequestParam(name = "filters", required = false) String[] filters,
       @RequestParam(name = "sort", required = false) String... sort) {
     var request = PropertiesSearchRequest.builder()
         .location(location)
@@ -171,7 +171,7 @@ public class PropertiesController {
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .data(propertiesService.searchProperties(request, pageNo, pageSize, filter, sort))
+        .data(propertiesService.searchProperties(request, pageNo, pageSize, filters, sort))
         .build();
   }
 

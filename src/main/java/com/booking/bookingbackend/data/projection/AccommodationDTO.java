@@ -1,6 +1,7 @@
 package com.booking.bookingbackend.data.projection;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,6 +20,6 @@ public record AccommodationDTO(
     double totalPrice,
     @JsonProperty("bed_names")
     List<BedDTO> bedNames
-) {
+) implements Serializable {
 
 }

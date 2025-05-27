@@ -66,6 +66,7 @@ public class SecurityConfig {
       EndpointConstant.ENDPOINT_PROPERTY + "/{id}/accommodations/available",
       EndpointConstant.ENDPOINT_PAYMENT + "/check-payment-status",
       EndpointConstant.ENDPOINT_LOCATION,
+      EndpointConstant.ENDPOINT_AMENITIES + "/properties",
   };
 
   @Bean
