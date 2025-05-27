@@ -16,6 +16,7 @@ import com.booking.bookingbackend.data.dto.response.PropertyAvailableAccommodati
 import com.booking.bookingbackend.data.dto.response.ReviewResponse;
 import com.booking.bookingbackend.data.entity.Image;
 import com.booking.bookingbackend.data.entity.Properties;
+import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.mapper.AmenitiesMapper;
 import com.booking.bookingbackend.data.mapper.PropertiesMapper;
 import com.booking.bookingbackend.data.projection.AccommodationDTO;
@@ -92,7 +93,13 @@ public class PropertiesServiceImpl implements PropertiesService {
   public PropertiesResponse save(PropertiesRequest request) {
     Properties properties = mapper.toEntity(request);
 
-    properties.setHost(SecurityUtil.getCurrentUser());
+    User host = SecurityUtil.getCurrentUser();
+    if (host == null) {
+      throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
+    }
+    properties.setHost(userRepository.findById(host.getId())
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            User.class.getSimpleName())));
 
     properties.setPropertyType(propertyTypeRepository.findById(request.typeId())
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
@@ -105,7 +112,8 @@ public class PropertiesServiceImpl implements PropertiesService {
       Point geom = GeometryUtil.toWebMercator(request.longitude(), request.latitude());
       properties.setGeom(geom);
     }
-    Properties savedProperties = repository.save(properties);
+
+    PropertiesResponse response = mapper.toDtoResponse(repository.save(properties));
     // Save extra-images
     List<Image> imageList = request.extraImages().stream()
         .map(url -> Image.builder()
@@ -115,7 +123,7 @@ public class PropertiesServiceImpl implements PropertiesService {
             .build()).toList();
     imageRepository.saveAll(imageList);
 
-    return mapper.toDtoResponse(savedProperties);
+    return response;
   }
 
 

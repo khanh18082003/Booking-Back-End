@@ -23,7 +23,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,7 +39,17 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -55,7 +64,7 @@ public class PropertiesController {
   GoogleMapService googleMapService;
   private final AccommodationService accommodationService;
 
-  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
       summary = "Create Property",
@@ -113,9 +122,9 @@ public class PropertiesController {
       }
   )
   public ApiResponse<PropertiesResponse> save(
-          @RequestPart("request") @Valid PropertiesRequest request,
-          @RequestPart(value = "image", required = false) MultipartFile image,
-          @RequestPart(value = "extra_image", required = false) MultipartFile[] images
+      @RequestPart("request") @Valid PropertiesRequest request,
+      @RequestPart(value = "image", required = false) MultipartFile image,
+      @RequestPart(value = "extra_image", required = false) MultipartFile[] images
   ) {
     StringBuilder address = new StringBuilder();
     address.append(request.name()).append(", ");
@@ -137,7 +146,7 @@ public class PropertiesController {
 
     log.info("Address: {}", address);
     var location = googleMapService.getLatLng(address.toString());
-    String fileName=UUID.randomUUID() + "_" + image.getOriginalFilename();
+    String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
     Path uploadPath = Paths.get("uploads/properties/", fileName);
     try {
       Files.createDirectories(uploadPath.getParent());
@@ -159,7 +168,8 @@ public class PropertiesController {
             uploadPath = Paths.get("uploads/properties/", fileName);
             Files.createDirectories(uploadPath.getParent());
             Files.write(uploadPath, i.getBytes());
-            String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+            String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build()
+                .toUriString();
             String imageUrl = baseUrl + "/uploads/properties/" + fileName;
             imageUrls.add(imageUrl); // URL tương đối
           } catch (IOException e) {
@@ -172,16 +182,16 @@ public class PropertiesController {
     log.info("Image URLs: {}", imageUrls);
     // ✅ Gắn toạ độ và image vào request mới
     PropertiesRequest latLngRequest = request
-            .withLatitude(location[0])
-            .withLongitude(location[1])
-            .withExtraImages(imageUrls);  // Phần duy nhất được cập nhật thêm
+        .withLatitude(location[0])
+        .withLongitude(location[1])
+        .withExtraImages(imageUrls);  // Phần duy nhất được cập nhật thêm
     log.info("Properties Request: {}", latLngRequest);
     return ApiResponse.<PropertiesResponse>builder()
-            .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-            .status(HttpStatus.OK.value())
-            .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-            .data(propertiesService.save(latLngRequest))
-            .build();
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(propertiesService.save(latLngRequest))
+        .build();
   }
 
 
@@ -318,7 +328,8 @@ public class PropertiesController {
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .data(propertiesService.checkAvailableAccommodationsBooking(id, request, httpServletResponse))
+        .data(
+            propertiesService.checkAvailableAccommodationsBooking(id, request, httpServletResponse))
         .build();
   }
 }
