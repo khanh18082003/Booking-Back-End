@@ -1,14 +1,12 @@
-package com.booking.bookingbackend.controller;
+package com.booking.bookingbackend.controller.host;
 
 import com.booking.bookingbackend.configuration.Translator;
 import com.booking.bookingbackend.constant.CommonConstant;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.AuthenticationRequest;
-import com.booking.bookingbackend.data.dto.request.CheckExistEmailRequest;
 import com.booking.bookingbackend.data.dto.request.LogoutRequest;
 import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
-import com.booking.bookingbackend.data.dto.request.VerificationEmailRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
 import com.booking.bookingbackend.service.authentication.AuthenticationService;
@@ -34,22 +32,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_AUTH)
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
-@Slf4j(topic = "AUTHENTICATION-CONTROLLER")
-public class AuthenticationController {
+@Slf4j(topic = "AUTHENTICATION-HOST-CONTROLLER")
+public class AuthenticationHostController {
 
   AuthenticationService authenticationService;
   UserService userService;
 
-  public AuthenticationController(
-      @Qualifier("authenticationServiceImpl") AuthenticationService authenticationService,
-      UserService userService) {
+  public AuthenticationHostController(
+      @Qualifier("authenticationHostServiceImpl") AuthenticationService authenticationService,
+      UserService userService
+  ) {
     this.authenticationService = authenticationService;
     this.userService = userService;
   }
 
-  @PostMapping("/login")
+  @PostMapping("/host/login")
   @Operation(
-      summary = "Authenticate user",
+      summary = "Authenticate user has role HOST",
       description = "Authenticate user when user login",
       responses = {
           @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -73,7 +72,7 @@ public class AuthenticationController {
                               """))),
       }
   )
-  ApiResponse<AuthenticationResponse> login(
+  ApiResponse<AuthenticationResponse> loginHost(
       @Valid @RequestBody AuthenticationRequest request,
       HttpServletResponse response
   ) throws MessagingException, UnsupportedEncodingException {
@@ -86,7 +85,7 @@ public class AuthenticationController {
         .build();
   }
 
-  @PostMapping("/logout")
+  @PostMapping("/host/logout")
   @Operation(
       summary = "Log out account",
       description = "Log out",
@@ -127,25 +126,18 @@ public class AuthenticationController {
       @Valid @RequestBody LogoutRequest logoutRequest,
       HttpServletRequest req,
       HttpServletResponse res) {
-    try {
-      authenticationService.logout(logoutRequest, req, res);
-      log.info("User logged out successfully");
-      return ApiResponse.<Void>builder()
-          .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-          .status(HttpStatus.OK.value())
-          .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-          .build();
-    } catch (Exception e) {
-      log.error("Error during logout: {}", e.getMessage());
-      return ApiResponse.<Void>builder()
-          .code(ErrorCode.MESSAGE_UN_AUTHENTICATION.getErrorCode())
-          .status(HttpStatus.UNAUTHORIZED.value())
-          .message(Translator.toLocale(ErrorCode.MESSAGE_UN_AUTHENTICATION.getErrorCode()))
-          .build();
-    }
+
+    authenticationService.logout(logoutRequest, req, res);
+    log.info("User logged out successfully");
+    return ApiResponse.<Void>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .build();
+
   }
 
-  @PostMapping("/refresh-token")
+  @PostMapping("/host/refresh-token")
   @Operation(
       summary = "Generate a new access token",
       description = "Generates a new access token using the refresh token provided by the user",
@@ -193,104 +185,5 @@ public class AuthenticationController {
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .data(authenticationService.refreshToken(refreshTokenRequest, req))
         .build();
-  }
-
-  @PostMapping("/verify-email")
-  @Operation(
-      summary = "Verify Email",
-      description = "Verifies the email using the provided verification code",
-      responses = {
-          @io.swagger.v3.oas.annotations.responses.ApiResponse(
-              responseCode = CommonConstant.MESSAGE_OK,
-              description = "Email verified successfully",
-              content =
-              @Content(
-                  examples =
-                  @ExampleObject(
-                      value =
-                          """
-                              {
-                                "code": "M000",
-                                "status": "200",
-                                "message": "Success"
-                              }
-                              """))),
-          @io.swagger.v3.oas.annotations.responses.ApiResponse(
-              responseCode = CommonConstant.MESSAGE_BAD_REQUEST,
-              description = "Verification code is invalid or expired",
-              content =
-              @Content(
-                  examples =
-                  @ExampleObject(
-                      value =
-                          """
-                              {
-                                "code": "M0401",
-                                "status": "401",
-                                "message": "Unauthorized"
-                              }
-                              """)))
-      }
-  )
-  ApiResponse<Void> verifyMail(@Valid @RequestBody VerificationEmailRequest request) {
-    log.info("Verifying email: {}", request.code());
-    authenticationService.verifyTokenEmail(request);
-
-    userService.activeUser(request.email());
-
-    return ApiResponse.<Void>builder()
-        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-        .status(HttpStatus.OK.value())
-        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .build();
-  }
-
-  @PostMapping("/check-exist-email")
-  @Operation(
-      summary = "Check if email exists",
-      description = "Check if the email already exists in the system",
-      responses = {
-          @io.swagger.v3.oas.annotations.responses.ApiResponse(
-              responseCode = CommonConstant.MESSAGE_OK,
-              description = "Email exists",
-              content =
-              @Content(
-                  examples =
-                  @ExampleObject(
-                      value =
-                          """
-                              {
-                                  "code": "M000",
-                                  "status": "200",
-                                  "message": "Success"
-                              }
-                              """))),
-          @io.swagger.v3.oas.annotations.responses.ApiResponse(
-              responseCode = CommonConstant.MESSAGE_NOT_FOUND,
-              description = "Email does not exist",
-              content =
-              @Content(
-                  examples =
-                  @ExampleObject(
-                      value =
-                          """
-                              {
-                                  "code": "M0404",
-                                  "status": "404",
-                                  "message": "Not Found"
-                              }
-                              """)))
-      }
-  )
-  ApiResponse<Void> checkExistEmail(@Valid @RequestBody CheckExistEmailRequest request) {
-    String email = request.email();
-    userService.findByEmail(email);
-    return ApiResponse.<Void>builder()
-        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-        .status(HttpStatus.OK.value())
-        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .build();
-
-
   }
 }

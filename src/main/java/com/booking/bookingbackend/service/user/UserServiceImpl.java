@@ -77,10 +77,8 @@ public class UserServiceImpl implements UserService {
     return mapper.toDtoResponse(
         repository
             .findByEmail(email)
-            .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-                getEntityClass().getSimpleName())
-
-            ));
+            .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_USER_NOT_FOUND))
+    );
   }
 
   @Override
@@ -156,7 +154,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public void changePassword(ResetPasswordRequest request) {
     Optional<RedisVerificationCode> redisCodeOpt = verificationCodeRepository.findById(
-            request.email());
+        request.email());
 //    log.info("Redis code: {}", redisCodeOpt.get().getCode());
     if (redisCodeOpt.isPresent()) {
       log.error("Token not found");
@@ -168,6 +166,7 @@ public class UserServiceImpl implements UserService {
     user.setPassword(passwordEncoder.encode(request.newPassword()));
     repository.save(user);
   }
+
   public void AddRoleHost(UUID userId, String roleName) {
     User user = repository.findById(userId)
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
