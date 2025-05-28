@@ -61,10 +61,6 @@ public class PaymentServiceImpl implements PaymentService {
       payment.setUrlImage(qrImgSrc);
     }
 
-    Payment savedPayment = repository.save(payment);
-    return mapper.toDtoResponse(savedPayment);
-  }
-
   private String createTransactionId() {
     String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     StringBuilder transactionId = new StringBuilder();
@@ -92,69 +88,46 @@ public class PaymentServiceImpl implements PaymentService {
     Payment updatedPayment = repository.save(payment);
     return mapper.toDtoResponse(updatedPayment);
   }
+    public Boolean checkPaymentOnlineStatus(UUID id ,int expectedAmount, String expectedTransactionId) throws IOException {
+        LocalDate localDate = LocalDate.now();
 
-//    @Override
-//    public boolean processPayment(UUID id, BigDecimal amount, String transactionId) {
-//        long startTime = System.currentTimeMillis();
-//        long timeout = 5 * 60 * 1000;
-//
-//        while (System.currentTimeMillis() - startTime < timeout) {
-//            try {
-//                if (checkPaymentOnlineStatus(amount.intValue(), transactionId)) {
-//                    System.out.println("Thanh toán thành công cho giao dịch: " + transactionId);
-//                    return true;
-//                }
-//                Thread.sleep(1000);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        System.out.println("Thanh toán thất bại hoặc hết thời gian cho giao dịch: " + transactionId);
-//        return false;
-//    }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formattedDate = localDate.format(formatter);
+        String apiUrl = API_URL + "transaction_date_min=" + formattedDate;
 
-  public Boolean checkPaymentOnlineStatus(UUID id, int expectedAmount, String expectedTransactionId)
-      throws IOException {
-    LocalDate localDate = LocalDate.now();
+        URL url = new URL(apiUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Authorization", AUTHORIZATION_TOKEN);
+        connection.setRequestProperty("Content-Type", "application/json");
 
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    String formattedDate = localDate.format(formatter);
-    String apiUrl = API_URL + "transaction_date_min=" + formattedDate;
+        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        String inputLine;
+        StringBuilder response = new StringBuilder();
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        in.close();
 
-    URL url = new URL(apiUrl);
-    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-    connection.setRequestMethod("GET");
-    connection.setRequestProperty("Authorization", AUTHORIZATION_TOKEN);
-    connection.setRequestProperty("Content-Type", "application/json");
+        JSONObject jsonObject = new JSONObject(response.toString());
+        JSONArray transactions = jsonObject.getJSONArray("transactions");
 
-    BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-    String inputLine;
-    StringBuilder response = new StringBuilder();
-    while ((inputLine = in.readLine()) != null) {
-      response.append(inputLine);
-    }
-    in.close();
+        for (int i = 0; i < transactions.length(); i++) {
+            JSONObject transaction = transactions.getJSONObject(i);
+            String transactionContent = transaction.getString("transaction_content").trim();
+            int amountIn = (int) Float.parseFloat(transaction.getString("amount_in"));
+            System.out.println("Transaction ID: " + transactionContent);
+            System.out.println("Amount: " + amountIn);
+            if (transactionContent.contains(expectedTransactionId) && amountIn == expectedAmount) {
+                Payment payment = repository.findById(id)
+                        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName()));
+                payment.setStatus(true);
+                payment.setPaidAt(new Timestamp(System.currentTimeMillis()));
+                repository.save(payment);
 
-    JSONObject jsonObject = new JSONObject(response.toString());
-    JSONArray transactions = jsonObject.getJSONArray("transactions");
-
-    for (int i = 0; i < transactions.length(); i++) {
-      JSONObject transaction = transactions.getJSONObject(i);
-      String transactionContent = transaction.getString("transaction_content").trim();
-      int amountIn = (int) Float.parseFloat(transaction.getString("amount_in"));
-      System.out.println("Transaction ID: " + transactionContent);
-      System.out.println("Amount: " + amountIn);
-      if (transactionContent.contains(expectedTransactionId) && amountIn == expectedAmount) {
-        Payment payment = repository.findById(id)
-            .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-                getEntityClass().getSimpleName()));
-        payment.setStatus(true);
-        payment.setPaidAt(new Timestamp(System.currentTimeMillis()));
-        repository.save(payment);
-        return true;
-      }
-    }
-    return false;
+                return true;
+            }
+        }
+        return false;
   }
 }

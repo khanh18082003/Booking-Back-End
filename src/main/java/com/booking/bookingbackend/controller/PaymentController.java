@@ -49,18 +49,6 @@ public class PaymentController {
                 .build();
     }
 
-    @PostMapping("/change-status")
-    ApiResponse<PaymentResponse> changeStatus(
-            @Valid @RequestBody UUID id,
-            @Valid @RequestBody Boolean status
-    ) {
-        return ApiResponse.<PaymentResponse>builder()
-                .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-                .status(HttpStatus.OK.value())
-                .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-                .data(paymentService.changStatus(id, status))
-                .build();
-    }
     @GetMapping("/check-payment-status")
     ApiResponse<Boolean> checkPaymentStatus(
             @RequestParam("id") UUID id,
