@@ -43,10 +43,9 @@ public class BookingResponse implements Serializable {
   BookingStatus status;
   @JsonProperty("user_booking")
   UserBookingResponse userBooking;
-  @JsonProperty("properties_id")
-  UUID propertiesId;
+  PropertiesBookingResponse properties;
   List<AccommodationBookingResponse> accommodations;
-  PaymentBookingResponse payment;
+  PaymentResponse payment;
   @JsonProperty("created_at")
   Timestamp createdAt;
   @JsonProperty("updated_at")

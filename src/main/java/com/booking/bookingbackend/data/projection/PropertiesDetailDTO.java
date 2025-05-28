@@ -1,6 +1,7 @@
 package com.booking.bookingbackend.data.projection;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.List;
@@ -27,6 +28,6 @@ public record PropertiesDetailDTO(
     List<AmenityDTO> amenities,
     @JsonProperty("image_urls")
     List<String> imageUrls
-) {
+) implements Serializable {
 
 }

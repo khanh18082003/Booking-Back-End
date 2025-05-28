@@ -6,7 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.UUID;
+import lombok.Builder;
 
+@Builder
 public record PaymentRequest(
         BigDecimal amount,
         @JsonProperty("payment_method")

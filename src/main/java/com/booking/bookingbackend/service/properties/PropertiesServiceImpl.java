@@ -1,44 +1,58 @@
 package com.booking.bookingbackend.service.properties;
 
-import static com.booking.bookingbackend.constant.CommonConstant.SORT_BY;
+import static com.booking.bookingbackend.constant.CommonConstant.ACCOMMODATION_ID;
 
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.ImageReferenceType;
+import com.booking.bookingbackend.data.dto.request.CheckAvailableAccommodationsBookingRequest;
 import com.booking.bookingbackend.data.dto.request.PropertiesRequest;
 import com.booking.bookingbackend.data.dto.request.PropertiesSearchRequest;
+import com.booking.bookingbackend.data.dto.response.CheckedAvailableAccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.Meta;
 import com.booking.bookingbackend.data.dto.response.PaginationResponse;
+import com.booking.bookingbackend.data.dto.response.PropertiesBookingResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
+import com.booking.bookingbackend.data.dto.response.PropertyAvailableAccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.ReviewResponse;
 import com.booking.bookingbackend.data.entity.Image;
 import com.booking.bookingbackend.data.entity.Properties;
+import com.booking.bookingbackend.data.entity.User;
+import com.booking.bookingbackend.data.mapper.AmenitiesMapper;
 import com.booking.bookingbackend.data.mapper.PropertiesMapper;
 import com.booking.bookingbackend.data.projection.AccommodationDTO;
 import com.booking.bookingbackend.data.projection.AmenityDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDetailDTO;
 import com.booking.bookingbackend.data.repository.AmenitiesRepository;
+import com.booking.bookingbackend.data.repository.AvailableRepository;
 import com.booking.bookingbackend.data.repository.ImageRepository;
 import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.data.repository.PropertyTypeRepository;
 import com.booking.bookingbackend.data.repository.ReviewRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
+import com.booking.bookingbackend.data.repository.criteria.PropertiesRepositoryCustom;
 import com.booking.bookingbackend.exception.AppException;
+import com.booking.bookingbackend.service.booking.BookingValidationService;
 import com.booking.bookingbackend.service.googlemap.GoogleMapService;
 import com.booking.bookingbackend.util.GeometryUtil;
 import com.booking.bookingbackend.util.SecurityUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.Tuple;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.sql.Time;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -49,13 +63,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.domain.Sort.Order;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 @Getter
 @Service
@@ -65,13 +75,17 @@ import org.springframework.util.StringUtils;
 public class PropertiesServiceImpl implements PropertiesService {
 
   PropertiesRepository repository;
+  PropertiesRepositoryCustom propertiesRepositoryCustom;
   UserRepository userRepository;
   PropertyTypeRepository propertyTypeRepository;
   AmenitiesRepository amenitiesRepository;
   ImageRepository imageRepository;
+  AvailableRepository availableRepository;
   PropertiesMapper mapper;
   GoogleMapService googleMapService;
   ReviewRepository reviewRepository;
+  BookingValidationService bookingValidationService;
+  AmenitiesMapper amenitiesMapper;
 
   @Override
   @Transactional
@@ -79,7 +93,13 @@ public class PropertiesServiceImpl implements PropertiesService {
   public PropertiesResponse save(PropertiesRequest request) {
     Properties properties = mapper.toEntity(request);
 
-    properties.setHost(SecurityUtil.getCurrentUser());
+    User host = SecurityUtil.getCurrentUser();
+    if (host == null) {
+      throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
+    }
+    properties.setHost(userRepository.findById(host.getId())
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            User.class.getSimpleName())));
 
     properties.setPropertyType(propertyTypeRepository.findById(request.typeId())
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
@@ -92,7 +112,8 @@ public class PropertiesServiceImpl implements PropertiesService {
       Point geom = GeometryUtil.toWebMercator(request.longitude(), request.latitude());
       properties.setGeom(geom);
     }
-    Properties savedProperties = repository.save(properties);
+
+    PropertiesResponse response = mapper.toDtoResponse(repository.save(properties));
     // Save extra-images
     List<Image> imageList = request.extraImages().stream()
         .map(url -> Image.builder()
@@ -102,7 +123,7 @@ public class PropertiesServiceImpl implements PropertiesService {
             .build()).toList();
     imageRepository.saveAll(imageList);
 
-    return mapper.toDtoResponse(savedProperties);
+    return response;
   }
 
 
@@ -111,30 +132,28 @@ public class PropertiesServiceImpl implements PropertiesService {
       PropertiesSearchRequest request,
       int pageNo,
       int pageSize,
-      String[] filters,
-      String... sorts
+      String[] filters, // e.g., "amenities:pool", "type:apartment"
+      String... sort
   ) {
-    // sorts: [rating:asc, rating:desc]
-    List<Sort.Order> orders = new ArrayList<>();
-    if (sorts != null) {
-      for (String sortBy : sorts) {
-        if (StringUtils.hasLength(sortBy)) {
-          Pattern pattern = Pattern.compile(SORT_BY);
-          Matcher matcher = pattern.matcher(sortBy);
+    Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
 
-          if (matcher.find()) {
-            Direction direction = matcher.group(3).equalsIgnoreCase("asc")
-                ? Direction.ASC
-                : Direction.DESC;
-            orders.add(new Order(direction, matcher.group(1)));
-          } else {
-            log.warn("Invalid sort parameter: {}", sortBy);
-          }
+    String[] filteredSort = null;
+    String totalPriceDirection = null;
+    String ratingDirection = null;
+    if (sort != null) {
+      List<String> filteredSortList = new ArrayList<>();
+      for (String s : sort) {
+        if (s.startsWith("total_price")) {
+          // Extract direction for later use
+          totalPriceDirection = s.contains("desc") ? "desc" : "asc";
+        } else if (s.startsWith("rating")) {
+          ratingDirection = s.contains("desc") ? "desc" : "asc";
+        } else {
+          filteredSortList.add(s);
         }
       }
+      filteredSort = filteredSortList.isEmpty() ? null : filteredSortList.toArray(new String[0]);
     }
-
-    Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(orders));
 
     var startDate = request.startDate();
     var endDate = request.endDate();
@@ -145,7 +164,7 @@ public class PropertiesServiceImpl implements PropertiesService {
     double[] latLng = googleMapService.getLatLng(request.location());
     double[] transformedCoordinates = GeometryUtil.transformLatLong(latLng[1], latLng[0]);
 
-    List<Tuple> raw = repository.searchProperties(
+    List<Tuple> raw = propertiesRepositoryCustom.searchPropertiesCustom(
         transformedCoordinates[1],
         transformedCoordinates[0],
         request.radius(),
@@ -155,11 +174,13 @@ public class PropertiesServiceImpl implements PropertiesService {
         request.adults() + request.children(),
         request.adults(),
         request.children(),
-        request.rooms()
+        request.rooms(),
+        filters,
+        filteredSort
     );
 
     ObjectMapper objectMapper = new ObjectMapper();
-    List<PropertiesDTO> dtos = raw.stream().map(row -> {
+    List<PropertiesDTO> dtos = new ArrayList<>(raw.stream().map(row -> {
       try {
         List<AccommodationDTO> accommodations = objectMapper.readValue(
             row.get("accommodations", String.class),
@@ -196,12 +217,31 @@ public class PropertiesServiceImpl implements PropertiesService {
       } catch (Exception e) {
         throw new RuntimeException("Failed to map accommodations JSON", e);
       }
-    }).toList();
+    }).toList());
 
-    // You may optionally sort or filter further in Java
+    Comparator<PropertiesDTO> comparator = Comparator.comparing(p -> 0);
+    if (ratingDirection != null) {
+      comparator = Comparator
+          .comparing(
+              PropertiesDTO::rating,
+              ratingDirection.equals("desc")
+                  ? Comparator.reverseOrder()
+                  : Comparator.naturalOrder()
+          );
+    }
+    if (totalPriceDirection != null) {
+      Comparator<PropertiesDTO> priceComparator = Comparator
+          .comparing(
+              PropertiesDTO::totalPrice,
+              totalPriceDirection.equals("desc")
+                  ? Comparator.reverseOrder()
+                  : Comparator.naturalOrder()
+          );
+      comparator = comparator.thenComparing(priceComparator);
+    }
+    dtos.sort(comparator);
 
-    long total = raw.size(); // or call countQuery if accuracy needed
-    Page<PropertiesDTO> page = new PageImpl<>(dtos, pageable, total);
+    Page<PropertiesDTO> page = new PageImpl<>(dtos, pageable, raw.size());
 
     return PaginationResponse.<PropertiesDTO>builder()
         .meta(Meta.builder()
@@ -441,6 +481,100 @@ public class PropertiesServiceImpl implements PropertiesService {
             .build())
         .data(page.getContent())
         .build();
+  }
+
+  @Override
+  public PropertyAvailableAccommodationBookingResponse checkAvailableAccommodationsBooking(
+      UUID id,
+      CheckAvailableAccommodationsBookingRequest request,
+      HttpServletResponse httpServletResponse
+  ) {
+    bookingValidationService.validateRequest(
+        request.checkIn(),
+        request.checkOut(),
+        request.adults(),
+        request.children()
+    );
+    Map<UUID, Integer> accommodationQuantities = getAccommodationQuantities(
+        request.accommodations()
+    );
+    log.info("Accommodation quantities: {}", accommodationQuantities);
+    List<CheckedAvailableAccommodationBookingResponse> availableAccommodationBooking = accommodationQuantities.entrySet()
+        .stream()
+        .map(v -> {
+              return availableRepository.checkAvailableAccommodation(
+                  v.getKey(),
+                  request.checkIn(),
+                  request.checkOut().minusDays(1),
+                  v.getValue(),
+                  (int) ChronoUnit.DAYS.between(
+                      request.checkIn(),
+                      request.checkOut()
+                  )
+              ).orElseThrow(() -> new AppException(ErrorCode.MESSAGE_NO_AVAILABLE_ACCOMMODATION));
+            }
+        ).toList();
+
+    Properties properties = repository.findById(id)
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            getEntityClass().getSimpleName()));
+    PropertiesBookingResponse propertiesBookingResponse = PropertiesBookingResponse.builder()
+        .id(properties.getId())
+        .name(properties.getName())
+        .description(properties.getDescription())
+        .address(properties.getAddress())
+        .ward(properties.getWard())
+        .district(properties.getDistrict())
+        .city(properties.getCity())
+        .province(properties.getProvince())
+        .country(properties.getCountry())
+        .rating(properties.getRating())
+        .totalRating(properties.getTotalRating())
+        .checkInTime(properties.getCheckInTime())
+        .checkOutTime(properties.getCheckOutTime())
+        .propertiesType(properties.getPropertyType().getName())
+        .amenities(
+            properties.getAmenities()
+                .stream()
+                .map(amenitiesMapper::toDtoResponse)
+                .collect(Collectors.toSet())
+        )
+        .build();
+
+    return PropertyAvailableAccommodationBookingResponse.builder()
+        .properties(propertiesBookingResponse)
+        .accommodations(availableAccommodationBooking)
+        .checkIn(request.checkIn())
+        .checkOut(request.checkOut())
+        .adults(request.adults())
+        .children(request.children())
+        .rooms(request.rooms())
+        .totalPrice(availableAccommodationBooking.stream()
+            .map(CheckedAvailableAccommodationBookingResponse::getTotalPrice)
+            .reduce(BigDecimal.ZERO, BigDecimal::add))
+        .build();
+  }
+
+  private Map<UUID, Integer> getAccommodationQuantities(
+      String... accommodations
+  ) {
+    Map<UUID, Integer> accommodationQuantities = new HashMap<>();
+    if (accommodations != null) {
+      for (String s : accommodations) {
+        Pattern pattern = Pattern.compile(ACCOMMODATION_ID);
+        Matcher matcher = pattern.matcher(s);
+
+        if (matcher.find()) {
+          accommodationQuantities.put(
+              UUID.fromString(matcher.group(1)),
+              Integer.parseInt(matcher.group(3))
+          );
+        } else {
+          log.warn("Invalid search parameter: {}", s);
+        }
+      }
+    }
+    return accommodationQuantities;
   }
 }
 

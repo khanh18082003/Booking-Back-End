@@ -4,11 +4,14 @@ import com.booking.bookingbackend.configuration.Translator;
 import com.booking.bookingbackend.constant.CommonConstant;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
+import com.booking.bookingbackend.constant.UserRole;
+import com.booking.bookingbackend.data.dto.request.CheckExistEmailRequest;
 import com.booking.bookingbackend.data.dto.request.ForgotPasswordRequest;
 import com.booking.bookingbackend.data.dto.request.ResetPasswordRequest;
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.ProfileResponse;
+import com.booking.bookingbackend.data.dto.response.RoleResponse;
 import com.booking.bookingbackend.data.dto.response.UserProfileDto;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
 import com.booking.bookingbackend.service.mail.MailService;
@@ -176,6 +179,32 @@ public class UserController {
     return ApiResponse.<Void>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .build();
+  }
+
+  @PostMapping("/host/check-email")
+  ApiResponse<Void> createHost(
+      @Valid @RequestBody CheckExistEmailRequest request) {
+    UserResponse user = userService.findByEmail(request.email().strip());
+    // Kiểm tra trong user có role host chưa
+    String[] rolesNames = user.getRoles().stream()
+        .map(RoleResponse::getName)
+        .toArray(String[]::new);
+    for (String roleName : rolesNames) {
+      if (roleName.equals("HOST")) {
+        return ApiResponse.<Void>builder()
+            .code(ErrorCode.MESSAGE_USER_ALREADY_REGISTERED.getErrorCode())
+            .status(HttpStatus.BAD_REQUEST.value())
+            .message(Translator.toLocale(ErrorCode.MESSAGE_USER_ALREADY_REGISTERED.getErrorCode()))
+            .build();
+      }
+    }
+    // Nếu chưa có role host, tiến hành tạo mới
+    userService.AddRoleHost(user.getId(), UserRole.HOST.name());
+    return ApiResponse.<Void>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.CREATED.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .build();
   }

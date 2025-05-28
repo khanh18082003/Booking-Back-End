@@ -41,4 +41,6 @@ public class CommonConstant {
       """;
 
   public static final String SORT_BY = "(\\w+?)(:)(.*)";
+  public static final String ACCOMMODATION_ID = "([0-9a-fA-F-]+)(:)(\\d+)";
+  public static final String SEARCH_OPERATOR = "(\\w+?)(:|>|<)(.*)";
 }

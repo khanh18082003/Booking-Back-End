@@ -4,9 +4,11 @@ import com.booking.bookingbackend.constant.BookingStatus;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.PaymentMethod;
 import com.booking.bookingbackend.data.dto.request.BookingRequest;
+import com.booking.bookingbackend.data.dto.request.PaymentRequest;
 import com.booking.bookingbackend.data.dto.response.AccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.BookingResponse;
-import com.booking.bookingbackend.data.dto.response.PaymentBookingResponse;
+import com.booking.bookingbackend.data.dto.response.PaymentResponse;
+import com.booking.bookingbackend.data.dto.response.PropertiesBookingResponse;
 import com.booking.bookingbackend.data.dto.response.UserBookingResponse;
 import com.booking.bookingbackend.data.entity.Booking;
 import com.booking.bookingbackend.data.entity.BookingDetail;
@@ -23,10 +25,10 @@ import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.accommodation.AccommodationService;
+import com.booking.bookingbackend.service.payment.PaymentService;
 import com.booking.bookingbackend.service.price.PriceService;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
@@ -54,13 +56,21 @@ public class BookingServiceImpl implements BookingService {
   BookingMapper mapper;
   AccommodationService accommodationService;
   PriceService priceService;
+  BookingValidationService bookingValidationService;
+  PaymentService paymentService;
+
   private final AbstractScriptDatabaseInitializer abstractScriptDatabaseInitializer;
 
   @Transactional
   @Override
   public BookingResponse book(BookingRequest request) {
     // Validate request
-    validateRequest(request);
+    bookingValidationService.validateRequest(
+        request.checkIn(),
+        request.checkOut(),
+        request.adults(),
+        request.children()
+    );
 
     // Check if the properties exist and available accommodations
     final var aAccommodations = request.accommodations().stream()
@@ -138,6 +148,18 @@ public class BookingServiceImpl implements BookingService {
             }
         ).toList();
     bookingDetailRepository.saveAll(bookingDetails);
+
+    // Create a payment if the payment method is cash
+    PaymentMethod paymentMethod = PaymentMethod.valueOf(request.paymentMethod());
+
+    PaymentRequest paymentRequest = PaymentRequest.builder()
+        .amount(totalPrice)
+        .paymentMethod(paymentMethod)
+        .bookingId(savedBooking.getId())
+        .build();
+    PaymentResponse paymentResponse = paymentService.save(paymentRequest);
+
+    // Map the saved booking to response DTO
     BookingResponse response = mapper.toDtoResponse(savedBooking);
     if (savedBooking.getUser() != null) {
       Profile profile = savedBooking.getUser().getProfile();
@@ -158,27 +180,28 @@ public class BookingServiceImpl implements BookingService {
           .country(guest.getCountry())
           .build());
     }
-    response.setPropertiesId(savedBooking.getProperties().getId());
-    response.setAccommodations(aAccommodations);
-    response.setPayment(PaymentBookingResponse.builder()
-        .status(false)
-        .paymentMethod(PaymentMethod.valueOf(request.paymentMethod()))
+    Properties properties = savedBooking.getProperties();
+    response.setProperties(PropertiesBookingResponse.builder()
+        .id(properties.getId())
+        .name(properties.getName())
+        .description(properties.getDescription())
+        .address(properties.getAddress())
+        .ward(properties.getWard())
+        .district(properties.getDistrict())
+        .city(properties.getCity())
+        .province(properties.getProvince())
+        .country(properties.getCountry())
+        .rating(properties.getRating())
+        .totalRating(properties.getTotalRating())
+        .checkInTime(properties.getCheckInTime())
+        .checkOutTime(properties.getCheckOutTime())
+        .propertiesType(properties.getPropertyType().getName())
         .build());
+    response.setAccommodations(aAccommodations);
+    response.setPayment(paymentResponse);
     return response;
   }
 
-  private void validateRequest(BookingRequest request) {
-    final var checkInDate = request.checkIn();
-    final var checkOutDate = request.checkOut();
-    final var currentDate = LocalDate.now();
-
-    if (checkInDate.isAfter(checkOutDate) || checkInDate.isBefore(currentDate)) {
-      throw new AppException(ErrorCode.MESSAGE_INVALID_CHECKIN_DATE);
-    }
-    if (request.adults() <= 0 || request.children() < 0) {
-      throw new AppException(ErrorCode.MESSAGE_INVALID_GUESTS);
-    }
-  }
 
   @Override
   public BookingResponse changeStatus(UUID id, BookingStatus status) {

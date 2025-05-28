@@ -11,6 +11,6 @@ import org.springframework.stereotype.Repository;
 public interface RoleRepository extends BaseRepository<Role, Integer> {
   @Query("SELECT r FROM Role r WHERE r.name IN :roles")
   Collection<Role> findAllByName(Collection<String> roles);
-
+  Role findByName(String name);
   boolean existsByNameIsIgnoreCase(String name);
 }

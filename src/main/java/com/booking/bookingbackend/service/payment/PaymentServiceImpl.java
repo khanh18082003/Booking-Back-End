@@ -10,6 +10,15 @@ import com.booking.bookingbackend.data.mapper.PaymentMapper;
 import com.booking.bookingbackend.data.repository.BookingRepository;
 import com.booking.bookingbackend.data.repository.PaymentRepository;
 import com.booking.bookingbackend.exception.AppException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -19,72 +28,66 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.math.BigDecimal;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.UUID;
 @Getter
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @Slf4j(topic = "PAYMENT-SERVICE")
 public class PaymentServiceImpl implements PaymentService {
-    PaymentRepository repository;
-    BookingRepository bookingRepository;
-    PaymentMapper mapper;
-    static String API_URL = "https://my.sepay.vn/userapi/transactions/list?";
-    static String AUTHORIZATION_TOKEN = "Bearer CJPN4H68I7XSWHVPGNJ5CYU6H3UVZR24WS5NDT97EV0CXBFUXPFTLGACOM9IIQ1A";
-    static String ACCOUNT_NUMBER = "0396441431";
-    static String ACCOUNT_NAME = "NGUYEN THANH TAM";
 
-    @Override
-    public PaymentResponse save(PaymentRequest request) {
-        Payment payment = mapper.toEntity(request);
-        System.out.println("Booking Id: " + request.bookingId());
-        payment.setBooking(bookingRepository.findById(request.bookingId())
-                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , Booking.class.getSimpleName())));
-        String TransactionId = createTransactionId();
-        payment.setTransactionId(TransactionId);
-        payment.setStatus(false);
-        String qrImgSrc = "https://img.vietqr.io/image/970422-" + ACCOUNT_NUMBER
-                + "-compact2.png?amount=" + request.amount()
-                + "&addInfo=" + TransactionId
-                + "&accountName=" + ACCOUNT_NAME.replace(" ", "%20");
-        payment.setUrlImage(qrImgSrc);
-        Payment savedPayment = repository.save(payment);
-        return mapper.toDtoResponse(savedPayment);
+  PaymentRepository repository;
+  BookingRepository bookingRepository;
+  PaymentMapper mapper;
+  static String API_URL = "https://my.sepay.vn/userapi/transactions/list?";
+  static String AUTHORIZATION_TOKEN = "Bearer CJPN4H68I7XSWHVPGNJ5CYU6H3UVZR24WS5NDT97EV0CXBFUXPFTLGACOM9IIQ1A";
+  static String ACCOUNT_NUMBER = "0396441431";
+  static String ACCOUNT_NAME = "NGUYEN THANH TAM";
+
+  @Override
+  public PaymentResponse save(PaymentRequest request) {
+    Payment payment = mapper.toEntity(request);
+
+    payment.setBooking(bookingRepository.findById(request.bookingId())
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            Booking.class.getSimpleName())));
+    String transactionId = createTransactionId();
+    payment.setTransactionId(transactionId);
+    payment.setStatus(false);
+    if (request.paymentMethod().equals(PaymentMethod.ONLINE)) {
+      String qrImgSrc = "https://img.vietqr.io/image/970422-" + ACCOUNT_NUMBER
+          + "-compact2.png?amount=" + request.amount()
+          + "&addInfo=" + transactionId
+          + "&accountName=" + ACCOUNT_NAME.replace(" ", "%20");
+      payment.setUrlImage(qrImgSrc);
     }
 
-    private String createTransactionId() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        StringBuilder transactionId = new StringBuilder();
-        for (int i = 0; i < 7; i++) {
-            int randomIndex = (int) (Math.random() * chars.length());
-            transactionId.append(chars.charAt(randomIndex));
-        }
-        return transactionId.toString();
+  private String createTransactionId() {
+    String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    StringBuilder transactionId = new StringBuilder();
+    for (int i = 0; i < 7; i++) {
+      int randomIndex = (int) (Math.random() * chars.length());
+      transactionId.append(chars.charAt(randomIndex));
     }
+    return transactionId.toString();
+  }
 
-    @Override
-    public PaymentResponse getPayment(UUID id) {
-        Payment payment = repository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName()));
-        return mapper.toDtoResponse(payment);
-    }
+  @Override
+  public PaymentResponse getPayment(UUID id) {
+    Payment payment = repository.findById(id)
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            getEntityClass().getSimpleName()));
+    return mapper.toDtoResponse(payment);
+  }
 
-    public void changStatus(UUID id, boolean status) {
-        Payment payment = repository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName()));
-        payment.setStatus(status);
-        Payment updatedPayment = repository.save(payment);
-    }
-
+  @Override
+  public PaymentResponse changStatus(UUID id, boolean status) {
+    Payment payment = repository.findById(id)
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            getEntityClass().getSimpleName()));
+    payment.setStatus(status);
+    Payment updatedPayment = repository.save(payment);
+    return mapper.toDtoResponse(updatedPayment);
+  }
     public Boolean checkPaymentOnlineStatus(UUID id ,int expectedAmount, String expectedTransactionId) throws IOException {
         LocalDate localDate = LocalDate.now();
 
@@ -126,5 +129,5 @@ public class PaymentServiceImpl implements PaymentService {
             }
         }
         return false;
-    }
+  }
 }
