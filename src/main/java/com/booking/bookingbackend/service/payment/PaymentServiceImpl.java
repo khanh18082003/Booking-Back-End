@@ -78,35 +78,12 @@ public class PaymentServiceImpl implements PaymentService {
         return mapper.toDtoResponse(payment);
     }
 
-    @Override
-    public PaymentResponse changStatus(UUID id, boolean status) {
+    public void changStatus(UUID id, boolean status) {
         Payment payment = repository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , getEntityClass().getSimpleName()));
         payment.setStatus(status);
         Payment updatedPayment = repository.save(payment);
-        return mapper.toDtoResponse(updatedPayment);
     }
-
-//    @Override
-//    public boolean processPayment(UUID id, BigDecimal amount, String transactionId) {
-//        long startTime = System.currentTimeMillis();
-//        long timeout = 5 * 60 * 1000;
-//
-//        while (System.currentTimeMillis() - startTime < timeout) {
-//            try {
-//                if (checkPaymentOnlineStatus(amount.intValue(), transactionId)) {
-//                    System.out.println("Thanh toán thành công cho giao dịch: " + transactionId);
-//                    return true;
-//                }
-//                Thread.sleep(1000);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        System.out.println("Thanh toán thất bại hoặc hết thời gian cho giao dịch: " + transactionId);
-//        return false;
-//    }
 
     public Boolean checkPaymentOnlineStatus(UUID id ,int expectedAmount, String expectedTransactionId) throws IOException {
         LocalDate localDate = LocalDate.now();
@@ -144,6 +121,7 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.setStatus(true);
                 payment.setPaidAt(new Timestamp(System.currentTimeMillis()));
                 repository.save(payment);
+
                 return true;
             }
         }
