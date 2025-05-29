@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
 @Slf4j
-public class ParsePatternUtil {
+public class ParsePatternUtils {
 
   public static String parseSortPattern(String... sort) {
     // sort: rating:asc

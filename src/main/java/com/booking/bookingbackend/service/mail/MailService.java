@@ -1,7 +1,9 @@
 package com.booking.bookingbackend.service.mail;
 
+import com.booking.bookingbackend.data.dto.response.BookingResponse;
 import com.booking.bookingbackend.data.entity.RedisVerificationCode;
 import com.booking.bookingbackend.data.repository.VerificationCodeRepository;
+import com.booking.bookingbackend.util.DateUtils;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
@@ -83,7 +85,7 @@ public class MailService {
     // Tạo MimeMessage
     MimeMessage message = mailSender.createMimeMessage();
     MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-    System.out.println("to = " + to);
+
     // Thiết lập thông tin email
     helper.setTo(to);
     helper.setSubject("Xác định email và thông tin đăng nhập");
@@ -112,6 +114,35 @@ public class MailService {
     log.info("Email sent");
   }
 
+  public void sendMailBookingConfirmation(
+      BookingResponse bookingResponse
+  ) throws MessagingException, UnsupportedEncodingException {
+    log.info("Sending...");
+    MimeMessage message = mailSender.createMimeMessage();
+    MimeMessageHelper helper = new MimeMessageHelper(
+        message,
+        true,
+        StandardCharsets.UTF_8.name()
+    );
+    helper.setTo(bookingResponse.getUserBooking().getEmail());
+    helper.setSubject("Gửi thông tin đặt phòng thành công");
+    helper.setFrom(from);
 
+    // Tạo context để truyền dữ liệu vào template
+    Context context = new Context();
+    context.setVariable("booking", bookingResponse);
+    context.setVariable("supportEmail", supportEmail);
+    // Add date utility for Thymeleaf
+    context.setVariable("nights", DateUtils.daysBetween(
+        bookingResponse.getCheckIn(),
+        bookingResponse.getCheckOut())
+    );
+
+    // Render template HTML
+    String htmlContent = springTemplateEngine.process("booking-template.html", context);
+    helper.setText(htmlContent, true);
+
+    mailSender.send(message);
+  }
 
 }

@@ -1,6 +1,6 @@
 package com.booking.bookingbackend.data.repository.criteria;
 
-import com.booking.bookingbackend.util.ParsePatternUtil;
+import com.booking.bookingbackend.util.ParsePatternUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -36,9 +36,9 @@ public class PropertiesRepositoryCustomImpl implements PropertiesRepositoryCusto
       String... sort
   ) {
 
-    String orderBy = ParsePatternUtil.parseSortPattern(sort);
+    String orderBy = ParsePatternUtils.parseSortPattern(sort);
 
-    List<SearchOperation> searchOperations = ParsePatternUtil.parseFilterPattern(filters);
+    List<SearchOperation> searchOperations = ParsePatternUtils.parseFilterPattern(filters);
 
     StringBuilder sql = new StringBuilder("""
           WITH destination AS (SELECT ST_GeomFromText(CONCAT('POINT(', :longitude, ' ', :latitude, ')'),

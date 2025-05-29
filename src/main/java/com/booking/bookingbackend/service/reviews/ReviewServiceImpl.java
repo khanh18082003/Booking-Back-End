@@ -12,7 +12,7 @@ import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.data.repository.ReviewRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
-import com.booking.bookingbackend.util.SecurityUtil;
+import com.booking.bookingbackend.util.SecurityUtils;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import lombok.AccessLevel;
@@ -48,7 +48,7 @@ public class ReviewServiceImpl implements ReviewService {
         );
     entity.setProperties(properties);
     // Get User
-    User user = SecurityUtil.getCurrentUser();
+    User user = SecurityUtils.getCurrentUser();
     entity.setUser(user);
     // Save Review
     log.info("Saving review for user: {}", user.getId());

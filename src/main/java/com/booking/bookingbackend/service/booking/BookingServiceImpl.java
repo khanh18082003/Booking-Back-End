@@ -7,17 +7,21 @@ import com.booking.bookingbackend.data.dto.request.BookingRequest;
 import com.booking.bookingbackend.data.dto.request.PaymentRequest;
 import com.booking.bookingbackend.data.dto.response.AccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.BookingResponse;
+import com.booking.bookingbackend.data.dto.response.Meta;
+import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.dto.response.PaymentResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesBookingResponse;
 import com.booking.bookingbackend.data.dto.response.UserBookingResponse;
+import com.booking.bookingbackend.data.entity.Available;
 import com.booking.bookingbackend.data.entity.Booking;
 import com.booking.bookingbackend.data.entity.BookingDetail;
 import com.booking.bookingbackend.data.entity.GuestBooking;
-import com.booking.bookingbackend.data.entity.Profile;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.entity.ids.BookingDetailId;
 import com.booking.bookingbackend.data.mapper.BookingMapper;
+import com.booking.bookingbackend.data.projection.UserBookingsHistoryDTO;
+import com.booking.bookingbackend.data.repository.AvailableRepository;
 import com.booking.bookingbackend.data.repository.BookingDetailsRepository;
 import com.booking.bookingbackend.data.repository.BookingRepository;
 import com.booking.bookingbackend.data.repository.GuestBookingRepository;
@@ -25,10 +29,15 @@ import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.accommodation.AccommodationService;
+import com.booking.bookingbackend.service.mail.MailService;
 import com.booking.bookingbackend.service.payment.PaymentService;
 import com.booking.bookingbackend.service.price.PriceService;
+import com.booking.bookingbackend.util.SecurityUtils;
+import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
@@ -39,6 +48,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 @Getter
@@ -53,17 +66,20 @@ public class BookingServiceImpl implements BookingService {
   UserRepository userRepository;
   GuestBookingRepository guestBookingRepository;
   BookingDetailsRepository bookingDetailRepository;
+  AvailableRepository availableRepository;
   BookingMapper mapper;
   AccommodationService accommodationService;
   PriceService priceService;
   BookingValidationService bookingValidationService;
   PaymentService paymentService;
+  MailService mailService;
 
   private final AbstractScriptDatabaseInitializer abstractScriptDatabaseInitializer;
 
   @Transactional
   @Override
-  public BookingResponse book(BookingRequest request) {
+  public BookingResponse book(BookingRequest request)
+      throws MessagingException, UnsupportedEncodingException {
     // Validate request
     bookingValidationService.validateRequest(
         request.checkIn(),
@@ -108,19 +124,18 @@ public class BookingServiceImpl implements BookingService {
               User.class.getSimpleName()
           ))
       );
-    } else {
-      GuestBooking guest = GuestBooking.builder()
-          .email(request.guest().email())
-          .firstName(request.guest().firstName())
-          .lastName(request.guest().lastName())
-          .phoneNumber(request.guest().phoneNumber())
-          .country(request.guest().country())
-          .build();
-      guestBookingRepository.save(guest);
-      booking.setGuestBooking(guest);
     }
+    GuestBooking guest = GuestBooking.builder()
+        .email(request.guest().email())
+        .firstName(request.guest().firstName())
+        .lastName(request.guest().lastName())
+        .phoneNumber(request.guest().phoneNumber())
+        .country(request.guest().country())
+        .build();
+    guestBookingRepository.save(guest);
+    booking.setGuestBooking(guest);
 
-    booking.setStatus(BookingStatus.Pending);
+    booking.setStatus(BookingStatus.CONFIRMED);
 
     // Save the available accommodations
     accommodationService.saveAll(aAccommodations);
@@ -161,29 +176,20 @@ public class BookingServiceImpl implements BookingService {
 
     // Map the saved booking to response DTO
     BookingResponse response = mapper.toDtoResponse(savedBooking);
-    if (savedBooking.getUser() != null) {
-      Profile profile = savedBooking.getUser().getProfile();
-      response.setUserBooking(UserBookingResponse.builder()
-          .email(savedBooking.getUser().getEmail())
-          .firstName(profile.getFirstName())
-          .lastName(profile.getLastName())
-          .phone(profile.getPhone())
-          .country(profile.getNationality())
-          .build());
-    } else {
-      GuestBooking guest = savedBooking.getGuestBooking();
-      response.setUserBooking(UserBookingResponse.builder()
-          .email(guest.getEmail())
-          .firstName(guest.getFirstName())
-          .lastName(guest.getLastName())
-          .phone(guest.getPhoneNumber())
-          .country(guest.getCountry())
-          .build());
-    }
+
+    response.setUserBooking(UserBookingResponse.builder()
+        .email(guest.getEmail())
+        .firstName(guest.getFirstName())
+        .lastName(guest.getLastName())
+        .phone(guest.getPhoneNumber())
+        .country(guest.getCountry())
+        .build());
+
     Properties properties = savedBooking.getProperties();
     response.setProperties(PropertiesBookingResponse.builder()
         .id(properties.getId())
         .name(properties.getName())
+        .image(properties.getImage())
         .description(properties.getDescription())
         .address(properties.getAddress())
         .ward(properties.getWard())
@@ -199,6 +205,8 @@ public class BookingServiceImpl implements BookingService {
         .build());
     response.setAccommodations(aAccommodations);
     response.setPayment(paymentResponse);
+
+    mailService.sendMailBookingConfirmation(response);
     return response;
   }
 
@@ -220,4 +228,64 @@ public class BookingServiceImpl implements BookingService {
         .map(mapper::toDtoResponse)
         .collect(Collectors.toList());
   }
+
+  @PreAuthorize("hasRole('USER')")
+  @Override
+  public PaginationResponse<UserBookingsHistoryDTO> getUserBookingsHistory(
+      int pageNo,
+      int pageSize
+  ) {
+    User user = SecurityUtils.getCurrentUser();
+    Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
+    Page<UserBookingsHistoryDTO> page = repository.findUserBookingsHistory(
+        user.getId(),
+        pageable
+    );
+    return PaginationResponse.<UserBookingsHistoryDTO>builder()
+        .meta(Meta.builder()
+            .page(page.getNumber() + 1)
+            .pageSize(page.getSize())
+            .pages(page.getTotalPages())
+            .total(page.getTotalElements())
+            .build())
+        .data(page.getContent())
+        .build();
+  }
+
+  @Transactional
+  @Override
+  public void cancelBooking(UUID bookingId) {
+    Booking booking = repository.findById(bookingId)
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            getEntityClass().getSimpleName())
+        );
+    if (booking.getStatus() == BookingStatus.CANCELLED) {
+      throw new AppException(ErrorCode.MESSAGE_BOOKING_ALREADY_CANCELLED);
+    }
+
+    booking.setStatus(BookingStatus.CANCELLED);
+    booking = repository.save(booking);
+    LocalDate checkIn = booking.getCheckIn();
+    LocalDate checkOut = booking.getCheckOut();
+
+    List<BookingDetail> bookingDetailList = bookingDetailRepository.findAllByBookingId(
+        booking.getId());
+
+    bookingDetailList.forEach(bookingDetail -> {
+      List<Available> availables = availableRepository.findAllByAccommodationIdBetweenCheckInAndCheckOut(
+          bookingDetail.getId().getAccommodationId(),
+          checkIn,
+          checkOut.minusDays(1)
+      );
+      if (!availables.isEmpty()) {
+        availables.forEach(available -> {
+          available.setTotalReserved(available.getTotalReserved() - bookingDetail.getBookedUnits());
+        });
+        availableRepository.saveAll(availables);
+      }
+    });
+
+  }
+
+
 }

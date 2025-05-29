@@ -148,5 +148,5 @@ public interface PropertiesRepository extends BaseRepository<Properties, UUID> {
   Tuple findPropertiesDetail(@Param("id") UUID id);
 
 
-
+  List<Properties> findAllByHostId(UUID id);
 }
