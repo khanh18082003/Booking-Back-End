@@ -13,7 +13,8 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 @Mapper(componentModel = "spring")
 public interface AccommodationMapper extends EntityDtoMapper<Accommodation, AccommodationResponse> {
 
-  Accommodation toEntity(AccommodationCreationRequest request);
-  @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-  void merge(AccommodationUpdateRequest response,@MappingTarget Accommodation entity);
+    Accommodation toEntity(AccommodationCreationRequest request);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void merge(AccommodationUpdateRequest response, @MappingTarget Accommodation entity);
 }

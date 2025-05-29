@@ -580,7 +580,7 @@ public class PropertiesServiceImpl implements PropertiesService {
     @Override
     @PreAuthorize(value = "hasRole('HOST')")
     public List<PropertiesHostDTO> getMyProperties() {
-        User user = SecurityUtil.getCurrentUser();
+        User user = SecurityUtils.getCurrentUser();
         List<Properties> propertiesList = repository.findAllByHostId(user.getId());
         log.info("Found {} properties for host {}", propertiesList.size());
         return propertiesList.stream()
