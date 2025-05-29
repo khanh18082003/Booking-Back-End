@@ -11,7 +11,7 @@ import com.booking.bookingbackend.service.mail.MailService;
 import com.booking.bookingbackend.service.mail.VerificationCodeService;
 import com.booking.bookingbackend.service.profile.ProfileService;
 import com.booking.bookingbackend.service.user.UserService;
-import com.booking.bookingbackend.util.SecurityUtil;
+import com.booking.bookingbackend.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -72,7 +72,7 @@ public class MailController {
     String lastName = userProfile.getLastName();
     String name = firstName != null && lastName != null ? firstName + " " + lastName : null;
 
-    String newVerifyCode = SecurityUtil.generateVerificationCode();
+    String newVerifyCode = SecurityUtils.generateVerificationCode();
     verificationCodeService.saveCode(newVerifyCode, user.getEmail());
 
     mailService.sendVerificationEmail(

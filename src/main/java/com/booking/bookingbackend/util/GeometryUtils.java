@@ -5,7 +5,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 
-public class GeometryUtil {
+public class GeometryUtils {
 
   private static final double R = 6378137; // Bán kính chuẩn
 

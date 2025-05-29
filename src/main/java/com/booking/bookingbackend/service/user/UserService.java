@@ -2,11 +2,14 @@ package com.booking.bookingbackend.service.user;
 
 import com.booking.bookingbackend.data.dto.request.ResetPasswordRequest;
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
+import com.booking.bookingbackend.data.dto.response.RevenueResponse;
 import com.booking.bookingbackend.data.dto.response.UserProfileDto;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.service.BaseEntityService;
+
+import java.util.List;
 import java.util.UUID;
 
 public interface UserService extends BaseEntityService<
@@ -31,5 +34,7 @@ public interface UserService extends BaseEntityService<
   void changePassword(ResetPasswordRequest request);
 
   void AddRoleHost(UUID userId, String roleName);
+
+  List<RevenueResponse> getRevenueByHostId(UUID userId);
 
 }

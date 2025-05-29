@@ -149,5 +149,4 @@ public interface PropertiesRepository extends BaseRepository<Properties, UUID> {
 
   List<Properties> findAllByHostId(UUID hostId);
 
-
 }

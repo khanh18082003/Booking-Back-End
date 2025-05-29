@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Thông tin đặt phòng của bạn</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6fb;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      padding: 32px 24px;
+    }
+    .header {
+      background: #003580;
+      color: #fff;
+      padding: 18px 0;
+      border-radius: 10px 10px 0 0;
+      text-align: center;
+      font-size: 26px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .section-title {
+      color: #003580;
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 28px;
+      margin-bottom: 12px;
+      border-left: 4px solid #003580;
+      padding-left: 10px;
+    }
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 18px;
+    }
+    .info-table td {
+      padding: 6px 0;
+      vertical-align: top;
+    }
+    .info-label {
+      color: #555;
+      font-weight: 500;
+      width: 140px;
+    }
+    .info-value {
+      color: #222;
+      font-weight: bold;
+    }
+    .highlight {
+      color: #003580;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .status-paid {
+      color: #fff;
+      background: #16a34a;
+      border-radius: 12px;
+      padding: 2px 12px;
+      font-size: 13px;
+      font-weight: bold;
+      display: inline-block;
+    }
+    .status-unpaid {
+      color: #fff;
+      background: #ef4444;
+      border-radius: 12px;
+      padding: 2px 12px;
+      font-size: 13px;
+      font-weight: bold;
+      display: inline-block;
+    }
+    .footer {
+      margin-top: 32px;
+      color: #888;
+      font-size: 13px;
+      text-align: center;
+    }
+    .qr-section {
+      text-align: center;
+      margin: 24px 0 0 0;
+    }
+    .qr-section img {
+      border: 4px solid #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      width: 180px;
+      height: 180px;
+      object-fit: contain;
+      background: #fff;
+    }
+    .qr-note {
+      color: #eab308;
+      background: #fef9c3;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 14px 0 0 0;
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-block;
+    }
+    .total-price {
+      color: #003580;
+      font-size: 22px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+    a {
+      color: #003580;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    Xác nhận đặt phòng thành công!
+  </div>
+  <p style="margin-top: 18px; font-size: 17px;">
+    Xin chào <span th:text="${booking.userBooking.firstName} + ' ' + ${booking.userBooking.lastName}">Khách hàng</span>,
+  </p>
+  <p>
+    Cảm ơn bạn đã đặt phòng tại <span class="highlight" th:text="${booking.properties.name}">Tên chỗ nghỉ</span>.<br>
+    Dưới đây là thông tin chi tiết về đơn đặt phòng của bạn:
+  </p>
+
+  <!-- Thông tin chỗ nghỉ -->
+  <div class="section-title">Chi tiết chỗ nghỉ</div>
+  <table class="info-table">
+    <tr>
+      <td class="info-label">Tên chỗ nghỉ:</td>
+      <td class="info-value" th:text="${booking.properties.name}"></td>
+    </tr>
+    <tr>
+      <td class="info-label">Địa chỉ:</td>
+      <td class="info-value" th:text="${booking.properties.address}"></td>
+    </tr>
+    <tr>
+      <td class="info-label">Nhận phòng:</td>
+      <td>
+        <span th:text="${#temporals.format(booking.checkIn, 'dd/MM/yyyy')}"></span>
+        (Từ <span th:text="${booking.properties.checkInTime}"></span>)
+      </td>
+    </tr>
+    <tr>
+      <td class="info-label">Trả phòng:</td>
+      <td>
+        <span th:text="${#temporals.format(booking.checkOut, 'dd/MM/yyyy')}"></span>
+        (Trước <span th:text="${booking.properties.checkOutTime}"></span>)
+      </td>
+    </tr>
+    <tr>
+      <td class="info-label">Thời gian lưu trú:</td>
+      <td>
+        <span th:text="${nights}"></span> đêm
+      </td>
+    </tr>
+  </table>
+
+  <!-- Thông tin khách hàng -->
+  <div class="section-title">Thông tin khách hàng</div>
+  <table class="info-table">
+    <tr>
+      <td class="info-label">Họ tên:</td>
+      <td class="info-value" th:text="${booking.userBooking.firstName} + ' ' + ${booking.userBooking.lastName}"></td>
+    </tr>
+    <tr>
+      <td class="info-label">Email:</td>
+      <td class="info-value" th:text="${booking.userBooking.email}"></td>
+    </tr>
+    <tr>
+      <td class="info-label">Số điện thoại:</td>
+      <td class="info-value" th:text="${booking.userBooking.phone}"></td>
+    </tr>
+    <tr th:if="${booking.userBooking.country != null}">
+      <td class="info-label">Quốc gia:</td>
+      <td class="info-value" th:text="${booking.userBooking.country}"></td>
+    </tr>
+  </table>
+
+  <!-- Thông tin thanh toán -->
+  <div class="section-title">Chi tiết thanh toán</div>
+  <table class="info-table">
+    <tr>
+      <td class="info-label">Phương thức:</td>
+      <td class="info-value" th:text="${booking.payment.paymentMethod == 'ONLINE' ? 'Thanh toán online' : 'Thanh toán tại chỗ nghỉ'}"></td>
+    </tr>
+    <tr>
+      <td class="info-label">Trạng thái:</td>
+      <td>
+        <span th:if="${booking.payment.status}" class="status-paid">Đã thanh toán</span>
+        <span th:unless="${booking.payment.status}" class="status-unpaid">Chưa thanh toán</span>
+      </td>
+    </tr>
+    <tr>
+      <td class="info-label">Tổng giá:</td>
+      <td>
+        <span class="total-price" th:text="'VND ' + ${#numbers.formatDecimal(booking.totalPrice, 0, 'COMMA', 0, 'POINT')}"></span>
+        <span style="font-size:12px; color:#888;">(Đã bao gồm thuế và phí)</span>
+      </td>
+    </tr>
+  </table>
+
+  <!-- QR code nếu là thanh toán online và chưa thanh toán -->
+  <div th:if="${booking.payment.paymentMethod == 'ONLINE' and !booking.payment.status}" class="qr-section">
+    <div>
+      <img th:src="${booking.payment.urlImage}" alt="QR Code thanh toán" />
+    </div>
+    <div class="qr-note">
+      Quét mã QR bằng ứng dụng ngân hàng hoặc ví điện tử để hoàn tất thanh toán.
+    </div>
+    <div style="margin-top:10px;">
+      <b>Số tiền cần thanh toán:</b>
+      <span th:text="'VND ' + ${#numbers.formatDecimal(booking.totalPrice, 0, 'COMMA', 0, 'POINT')}"></span>
+    </div>
+  </div>
+
+  <div class="footer">
+    Đây là email tự động, vui lòng không trả lời.<br>
+    Nếu có thắc mắc, vui lòng liên hệ <a th:href="'mailto:' + ${supportEmail}" th:text="${supportEmail}">support</a>.<br>
+    &copy; 2025 Booking.com
+  </div>
+</div>
+</body>
+</html>

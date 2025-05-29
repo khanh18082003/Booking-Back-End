@@ -49,7 +49,7 @@ public class SecurityConfig {
   private static final String[] WHITE_LIST_API = {
       EndpointConstant.ENDPOINT_USER + "/register",
       EndpointConstant.ENDPOINT_AUTH + "/login",
-      EndpointConstant.ENDPOINT_AUTH + "/host/login",
+      EndpointConstant.ENDPOINT_AUTH + "/host/**",
       EndpointConstant.ENDPOINT_AUTH + "/verify-email",
       EndpointConstant.ENDPOINT_AUTH + "/refresh-token",
       EndpointConstant.ENDPOINT_AUTH + "/logout",
@@ -66,6 +66,7 @@ public class SecurityConfig {
       EndpointConstant.ENDPOINT_PROPERTY + "/{id}",
       EndpointConstant.ENDPOINT_PROPERTY + "/{id}/accommodations",
       EndpointConstant.ENDPOINT_PROPERTY + "/{id}/reviews",
+      EndpointConstant.ENDPOINT_PROPERTY + "/{id}/accommodations/available",
       EndpointConstant.ENDPOINT_PAYMENT + "/check-payment-status",
       EndpointConstant.ENDPOINT_PAYMENT + "/get-payment",
       EndpointConstant.ENDPOINT_LOCATION,

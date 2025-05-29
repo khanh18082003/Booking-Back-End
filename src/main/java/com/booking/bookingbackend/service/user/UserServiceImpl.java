@@ -4,6 +4,7 @@ import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.Gender;
 import com.booking.bookingbackend.data.dto.request.ResetPasswordRequest;
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
+import com.booking.bookingbackend.data.dto.response.RevenueResponse;
 import com.booking.bookingbackend.data.dto.response.UserProfileDto;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
 import com.booking.bookingbackend.data.entity.Profile;
@@ -15,9 +16,11 @@ import com.booking.bookingbackend.data.repository.RoleRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.data.repository.VerificationCodeRepository;
 import com.booking.bookingbackend.exception.AppException;
+import com.booking.bookingbackend.util.SecurityUtils;
 import jakarta.persistence.Tuple;
 import java.sql.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -100,17 +103,10 @@ public class UserServiceImpl implements UserService {
   public UserProfileDto getMyProfile() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication != null) {
-      UUID userId = authentication.getPrincipal() instanceof User
-          ? ((User) authentication.getPrincipal()).getId()
-          : null;
-      if (userId == null) {
-        throw new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-            getEntityClass().getSimpleName());
-      }
-      log.info("User ID: {}", userId);
+      User user = SecurityUtils.getCurrentUser();
 
       // Fetch user profile using the repository
-      Tuple userProfileTuple = repository.findByUserProfile(userId)
+      Tuple userProfileTuple = repository.findByUserProfile(user.getId())
           .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
               getEntityClass().getSimpleName())
 
@@ -174,5 +170,10 @@ public class UserServiceImpl implements UserService {
     user.getRoles().add(roleRepository.findByName(roleName));
     repository.save(user);
   }
+
+    @Override
+    public List<RevenueResponse> getRevenueByHostId(UUID userId) {
+        return repository.RevenueByHostId(userId);
+    }
 
 }

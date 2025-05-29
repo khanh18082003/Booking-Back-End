@@ -31,10 +31,11 @@ import com.booking.bookingbackend.data.repository.criteria.PropertiesRepositoryC
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.booking.BookingValidationService;
 import com.booking.bookingbackend.service.googlemap.GoogleMapService;
-import com.booking.bookingbackend.util.GeometryUtil;
-import com.booking.bookingbackend.util.SecurityUtil;
+import com.booking.bookingbackend.util.GeometryUtils;
+import com.booking.bookingbackend.util.SecurityUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.Tuple;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -92,7 +93,7 @@ public class PropertiesServiceImpl implements PropertiesService {
     public PropertiesResponse save(PropertiesRequest request) {
         Properties properties = mapper.toEntity(request);
 
-        User host = SecurityUtil.getCurrentUser();
+        User host = SecurityUtils.getCurrentUser();
         if (host == null) {
             throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
         }
@@ -108,7 +109,7 @@ public class PropertiesServiceImpl implements PropertiesService {
 
         // Tạo và gán Point geom từ latitude & longitude
         if (request.latitude() != null && request.longitude() != null) {
-            Point geom = GeometryUtil.toWebMercator(request.longitude(), request.latitude());
+            Point geom = GeometryUtils.toWebMercator(request.longitude(), request.latitude());
             properties.setGeom(geom);
         }
 
@@ -161,7 +162,7 @@ public class PropertiesServiceImpl implements PropertiesService {
         endDate = endDate.minusDays(1);
 
         double[] latLng = googleMapService.getLatLng(request.location());
-        double[] transformedCoordinates = GeometryUtil.transformLatLong(latLng[1], latLng[0]);
+        double[] transformedCoordinates = GeometryUtils.transformLatLong(latLng[1], latLng[0]);
 
         List<Tuple> raw = propertiesRepositoryCustom.searchPropertiesCustom(
                 transformedCoordinates[1],
@@ -384,7 +385,7 @@ public class PropertiesServiceImpl implements PropertiesService {
 
         // Update geom if latitude and longitude are provided
         if (request.latitude() != null && request.longitude() != null) {
-            Point geom = GeometryUtil.toWebMercator(request.longitude(), request.latitude());
+            Point geom = GeometryUtils.toWebMercator(request.longitude(), request.latitude());
             properties.setGeom(geom);
         }
 
@@ -554,6 +555,28 @@ public class PropertiesServiceImpl implements PropertiesService {
                 .build();
     }
 
+    private Map<UUID, Integer> getAccommodationQuantities(
+            String... accommodations
+    ) {
+        Map<UUID, Integer> accommodationQuantities = new HashMap<>();
+        if (accommodations != null) {
+            for (String s : accommodations) {
+                Pattern pattern = Pattern.compile(ACCOMMODATION_ID);
+                Matcher matcher = pattern.matcher(s);
+
+                if (matcher.find()) {
+                    accommodationQuantities.put(
+                            UUID.fromString(matcher.group(1)),
+                            Integer.parseInt(matcher.group(3))
+                    );
+                } else {
+                    log.warn("Invalid search parameter: {}", s);
+                }
+            }
+        }
+        return accommodationQuantities;
+    }
+
     @Override
     @PreAuthorize(value = "hasRole('HOST')")
     public List<PropertiesHostDTO> getMyProperties() {
@@ -590,26 +613,4 @@ public class PropertiesServiceImpl implements PropertiesService {
                 .collect(Collectors.toList());
     }
 
-    private Map<UUID, Integer> getAccommodationQuantities(
-            String... accommodations
-    ) {
-        Map<UUID, Integer> accommodationQuantities = new HashMap<>();
-        if (accommodations != null) {
-            for (String s : accommodations) {
-                Pattern pattern = Pattern.compile(ACCOMMODATION_ID);
-                Matcher matcher = pattern.matcher(s);
-
-                if (matcher.find()) {
-                    accommodationQuantities.put(
-                            UUID.fromString(matcher.group(1)),
-                            Integer.parseInt(matcher.group(3))
-                    );
-                } else {
-                    log.warn("Invalid search parameter: {}", s);
-                }
-            }
-        }
-        return accommodationQuantities;
-    }
 }
-
