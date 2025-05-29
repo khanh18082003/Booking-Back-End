@@ -15,6 +15,7 @@ import com.booking.bookingbackend.data.dto.response.ReviewResponse;
 import com.booking.bookingbackend.data.projection.AccommodationSearchDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDetailDTO;
+import com.booking.bookingbackend.data.projection.PropertiesHostDTO;
 import com.booking.bookingbackend.service.accommodation.AccommodationService;
 import com.booking.bookingbackend.service.googlemap.GoogleMapService;
 import com.booking.bookingbackend.service.properties.PropertiesService;
@@ -331,5 +332,16 @@ public class PropertiesController {
         .data(
             propertiesService.checkAvailableAccommodationsBooking(id, request, httpServletResponse))
         .build();
+  }
+
+  @GetMapping("/host-properties")
+  ApiResponse<List<PropertiesHostDTO>> getMyProperties() {
+    List<PropertiesHostDTO> properties = propertiesService.getMyProperties();
+    return ApiResponse.<List<PropertiesHostDTO>>builder()
+            .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+            .status(HttpStatus.OK.value())
+            .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+            .data(properties)
+            .build();
   }
 }
