@@ -17,7 +17,7 @@ import com.booking.bookingbackend.service.jwt.JwtService;
 import com.booking.bookingbackend.service.mail.MailService;
 import com.booking.bookingbackend.service.profile.ProfileService;
 import com.booking.bookingbackend.service.user.UserInfoService;
-import com.booking.bookingbackend.util.SecurityUtil;
+import com.booking.bookingbackend.util.SecurityUtils;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -85,7 +85,7 @@ public class AuthenticationHostServiceImpl implements AuthenticationService {
       mailService.sendVerificationEmail(
           user.getEmail(),
           name,
-          SecurityUtil.generateVerificationCode()
+          SecurityUtils.generateVerificationCode()
       );
       throw new AppException(ErrorCode.MESSAGE_USER_NOT_ACTIVE);
     }

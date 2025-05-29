@@ -1,6 +1,5 @@
 package com.booking.bookingbackend.service.googlemap;
 
-import com.booking.bookingbackend.util.GeometryUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;

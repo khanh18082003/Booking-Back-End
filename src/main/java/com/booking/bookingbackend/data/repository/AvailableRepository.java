@@ -57,4 +57,11 @@ public interface AvailableRepository extends BaseRepository<Available, Integer> 
       @Param("quantity") Integer quantity,
       @Param("nights") Integer nights
   );
+
+  @Query("SELECT av FROM Available av WHERE av.accommodation.id = :accommodationId AND av.date BETWEEN :checkInDate AND :checkOutDate")
+  List<Available> findAllByAccommodationIdBetweenCheckInAndCheckOut(
+      UUID accommodationId,
+      LocalDate checkInDate,
+      LocalDate checkOutDate
+  );
 }
