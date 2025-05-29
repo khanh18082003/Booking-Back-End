@@ -4,6 +4,7 @@ import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.Gender;
 import com.booking.bookingbackend.data.dto.request.ResetPasswordRequest;
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
+import com.booking.bookingbackend.data.dto.response.RevenueResponse;
 import com.booking.bookingbackend.data.dto.response.UserProfileDto;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
 import com.booking.bookingbackend.data.entity.Profile;
@@ -18,6 +19,7 @@ import com.booking.bookingbackend.exception.AppException;
 import jakarta.persistence.Tuple;
 import java.sql.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -174,5 +176,10 @@ public class UserServiceImpl implements UserService {
     user.getRoles().add(roleRepository.findByName(roleName));
     repository.save(user);
   }
+
+    @Override
+    public List<RevenueResponse> getRevenueByHostId(UUID userId) {
+        return repository.RevenueByHostId(userId);
+    }
 
 }
