@@ -14,6 +14,7 @@ import java.io.Serializable;
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BedTypeResponse implements Serializable {
+    Integer id;
     String name;
     int quantity;
 }

@@ -179,6 +179,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                         .collect(Collectors.toSet())
         );
 
+
         return response;
     }
 
