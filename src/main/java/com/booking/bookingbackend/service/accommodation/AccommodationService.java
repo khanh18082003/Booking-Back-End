@@ -6,6 +6,7 @@ import com.booking.bookingbackend.data.dto.request.AccommodationsSearchRequest;
 import com.booking.bookingbackend.data.dto.response.AccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.AccommodationResponse;
 import com.booking.bookingbackend.data.entity.Accommodation;
+import com.booking.bookingbackend.data.projection.AccommodationHostDTO;
 import com.booking.bookingbackend.data.projection.AccommodationSearchDTO;
 import com.booking.bookingbackend.data.projection.AvailableAccommodationDTO;
 import com.booking.bookingbackend.data.repository.AccommodationRepository;
@@ -40,4 +41,5 @@ public interface AccommodationService extends BaseEntityService<
   List<AccommodationSearchDTO> findAccommodationByPropertyId(
       final AccommodationsSearchRequest request
   );
+  List<AccommodationHostDTO> getAccommodationsByPropertyId(final UUID id);
 }

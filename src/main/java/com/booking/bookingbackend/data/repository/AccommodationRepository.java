@@ -85,7 +85,7 @@ public interface AccommodationRepository extends BaseRepository<Accommodation, U
           FROM valid_accommodations;
           
           """, nativeQuery = true)
-  List<Tuple> findAllByPropertyId(
+  List<Tuple> searchAllByPropertyId(
       @Param("propertyId") String propertyId,
       @Param("startDate") LocalDate startDate,
       @Param("endDate") LocalDate endDate,
@@ -93,4 +93,6 @@ public interface AccommodationRepository extends BaseRepository<Accommodation, U
       @Param("nights") Integer nights,
       @Param("capacity") Integer capacity
   );
+
+  List<Accommodation> findAllByPropertiesId(UUID id);
 }

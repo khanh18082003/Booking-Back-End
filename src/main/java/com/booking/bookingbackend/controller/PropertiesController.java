@@ -12,10 +12,7 @@ import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
 import com.booking.bookingbackend.data.dto.response.PropertyAvailableAccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.ReviewResponse;
-import com.booking.bookingbackend.data.projection.AccommodationSearchDTO;
-import com.booking.bookingbackend.data.projection.PropertiesDTO;
-import com.booking.bookingbackend.data.projection.PropertiesDetailDTO;
-import com.booking.bookingbackend.data.projection.PropertiesHostDTO;
+import com.booking.bookingbackend.data.projection.*;
 import com.booking.bookingbackend.service.accommodation.AccommodationService;
 import com.booking.bookingbackend.service.googlemap.GoogleMapService;
 import com.booking.bookingbackend.service.properties.PropertiesService;
@@ -343,5 +340,17 @@ public class PropertiesController {
             .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
             .data(properties)
             .build();
+  }
+
+  @GetMapping("/{id}/host-accommodations")
+  ApiResponse<List<AccommodationHostDTO>> getAccommodationsByPropertyId(@PathVariable UUID id) {
+    List<AccommodationHostDTO> accommodations = accommodationService.getAccommodationsByPropertyId(id);
+    return ApiResponse.<List<AccommodationHostDTO>>builder()
+            .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+            .status(HttpStatus.OK.value())
+            .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+            .data(accommodations)
+            .build();
+
   }
 }
