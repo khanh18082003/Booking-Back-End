@@ -14,7 +14,6 @@ import com.booking.bookingbackend.data.projection.PropertiesHostDTO;
 import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.service.BaseEntityService;
 import jakarta.servlet.http.HttpServletResponse;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -38,7 +37,7 @@ public interface PropertiesService extends
 
   void changeStatus(UUID id);
 
-  PropertiesResponse update(UUID id, PropertiesRequest request);
+  PropertiesHostDTO update(UUID id, PropertiesRequest request);
 
   PropertiesDetailDTO getPropertiesDetail(UUID id);
 
@@ -49,5 +48,6 @@ public interface PropertiesService extends
       CheckAvailableAccommodationsBookingRequest request,
       HttpServletResponse httpServletResponse
   );
+
   List<PropertiesHostDTO> getMyProperties();
 }

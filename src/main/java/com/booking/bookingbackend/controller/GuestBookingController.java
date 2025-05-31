@@ -24,18 +24,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Slf4j(topic = "GUEST-BOOKING-CONTROLLER")
 public class GuestBookingController {
-    GuestBookingService guestBookingService;
 
-    @PostMapping("/save")
-    public ApiResponse<GuestBookingResponse> save(
-            @Valid @RequestBody GuestBookingRequest guestBookingRequest
-    ) {
-        return ApiResponse.<GuestBookingResponse>builder()
-                .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-                .status(HttpStatus.OK.value())
-                .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-                .data(guestBookingService.save(guestBookingRequest))
-                .build();
-    }
+  GuestBookingService guestBookingService;
+
+  @PostMapping("/save")
+  public ApiResponse<GuestBookingResponse> save(
+      @Valid @RequestBody GuestBookingRequest guestBookingRequest
+  ) {
+    return ApiResponse.<GuestBookingResponse>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(guestBookingService.save(guestBookingRequest))
+        .build();
+  }
 
 }

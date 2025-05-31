@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Slf4j(topic = "GOOGLE-MAP-CONTROLLER")
 public class GoogleMapController {
+
   GoogleMapService googleMapService;
 
   @GetMapping
