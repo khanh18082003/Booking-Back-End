@@ -64,4 +64,12 @@ public interface AvailableRepository extends BaseRepository<Available, Integer> 
       LocalDate checkInDate,
       LocalDate checkOutDate
   );
+
+  @Query("SELECT MAX(date) FROM Available")
+  LocalDate findMaxDateInAvailable();
+
+  List<Available> findAllByAccommodationId(UUID accommodationId);
+
+  @Query("SELECT av FROM Available av WHERE av.accommodation.id = :accommodationId AND av.date IN :date")
+  List<Available> findAllByAccommodationIdAndDate(UUID accommodationId, List<LocalDate> date);
 }

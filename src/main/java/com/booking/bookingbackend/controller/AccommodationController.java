@@ -5,8 +5,10 @@ import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.AccommodationCreationRequest;
 import com.booking.bookingbackend.data.dto.request.AccommodationUpdateRequest;
+import com.booking.bookingbackend.data.dto.request.AvailableUpdatePriceRequest;
 import com.booking.bookingbackend.data.dto.response.AccommodationResponse;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
+import com.booking.bookingbackend.data.dto.response.AvailableResponse;
 import com.booking.bookingbackend.data.dto.response.Meta;
 import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.service.accommodation.AccommodationService;
@@ -189,5 +191,28 @@ public class AccommodationController {
         .build();
   }
 
+  @GetMapping("/{id}/available")
+  ApiResponse<List<AvailableResponse>> findAllByAccommodationId(@PathVariable UUID id) {
+    List<AvailableResponse> availableResponses = accommodationService.findAllByAccommodationId(id);
+    return ApiResponse.<List<AvailableResponse>>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(availableResponses)
+        .build();
+  }
+
+  @PutMapping("/available")
+  ApiResponse<List<AvailableResponse>> updatePriceAvailableByDate(
+      @Valid @RequestBody AvailableUpdatePriceRequest request
+  ) {
+    List<AvailableResponse> updatedResponses = accommodationService.updatePriceAvailableByDate(request);
+    return ApiResponse.<List<AvailableResponse>>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(updatedResponses)
+        .build();
+  }
 }
 

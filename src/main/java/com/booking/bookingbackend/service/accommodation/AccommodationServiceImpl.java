@@ -7,9 +7,11 @@ import com.booking.bookingbackend.constant.ImageReferenceType;
 import com.booking.bookingbackend.data.dto.request.AccommodationCreationRequest;
 import com.booking.bookingbackend.data.dto.request.AccommodationUpdateRequest;
 import com.booking.bookingbackend.data.dto.request.AccommodationsSearchRequest;
+import com.booking.bookingbackend.data.dto.request.AvailableUpdatePriceRequest;
 import com.booking.bookingbackend.data.dto.response.AccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.AccommodationResponse;
 import com.booking.bookingbackend.data.dto.response.AmenitiesResponse;
+import com.booking.bookingbackend.data.dto.response.AvailableResponse;
 import com.booking.bookingbackend.data.dto.response.BedTypeResponse;
 import com.booking.bookingbackend.data.dto.response.RoomResponse;
 import com.booking.bookingbackend.data.entity.Accommodation;
@@ -20,6 +22,7 @@ import com.booking.bookingbackend.data.entity.Image;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.RoomHasBed;
 import com.booking.bookingbackend.data.mapper.AccommodationMapper;
+import com.booking.bookingbackend.data.mapper.AvailableMapper;
 import com.booking.bookingbackend.data.projection.AccommodationHostDTO;
 import com.booking.bookingbackend.data.projection.AccommodationSearchDTO;
 import com.booking.bookingbackend.data.projection.AmenityDTO;
@@ -53,6 +56,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -71,6 +75,7 @@ public class AccommodationServiceImpl implements AccommodationService {
   AvailableRepository availableRepository;
   RoomHasBedRepository roomHasBedRepository;
   ImageRepository imageRepository;
+  AvailableMapper availableMapper;
 
   private static final int NIGHTS_MAX = 365;
 
@@ -134,6 +139,23 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     // Lưu thực thể
     Accommodation savedEntity = repository.save(entity);
+
+    LocalDate maxDate = availableRepository.findMaxDateInAvailable();
+    log.info("Max date in available: {}", maxDate);
+    List<Available> availableList = new ArrayList<>();
+    for (int i = 0; i < ChronoUnit.DAYS.between(LocalDate.now(), maxDate); i++) {
+      LocalDate date = LocalDate.now().plusDays(i);
+      Available available = Available.builder()
+          .accommodation(savedEntity)
+          .date(date)
+          .totalInventory(savedEntity.getTotalUnits())
+          .price(savedEntity.getBasePrice())
+          .totalReserved(0)
+          .build();
+      availableList.add(available);
+    }
+
+    availableRepository.saveAll(availableList);
     // Map sang response
     AccommodationResponse response = mapper.toDtoResponse(savedEntity);
     response.setPropertiesName(properties.getName());
@@ -439,5 +461,37 @@ public class AccommodationServiceImpl implements AccommodationService {
               rooms
           );
         }).toList();
+  }
+
+  @PreAuthorize("hasRole('HOST')")
+  @Override
+  public List<AvailableResponse> findAllByAccommodationId(UUID id) {
+    List<Available> availableList = availableRepository.findAllByAccommodationId(id);
+    return availableList.stream().map(availableMapper::toDtoResponse).toList();
+  }
+
+  @PreAuthorize("hasRole('HOST')")
+  @Override
+  public List<AvailableResponse> updatePriceAvailableByDate(
+      AvailableUpdatePriceRequest request
+  ) {
+    List<Available> availableList = availableRepository.findAllByAccommodationIdAndDate(
+        request.id(),
+        request.dates()
+    );
+    if (availableList.isEmpty()) {
+      throw new AppException(ErrorCode.MESSAGE_NO_AVAILABLE_ACCOMMODATION);
+    }
+
+    availableList = availableList.stream().peek(available -> {
+      if (request.price() != null) {
+        available.setPrice(request.price());
+      }
+    }).toList();
+
+    return availableRepository.saveAll(availableList)
+        .stream()
+        .map(availableMapper::toDtoResponse)
+        .collect(Collectors.toList());
   }
 }
