@@ -12,7 +12,11 @@ import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
 import com.booking.bookingbackend.data.dto.response.PropertyAvailableAccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.ReviewResponse;
-import com.booking.bookingbackend.data.projection.*;
+import com.booking.bookingbackend.data.projection.AccommodationHostDTO;
+import com.booking.bookingbackend.data.projection.AccommodationSearchDTO;
+import com.booking.bookingbackend.data.projection.PropertiesDTO;
+import com.booking.bookingbackend.data.projection.PropertiesDetailDTO;
+import com.booking.bookingbackend.data.projection.PropertiesHostDTO;
 import com.booking.bookingbackend.service.accommodation.AccommodationService;
 import com.booking.bookingbackend.service.googlemap.GoogleMapService;
 import com.booking.bookingbackend.service.properties.PropertiesService;
@@ -42,7 +46,6 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -62,7 +65,10 @@ public class PropertiesController {
   GoogleMapService googleMapService;
   private final AccommodationService accommodationService;
 
-  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+      produces = MediaType.APPLICATION_JSON_VALUE
+  )
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
       summary = "Create Property",
@@ -124,26 +130,18 @@ public class PropertiesController {
       @RequestPart(value = "image", required = false) MultipartFile image,
       @RequestPart(value = "extra_image", required = false) MultipartFile[] images
   ) {
-    StringBuilder address = new StringBuilder();
-    address.append(request.name()).append(", ");
-    if (StringUtils.hasLength(request.ward())) {
-      address.append(request.ward()).append(", ");
-    }
-    if (StringUtils.hasLength(request.district())) {
-      address.append(request.district()).append(", ");
-    }
-    if (StringUtils.hasLength(request.city())) {
-      address.append(request.city()).append(", ");
-    }
-    if (StringUtils.hasLength(request.province())) {
-      address.append(request.province()).append(", ");
-    }
-    if (StringUtils.hasLength(request.country())) {
-      address.append(request.country());
+    StringBuilder address = new StringBuilder(request.name());
+    String[] addressParts = {request.ward(), request.district(), request.city(), request.province(),
+        request.country()};
+    for (String part : addressParts) {
+      if (StringUtils.hasLength(part)) {
+        address.append(", ").append(part);
+      }
     }
 
     log.info("Address: {}", address);
     var location = googleMapService.getLatLng(address.toString());
+
     String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
     Path uploadPath = Paths.get("uploads/properties/", fileName);
     try {
@@ -236,16 +234,86 @@ public class PropertiesController {
         .build();
   }
 
-  @PutMapping("/{id}")
-  ApiResponse<PropertiesResponse> update(
+  @PutMapping(
+      value = "/{id}",
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+      produces = MediaType.APPLICATION_JSON_VALUE
+  )
+  ApiResponse<PropertiesHostDTO> update(
       @PathVariable UUID id,
-      @Valid @RequestBody PropertiesRequest request
+      @RequestPart("request") @Valid PropertiesRequest request,
+      @RequestPart(value = "image", required = false) MultipartFile image,
+      @RequestPart(value = "extra_image", required = false) MultipartFile[] images
   ) {
-    return ApiResponse.<PropertiesResponse>builder()
+    StringBuilder address = new StringBuilder(request.name());
+    String[] addressParts = {
+        request.ward(),
+        request.district(),
+        request.city(),
+        request.province(),
+        request.country()
+    };
+    for (String part : addressParts) {
+      if (StringUtils.hasLength(part)) {
+        address.append(", ").append(part);
+      }
+    }
+
+    log.info("Address: {}", address);
+    var location = googleMapService.getLatLng(address.toString());
+
+    String fileName;
+    Path uploadPath;
+    if (image != null) {
+      fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+      uploadPath = Paths.get("uploads/properties/", fileName);
+      try {
+        Files.createDirectories(uploadPath.getParent());
+        Files.write(uploadPath, image.getBytes());
+        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+        String imageUrl = baseUrl + "/uploads/properties/" + fileName; // URL tương đối
+        request = request.withImage(imageUrl); // Cập nhật URL ảnh vào request
+      } catch (IOException e) {
+        log.error("Lỗi khi lưu ảnh", e);
+        throw new RuntimeException("Lỗi khi upload ảnh", e);
+      }
+    }
+
+    // ✅ Xử lý images nếu có
+    List<String> imageUrls =
+        request.extraImages() != null ? request.extraImages() : new ArrayList<>();
+    if (images != null) {
+      int index = 0;
+      for (MultipartFile i : images) {
+        if (!i.isEmpty()) {
+          try {
+            fileName = UUID.randomUUID() + "_" + i.getOriginalFilename();
+            uploadPath = Paths.get("uploads/properties/", fileName);
+            Files.createDirectories(uploadPath.getParent());
+            Files.write(uploadPath, i.getBytes());
+            String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build()
+                .toUriString();
+            String imageUrl = baseUrl + "/uploads/properties/" + fileName;
+            imageUrls.set(imageUrls.size() - images.length + index, imageUrl);
+            index++;
+          } catch (IOException e) {
+            log.error("Lỗi khi lưu ảnh", e);
+            throw new RuntimeException("Lỗi khi upload ảnh", e);
+          }
+        }
+      }
+    }
+    log.info("Image URLs: {}", imageUrls);
+
+    return ApiResponse.<PropertiesHostDTO>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .data(propertiesService.update(id, request))
+        .data(propertiesService.update(id, request
+            .withLatitude(location[0])
+            .withLongitude(location[1])
+            .withExtraImages(imageUrls)
+        ))
         .build();
   }
 
@@ -335,22 +403,23 @@ public class PropertiesController {
   ApiResponse<List<PropertiesHostDTO>> getMyProperties() {
     List<PropertiesHostDTO> properties = propertiesService.getMyProperties();
     return ApiResponse.<List<PropertiesHostDTO>>builder()
-            .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-            .status(HttpStatus.OK.value())
-            .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-            .data(properties)
-            .build();
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(properties)
+        .build();
   }
 
   @GetMapping("/{id}/host-accommodations")
   ApiResponse<List<AccommodationHostDTO>> getAccommodationsByPropertyId(@PathVariable UUID id) {
-    List<AccommodationHostDTO> accommodations = accommodationService.getAccommodationsByPropertyId(id);
+    List<AccommodationHostDTO> accommodations = accommodationService.getAccommodationsByPropertyId(
+        id);
     return ApiResponse.<List<AccommodationHostDTO>>builder()
-            .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-            .status(HttpStatus.OK.value())
-            .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-            .data(accommodations)
-            .build();
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(accommodations)
+        .build();
 
   }
 }

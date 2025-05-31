@@ -74,7 +74,7 @@ public class BookingController {
 
   @PostMapping("/cancel-booking/{id}")
   ApiResponse<Void> cancelBooking(
-     @PathVariable("id") UUID bookingId
+      @PathVariable("id") UUID bookingId
   ) {
     bookingService.cancelBooking(bookingId);
     return ApiResponse.<Void>builder()

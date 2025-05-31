@@ -25,5 +25,6 @@ public interface AmenitiesRepository extends BaseRepository<Amenities, UUID> {
       INNER JOIN (select id from tbl_properties where id IN :property_ids) tp ON tp.id = tpa.properties_id
       group by ta.id, ta.name
       """, nativeQuery = true)
-  List<AmenitiesPropertiesDTO> findAndCountAmenitiesByProperties(@Param("property_ids") List<UUID> propertyIds);
+  List<AmenitiesPropertiesDTO> findAndCountAmenitiesByProperties(
+      @Param("property_ids") List<UUID> propertyIds);
 }

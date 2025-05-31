@@ -41,5 +41,6 @@ public interface AccommodationService extends BaseEntityService<
   List<AccommodationSearchDTO> findAccommodationByPropertyId(
       final AccommodationsSearchRequest request
   );
+
   List<AccommodationHostDTO> getAccommodationsByPropertyId(final UUID id);
 }

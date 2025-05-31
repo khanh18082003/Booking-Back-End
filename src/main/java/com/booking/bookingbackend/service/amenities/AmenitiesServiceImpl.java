@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
-
 public class AmenitiesServiceImpl implements AmenitiesService {
 
   AmenitiesRepository repository;
