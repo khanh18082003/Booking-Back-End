@@ -85,7 +85,7 @@ public class ProfileServiceImpl implements ProfileService {
   @Override
   public ProfileResponse updateAvatar(MultipartFile avatarFile) throws IOException {
     CustomUserDetails userDetails = SecurityUtils.getCurrentUser();
-    User user = userDetails.getUser();
+    User user = userDetails.user();
     if (user == null) {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
@@ -133,7 +133,7 @@ public class ProfileServiceImpl implements ProfileService {
   @Override
   public void deleteAvatar() {
     CustomUserDetails userDetails = SecurityUtils.getCurrentUser();
-    User user = userDetails.getUser();
+    User user = userDetails.user();
     if (user == null) {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }

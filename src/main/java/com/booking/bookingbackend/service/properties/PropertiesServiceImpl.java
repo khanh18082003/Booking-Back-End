@@ -100,7 +100,7 @@ public class PropertiesServiceImpl implements PropertiesService {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
 
-    User host = hostDetails.getUser();
+    User host = hostDetails.user();
     properties.setHost(userRepository.findById(host.getId())
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
             User.class.getSimpleName())));
@@ -376,7 +376,7 @@ public class PropertiesServiceImpl implements PropertiesService {
         );
     mapper.merge(request, properties);
 
-    if (!properties.getHost().getId().equals(userDetails.getUser().getId())) {
+    if (!properties.getHost().getId().equals(userDetails.user().getId())) {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
 
@@ -625,7 +625,7 @@ public class PropertiesServiceImpl implements PropertiesService {
     if (userDetails == null) {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
-    List<Properties> propertiesList = repository.findAllByHostId(userDetails.getUser().getId());
+    List<Properties> propertiesList = repository.findAllByHostId(userDetails.user().getId());
 
     return propertiesList.stream()
         .map(properties -> PropertiesHostDTO.builder()
