@@ -10,6 +10,8 @@ import com.booking.bookingbackend.data.mapper.PaymentMapper;
 import com.booking.bookingbackend.data.repository.BookingRepository;
 import com.booking.bookingbackend.data.repository.PaymentRepository;
 import com.booking.bookingbackend.exception.AppException;
+import com.booking.bookingbackend.service.payment.command.PaymentCommand;
+import com.booking.bookingbackend.service.payment.command.PaymentCommandFactory;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -40,25 +42,20 @@ public class PaymentServiceImpl implements PaymentService {
     PaymentMapper mapper;
     static String API_URL = "https://my.sepay.vn/userapi/transactions/list?";
     static String AUTHORIZATION_TOKEN = "Bearer CJPN4H68I7XSWHVPGNJ5CYU6H3UVZR24WS5NDT97EV0CXBFUXPFTLGACOM9IIQ1A";
-    static String ACCOUNT_NUMBER = "0396441431";
-    static String ACCOUNT_NAME = "NGUYEN THANH TAM";
 
     @Override
     public PaymentResponse save(PaymentRequest request) {
         Payment payment = mapper.toEntity(request);
-        System.out.println("Booking Id: " + request.bookingId());
         payment.setBooking(bookingRepository.findById(request.bookingId())
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID , Booking.class.getSimpleName())));
-        String TransactionId = createTransactionId();
-        payment.setTransactionId(TransactionId);
-        payment.setStatus(false);
-        if (request.paymentMethod() == PaymentMethod.ONLINE) {
-            String qrImgSrc = "https://img.vietqr.io/image/970422-" + ACCOUNT_NUMBER
-                    + "-compact2.png?amount=" + request.amount()
-                    + "&addInfo=" + TransactionId
-                    + "&accountName=" + ACCOUNT_NAME.replace(" ", "%20");
-            payment.setUrlImage(qrImgSrc);
-        }
+
+        String transactionId = createTransactionId();
+        payment.setTransactionId(transactionId);
+
+        // Command pattern to handle different payment methods
+        PaymentCommand command = PaymentCommandFactory.getCommand(request.paymentMethod());
+        command.execute(payment, request);
+
         Payment savedPayment = repository.save(payment);
         return mapper.toDtoResponse(savedPayment);
     }
