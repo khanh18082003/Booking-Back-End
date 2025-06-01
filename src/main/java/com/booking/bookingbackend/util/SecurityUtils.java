@@ -1,5 +1,6 @@
 package com.booking.bookingbackend.util;
 
+import com.booking.bookingbackend.data.entity.CustomUserDetails;
 import com.booking.bookingbackend.data.entity.User;
 import java.security.SecureRandom;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,7 +17,7 @@ public class SecurityUtils {
     return code.toString();
   }
 
-  public static User getCurrentUser() {
-    return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+  public static CustomUserDetails getCurrentUser() {
+    return (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
   }
 }

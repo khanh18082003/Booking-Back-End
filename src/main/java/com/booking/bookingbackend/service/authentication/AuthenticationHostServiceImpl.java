@@ -9,12 +9,13 @@ import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
 import com.booking.bookingbackend.data.dto.request.VerificationEmailRequest;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
 import com.booking.bookingbackend.data.dto.response.ProfileResponse;
+import com.booking.bookingbackend.data.entity.CustomUserDetails;
 import com.booking.bookingbackend.data.entity.RedisVerificationCode;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.repository.VerificationCodeRepository;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.jwt.JwtService;
-import com.booking.bookingbackend.service.mail.MailService;
+import com.booking.bookingbackend.service.notification.MailService;
 import com.booking.bookingbackend.service.profile.ProfileService;
 import com.booking.bookingbackend.service.user.UserInfoService;
 import com.booking.bookingbackend.util.SecurityUtils;
@@ -69,13 +70,13 @@ public class AuthenticationHostServiceImpl implements AuthenticationService {
         )
     );
 
-    User user = (User) authentication.getPrincipal();
-    user.getAuthorities().stream()
+    CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+    userDetails.getAuthorities().stream()
         .filter(authority -> authority.getAuthority().equals("ROLE_HOST"))
         .findFirst()
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION));
-
-    if (!user.isActive()) {
+    User user = userDetails.getUser();
+    if (user != null && !user.isActive()) {
       ProfileResponse profileResponse = profileService.findByUserId(user.getId());
       String firstName = profileResponse.getFirstName();
       String lastName = profileResponse.getLastName();
@@ -132,10 +133,12 @@ public class AuthenticationHostServiceImpl implements AuthenticationService {
     String username = jwtService.extractUsername(TokenType.REFRESH_TOKEN, refreshToken);
 
     // Load the user by username
-    User user = (User) userInfoService.loadUserByUsername(username);
+    CustomUserDetails userDetails = (CustomUserDetails) userInfoService.loadUserByUsername(
+        username
+    );
 
     // Validate the refresh token and access token
-    if (!jwtService.validateToken(TokenType.REFRESH_TOKEN, refreshToken, user)
+    if (!jwtService.validateToken(TokenType.REFRESH_TOKEN, refreshToken, userDetails)
         && !jwtService.extractUsername(TokenType.ACCESS_TOKEN, refreshTokenRequest.accessToken())
         .equals(username)) {
       // Throw an exception if both tokens are invalid
@@ -147,8 +150,8 @@ public class AuthenticationHostServiceImpl implements AuthenticationService {
 
     // Generate a new access token for the authenticated user
     String newAccessToken = jwtService.generateAccessToken(
-        user.getUsername(),
-        user.getAuthorities()
+        userDetails.getUsername(),
+        userDetails.getAuthorities()
     );
 
     // Return the new access token in the response

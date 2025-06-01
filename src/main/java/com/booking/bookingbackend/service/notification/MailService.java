@@ -1,16 +1,14 @@
-package com.booking.bookingbackend.service.mail;
+package com.booking.bookingbackend.service.notification;
 
 import com.booking.bookingbackend.data.dto.response.BookingResponse;
 import com.booking.bookingbackend.data.entity.RedisVerificationCode;
 import com.booking.bookingbackend.data.repository.VerificationCodeRepository;
 import com.booking.bookingbackend.util.DateUtils;
 import jakarta.mail.MessagingException;
-import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -20,7 +18,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
@@ -41,43 +38,6 @@ public class MailService {
   @Value("${admin-user.email}")
   @NonFinal
   String supportEmail;
-
-  public String sendMail(
-      String recipients,
-      String subject,
-      String content,
-      MultipartFile[] files
-  ) throws MessagingException, UnsupportedEncodingException {
-    log.info("Sending...");
-    MimeMessage message = mailSender.createMimeMessage();
-    MimeMessageHelper helper = new MimeMessageHelper(
-        message,
-        MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
-        StandardCharsets.UTF_8.name()
-    );
-    helper.setFrom(from, "Booking.com");
-
-    if (recipients.contains(",")) {
-      helper.setTo(InternetAddress.parse(recipients));
-    } else {
-      helper.setTo(recipients);
-    }
-
-    if (files != null) {
-      for (MultipartFile file : files) {
-        helper.addAttachment(Objects.requireNonNull(file.getOriginalFilename()), file);
-      }
-    }
-
-    helper.setSubject(subject);
-    helper.setText(content, true);
-
-    mailSender.send(message);
-
-    log.info("Email has been send successfully: recipients={}", recipients);
-
-    return "sent";
-  }
 
   @Transactional
   public void sendVerificationEmail(String to, String name, String code)

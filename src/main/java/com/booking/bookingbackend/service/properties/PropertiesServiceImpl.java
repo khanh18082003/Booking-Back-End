@@ -15,6 +15,7 @@ import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
 import com.booking.bookingbackend.data.dto.response.PropertyAvailableAccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.ReviewResponse;
 import com.booking.bookingbackend.data.entity.Amenities;
+import com.booking.bookingbackend.data.entity.CustomUserDetails;
 import com.booking.bookingbackend.data.entity.Image;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.User;
@@ -94,10 +95,12 @@ public class PropertiesServiceImpl implements PropertiesService {
   public PropertiesResponse save(PropertiesRequest request) {
     Properties properties = mapper.toEntity(request);
 
-    User host = SecurityUtils.getCurrentUser();
-    if (host == null) {
+    CustomUserDetails hostDetails = SecurityUtils.getCurrentUser();
+    if (hostDetails == null) {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
+
+    User host = hostDetails.getUser();
     properties.setHost(userRepository.findById(host.getId())
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
             User.class.getSimpleName())));
@@ -363,13 +366,17 @@ public class PropertiesServiceImpl implements PropertiesService {
   @Transactional
   @Override
   public PropertiesHostDTO update(UUID id, PropertiesRequest request) {
-    User user = SecurityUtils.getCurrentUser();
+    CustomUserDetails userDetails = SecurityUtils.getCurrentUser();
+    if (userDetails == null) {
+      throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
+    }
     Properties properties = repository.findById(id)
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
             getEntityClass().getSimpleName())
         );
     mapper.merge(request, properties);
-    if (!properties.getHost().getId().equals(user.getId())) {
+
+    if (!properties.getHost().getId().equals(userDetails.getUser().getId())) {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
 
@@ -614,8 +621,11 @@ public class PropertiesServiceImpl implements PropertiesService {
   @Override
   @PreAuthorize(value = "hasRole('HOST')")
   public List<PropertiesHostDTO> getMyProperties() {
-    User user = SecurityUtils.getCurrentUser();
-    List<Properties> propertiesList = repository.findAllByHostId(user.getId());
+    CustomUserDetails userDetails = SecurityUtils.getCurrentUser();
+    if (userDetails == null) {
+      throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
+    }
+    List<Properties> propertiesList = repository.findAllByHostId(userDetails.getUser().getId());
 
     return propertiesList.stream()
         .map(properties -> PropertiesHostDTO.builder()

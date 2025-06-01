@@ -9,12 +9,13 @@ import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
 import com.booking.bookingbackend.data.dto.request.VerificationEmailRequest;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
 import com.booking.bookingbackend.data.dto.response.ProfileResponse;
+import com.booking.bookingbackend.data.entity.CustomUserDetails;
 import com.booking.bookingbackend.data.entity.RedisVerificationCode;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.repository.VerificationCodeRepository;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.jwt.JwtService;
-import com.booking.bookingbackend.service.mail.MailService;
+import com.booking.bookingbackend.service.notification.MailService;
 import com.booking.bookingbackend.service.profile.ProfileService;
 import com.booking.bookingbackend.service.user.UserInfoService;
 import com.booking.bookingbackend.util.SecurityUtils;
@@ -74,17 +75,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     Authentication authentication = authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(
             request.email().strip(),
-            request.password()
+            request.password().strip()
         )
     );
 
-    User user = (User) authentication.getPrincipal();
-    user.getAuthorities().stream()
+    CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+    userDetails.getAuthorities().stream()
         .filter(authority -> authority.getAuthority().equals("ROLE_USER"))
         .findFirst()
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION));
+    User user = userDetails.getUser();
 
-    if (!user.isActive()) {
+    if (user != null && !userDetails.isEnabled()) {
       ProfileResponse profileResponse = profileService.findByUserId(user.getId());
       String firstName = profileResponse.getFirstName();
       String lastName = profileResponse.getLastName();
@@ -141,21 +143,23 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   @Override
   public AuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest,
       HttpServletRequest req) {
-    // Retrieve the refresh token from cookies
-    log.info("Refresh token request received");
+
     String refreshToken = getRefreshTokenFromCookies(req, RefreshTokenType.USER);
     if (refreshToken == null || refreshToken.isEmpty()) {
       // Throw an exception if the refresh token is not found or empty
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
+    log.info("Refresh token request received");
 
     String username = jwtService.extractUsername(TokenType.REFRESH_TOKEN, refreshToken);
 
     // Load the user by username
-    User user = (User) userInfoService.loadUserByUsername(username);
+    CustomUserDetails userDetails = (CustomUserDetails) userInfoService.loadUserByUsername(
+        username
+    );
 
     // Validate the refresh token and access token
-    if (!jwtService.validateToken(TokenType.REFRESH_TOKEN, refreshToken, user)
+    if (!jwtService.validateToken(TokenType.REFRESH_TOKEN, refreshToken, userDetails)
         && !jwtService.extractUsername(TokenType.ACCESS_TOKEN, refreshTokenRequest.accessToken())
         .equals(username)) {
       // Throw an exception if both tokens are invalid
@@ -167,8 +171,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     // Generate a new access token for the authenticated user
     String newAccessToken = jwtService.generateAccessToken(
-        user.getUsername(),
-        user.getAuthorities()
+        userDetails.getUsername(),
+        userDetails.getAuthorities()
     );
 
     // Return the new access token in the response

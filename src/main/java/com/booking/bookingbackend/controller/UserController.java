@@ -17,7 +17,7 @@ import com.booking.bookingbackend.data.dto.response.UserProfileDto;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
 import com.booking.bookingbackend.data.projection.UserBookingsHistoryDTO;
 import com.booking.bookingbackend.service.booking.BookingService;
-import com.booking.bookingbackend.service.mail.MailService;
+import com.booking.bookingbackend.service.notification.MailService;
 import com.booking.bookingbackend.service.profile.ProfileService;
 import com.booking.bookingbackend.service.user.UserService;
 import com.booking.bookingbackend.util.SecurityUtils;
