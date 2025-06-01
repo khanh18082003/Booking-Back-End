@@ -27,6 +27,7 @@ public class PropertiesResponse implements Serializable {
     String description;
     String address;
     String ward;
+    String image;
     String district;
     String city;
     String province;

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PropertiesRepository extends BaseRepository<Properties, UUID> {
+
   @Query(value = """
       -- Create spatial point for the search location
       WITH destination AS (SELECT ST_GeomFromText(CONCAT('POINT(', :longitude, ' ', :latitude, ')'),
@@ -147,6 +148,6 @@ public interface PropertiesRepository extends BaseRepository<Properties, UUID> {
       """, nativeQuery = true)
   Tuple findPropertiesDetail(@Param("id") UUID id);
 
-
+  List<Properties> findAllByHostId(UUID hostId);
 
 }

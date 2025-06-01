@@ -17,7 +17,7 @@ import com.booking.bookingbackend.service.jwt.JwtService;
 import com.booking.bookingbackend.service.mail.MailService;
 import com.booking.bookingbackend.service.profile.ProfileService;
 import com.booking.bookingbackend.service.user.UserInfoService;
-import com.booking.bookingbackend.util.SecurityUtil;
+import com.booking.bookingbackend.util.SecurityUtils;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -79,6 +79,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     );
 
     User user = (User) authentication.getPrincipal();
+    user.getAuthorities().stream()
+        .filter(authority -> authority.getAuthority().equals("ROLE_USER"))
+        .findFirst()
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION));
+
     if (!user.isActive()) {
       ProfileResponse profileResponse = profileService.findByUserId(user.getId());
       String firstName = profileResponse.getFirstName();
@@ -89,7 +94,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
       mailService.sendVerificationEmail(
           user.getEmail(),
           name,
-          SecurityUtil.generateVerificationCode()
+          SecurityUtils.generateVerificationCode()
       );
       throw new AppException(ErrorCode.MESSAGE_USER_NOT_ACTIVE);
     }
@@ -151,7 +156,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     // Validate the refresh token and access token
     if (!jwtService.validateToken(TokenType.REFRESH_TOKEN, refreshToken, user)
-    && !jwtService.extractUsername(TokenType.ACCESS_TOKEN, refreshTokenRequest.accessToken()).equals(username)) {
+        && !jwtService.extractUsername(TokenType.ACCESS_TOKEN, refreshTokenRequest.accessToken())
+        .equals(username)) {
       // Throw an exception if both tokens are invalid
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
@@ -164,7 +170,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         user.getUsername(),
         user.getAuthorities()
     );
-
 
     // Return the new access token in the response
     return AuthenticationResponse.builder()

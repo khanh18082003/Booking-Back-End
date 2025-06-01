@@ -26,6 +26,7 @@ public class PropertiesBookingResponse {
 
   UUID id;
   String name;
+  String image;
   String description;
   String address;
   String ward;

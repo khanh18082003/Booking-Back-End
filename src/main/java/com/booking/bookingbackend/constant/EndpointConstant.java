@@ -17,5 +17,6 @@ public class EndpointConstant {
     public static final String ENDPOINT_LOCATION = "/locations";
     public static final String ENDPOINT_REVIEW = "/reviews";
     public static final String ENDPOINT_IMAGE = "/uploads";
+    public static final String ENDPOINT_BED_TYPE = "/bed-types";
     public static final String ENDPOINT_HOST = "/host";
 }

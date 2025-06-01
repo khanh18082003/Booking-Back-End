@@ -16,6 +16,7 @@ import com.booking.bookingbackend.data.repository.RoleRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.data.repository.VerificationCodeRepository;
 import com.booking.bookingbackend.exception.AppException;
+import com.booking.bookingbackend.util.SecurityUtils;
 import jakarta.persistence.Tuple;
 import java.sql.Date;
 import java.util.HashSet;
@@ -102,17 +103,10 @@ public class UserServiceImpl implements UserService {
   public UserProfileDto getMyProfile() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication != null) {
-      UUID userId = authentication.getPrincipal() instanceof User
-          ? ((User) authentication.getPrincipal()).getId()
-          : null;
-      if (userId == null) {
-        throw new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-            getEntityClass().getSimpleName());
-      }
-      log.info("User ID: {}", userId);
+      User user = SecurityUtils.getCurrentUser();
 
       // Fetch user profile using the repository
-      Tuple userProfileTuple = repository.findByUserProfile(userId)
+      Tuple userProfileTuple = repository.findByUserProfile(user.getId())
           .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
               getEntityClass().getSimpleName())
 

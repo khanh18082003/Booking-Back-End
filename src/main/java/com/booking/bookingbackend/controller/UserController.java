@@ -10,14 +10,17 @@ import com.booking.bookingbackend.data.dto.request.ForgotPasswordRequest;
 import com.booking.bookingbackend.data.dto.request.ResetPasswordRequest;
 import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
+import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.dto.response.ProfileResponse;
 import com.booking.bookingbackend.data.dto.response.RoleResponse;
 import com.booking.bookingbackend.data.dto.response.UserProfileDto;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
+import com.booking.bookingbackend.data.projection.UserBookingsHistoryDTO;
+import com.booking.bookingbackend.service.booking.BookingService;
 import com.booking.bookingbackend.service.mail.MailService;
 import com.booking.bookingbackend.service.profile.ProfileService;
 import com.booking.bookingbackend.service.user.UserService;
-import com.booking.bookingbackend.util.SecurityUtil;
+import com.booking.bookingbackend.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -33,6 +36,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -46,7 +50,7 @@ public class UserController {
   UserService userService;
   MailService mailService;
   ProfileService profileService;
-
+  BookingService bookingService;
 
   @PostMapping("/register")
   @ResponseStatus(HttpStatus.CREATED)
@@ -91,7 +95,7 @@ public class UserController {
     mailService.sendVerificationEmail(
         userResponse.getEmail(),
         name,
-        SecurityUtil.generateVerificationCode()
+        SecurityUtils.generateVerificationCode()
     );
 
     return ApiResponse.<UserResponse>builder()
@@ -150,7 +154,7 @@ public class UserController {
 
   @PostMapping("/forgot-password")
   ApiResponse<Void> forgotPassword(@RequestBody ForgotPasswordRequest request) {
-    String code = SecurityUtil.generateVerificationCode();
+    String code = SecurityUtils.generateVerificationCode();
     try {
       mailService.sendVerificationEmail(
           request.email().trim(),
@@ -206,6 +210,24 @@ public class UserController {
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.CREATED.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .build();
+  }
+
+  @GetMapping("/bookings-history")
+  ApiResponse<PaginationResponse<UserBookingsHistoryDTO>> getUserBookingsHistory(
+      @RequestParam(value = "pageNo", defaultValue = "1") int pageNo,
+      @RequestParam(value = "pageSize", defaultValue = "10") int pageSize
+  ) {
+    PaginationResponse<UserBookingsHistoryDTO> response = bookingService.getUserBookingsHistory(
+        pageNo,
+        pageSize
+    );
+
+    return ApiResponse.<PaginationResponse<UserBookingsHistoryDTO>>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(response)
         .build();
   }
 }

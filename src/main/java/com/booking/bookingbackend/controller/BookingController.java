@@ -8,7 +8,9 @@ import com.booking.bookingbackend.data.dto.request.BookingRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.BookingResponse;
 import com.booking.bookingbackend.service.booking.BookingService;
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -17,6 +19,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,7 +38,7 @@ public class BookingController {
   @PostMapping
   ApiResponse<BookingResponse> save(
       @Valid @RequestBody BookingRequest request
-  ) {
+  ) throws MessagingException, UnsupportedEncodingException {
     return ApiResponse.<BookingResponse>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
@@ -57,7 +60,7 @@ public class BookingController {
         .build();
   }
 
-  @GetMapping("/booing-history")
+  @GetMapping("/booking-history")
   ApiResponse<List<BookingResponse>> bookingHistory(
       @RequestParam("userId") UUID userId
   ) {
@@ -66,6 +69,18 @@ public class BookingController {
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .data(bookingService.BookingHistory(userId))
+        .build();
+  }
+
+  @PostMapping("/cancel-booking/{id}")
+  ApiResponse<Void> cancelBooking(
+      @PathVariable("id") UUID bookingId
+  ) {
+    bookingService.cancelBooking(bookingId);
+    return ApiResponse.<Void>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .build();
   }
 }

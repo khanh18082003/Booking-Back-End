@@ -14,6 +14,7 @@ import com.booking.bookingbackend.data.dto.response.PropertiesBookingResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
 import com.booking.bookingbackend.data.dto.response.PropertyAvailableAccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.ReviewResponse;
+import com.booking.bookingbackend.data.entity.Amenities;
 import com.booking.bookingbackend.data.entity.Image;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.User;
@@ -23,6 +24,7 @@ import com.booking.bookingbackend.data.projection.AccommodationDTO;
 import com.booking.bookingbackend.data.projection.AmenityDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDetailDTO;
+import com.booking.bookingbackend.data.projection.PropertiesHostDTO;
 import com.booking.bookingbackend.data.repository.AmenitiesRepository;
 import com.booking.bookingbackend.data.repository.AvailableRepository;
 import com.booking.bookingbackend.data.repository.ImageRepository;
@@ -34,8 +36,8 @@ import com.booking.bookingbackend.data.repository.criteria.PropertiesRepositoryC
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.booking.BookingValidationService;
 import com.booking.bookingbackend.service.googlemap.GoogleMapService;
-import com.booking.bookingbackend.util.GeometryUtil;
-import com.booking.bookingbackend.util.SecurityUtil;
+import com.booking.bookingbackend.util.GeometryUtils;
+import com.booking.bookingbackend.util.SecurityUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.Tuple;
@@ -63,7 +65,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -93,7 +94,7 @@ public class PropertiesServiceImpl implements PropertiesService {
   public PropertiesResponse save(PropertiesRequest request) {
     Properties properties = mapper.toEntity(request);
 
-    User host = SecurityUtil.getCurrentUser();
+    User host = SecurityUtils.getCurrentUser();
     if (host == null) {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
@@ -109,7 +110,7 @@ public class PropertiesServiceImpl implements PropertiesService {
 
     // Tạo và gán Point geom từ latitude & longitude
     if (request.latitude() != null && request.longitude() != null) {
-      Point geom = GeometryUtil.toWebMercator(request.longitude(), request.latitude());
+      Point geom = GeometryUtils.toWebMercator(request.longitude(), request.latitude());
       properties.setGeom(geom);
     }
 
@@ -162,7 +163,7 @@ public class PropertiesServiceImpl implements PropertiesService {
     endDate = endDate.minusDays(1);
 
     double[] latLng = googleMapService.getLatLng(request.location());
-    double[] transformedCoordinates = GeometryUtil.transformLatLong(latLng[1], latLng[0]);
+    double[] transformedCoordinates = GeometryUtils.transformLatLong(latLng[1], latLng[0]);
 
     List<Tuple> raw = propertiesRepositoryCustom.searchPropertiesCustom(
         transformedCoordinates[1],
@@ -359,14 +360,18 @@ public class PropertiesServiceImpl implements PropertiesService {
   }
 
   @PreAuthorize(value = "hasRole('HOST')")
-  @PostAuthorize(value = "returnObject.host.email == authentication.name")
   @Transactional
   @Override
-  public PropertiesResponse update(UUID id, PropertiesRequest request) {
+  public PropertiesHostDTO update(UUID id, PropertiesRequest request) {
+    User user = SecurityUtils.getCurrentUser();
     Properties properties = repository.findById(id)
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-            getEntityClass().getSimpleName()));
+            getEntityClass().getSimpleName())
+        );
     mapper.merge(request, properties);
+    if (!properties.getHost().getId().equals(user.getId())) {
+      throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
+    }
 
     if (request.typeId() != null) {
       properties.setPropertyType(propertyTypeRepository.findById(request.typeId())
@@ -385,38 +390,67 @@ public class PropertiesServiceImpl implements PropertiesService {
 
     // Update geom if latitude and longitude are provided
     if (request.latitude() != null && request.longitude() != null) {
-      Point geom = GeometryUtil.toWebMercator(request.longitude(), request.latitude());
+      Point geom = GeometryUtils.toWebMercator(request.longitude(), request.latitude());
       properties.setGeom(geom);
     }
 
-    Properties updatedProperties = repository.save(properties);
+    properties = repository.save(properties);
 
     // Handle image updates
     List<Image> existingImages = imageRepository.findAllByReferenceId(id.toString());
-    List<String> existingUrls = existingImages.stream().map(Image::getUrl).toList();
+    List<String> existingUrls = new ArrayList<>(
+        existingImages.stream().map(Image::getUrl).toList());
 
     // 1. Delete images that are no longer in the request
     existingImages.forEach(image -> {
       if (!request.extraImages().contains(image.getUrl())) {
         imageRepository.delete(image);
+        existingUrls.remove(image.getUrl());
       }
     });
 
     // 2. Add new images that don't exist yet
     List<Image> newImages = request.extraImages().stream()
         .filter(url -> !existingUrls.contains(url))
-        .map(url -> Image.builder()
-            .referenceId(id.toString())
-            .referenceType(ImageReferenceType.PROPERTIES.name())
-            .url(url)
-            .build())
-        .toList();
+        .map(url -> {
+          existingUrls.add(url);
+          return Image.builder()
+              .referenceId(id.toString())
+              .referenceType(ImageReferenceType.PROPERTIES.name())
+              .url(url)
+              .build();
+        }).toList();
 
     if (!newImages.isEmpty()) {
       imageRepository.saveAll(newImages);
     }
 
-    return mapper.toDtoResponse(updatedProperties);
+    return PropertiesHostDTO.builder()
+        .id(properties.getId())
+        .name(properties.getName())
+        .description(properties.getDescription())
+        .address(properties.getAddress())
+        .ward(properties.getWard())
+        .image(properties.getImage())
+        .city(properties.getCity())
+        .district(properties.getDistrict())
+        .province(properties.getProvince())
+        .country(properties.getCountry())
+        .rating(properties.getRating())
+        .totalRating(properties.getTotalRating())
+        .status(properties.isStatus())
+        .latitude(properties.getLatitude())
+        .longitude(properties.getLongitude())
+        .checkInTime(properties.getCheckInTime())
+        .checkOutTime(properties.getCheckOutTime())
+        .createdAt(properties.getCreatedAt())
+        .updatedAt(properties.getUpdatedAt())
+        .propertyType(properties.getPropertyType().getName())
+        .imageUrls(existingUrls)
+        .amenitiesIds(
+            properties.getAmenities().stream().map(Amenities::getId).toList()
+        )
+        .build();
   }
 
   @Override
@@ -576,5 +610,45 @@ public class PropertiesServiceImpl implements PropertiesService {
     }
     return accommodationQuantities;
   }
-}
 
+  @Override
+  @PreAuthorize(value = "hasRole('HOST')")
+  public List<PropertiesHostDTO> getMyProperties() {
+    User user = SecurityUtils.getCurrentUser();
+    List<Properties> propertiesList = repository.findAllByHostId(user.getId());
+
+    return propertiesList.stream()
+        .map(properties -> PropertiesHostDTO.builder()
+            .id(properties.getId())
+            .name(properties.getName())
+            .description(properties.getDescription())
+            .address(properties.getAddress())
+            .ward(properties.getWard())
+            .image(properties.getImage())
+            .city(properties.getCity())
+            .district(properties.getDistrict())
+            .province(properties.getProvince())
+            .country(properties.getCountry())
+            .rating(properties.getRating())
+            .totalRating(properties.getTotalRating())
+            .status(properties.isStatus())
+            .latitude(properties.getLatitude())
+            .longitude(properties.getLongitude())
+            .checkInTime(properties.getCheckInTime())
+            .checkOutTime(properties.getCheckOutTime())
+            .createdAt(properties.getCreatedAt())
+            .updatedAt(properties.getUpdatedAt())
+            .propertyType(properties.getPropertyType().getName())
+            .imageUrls(
+                imageRepository.findAllByReferenceId(properties.getId().toString()).stream().map(
+                    Image::getUrl
+                ).toList()
+            )
+            .amenitiesIds(
+                properties.getAmenities().stream().map(Amenities::getId).toList()
+            )
+            .build())
+        .toList();
+  }
+
+}

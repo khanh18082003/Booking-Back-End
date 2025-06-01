@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface BedTypeRepository extends BaseRepository<BedType, Integer> {
-    // Custom query methods can be defined here if needed
+  // Custom query methods can be defined here if needed
 }

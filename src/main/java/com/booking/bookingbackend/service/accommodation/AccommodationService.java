@@ -3,9 +3,12 @@ package com.booking.bookingbackend.service.accommodation;
 import com.booking.bookingbackend.data.dto.request.AccommodationCreationRequest;
 import com.booking.bookingbackend.data.dto.request.AccommodationUpdateRequest;
 import com.booking.bookingbackend.data.dto.request.AccommodationsSearchRequest;
+import com.booking.bookingbackend.data.dto.request.AvailableUpdatePriceRequest;
 import com.booking.bookingbackend.data.dto.response.AccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.AccommodationResponse;
+import com.booking.bookingbackend.data.dto.response.AvailableResponse;
 import com.booking.bookingbackend.data.entity.Accommodation;
+import com.booking.bookingbackend.data.projection.AccommodationHostDTO;
 import com.booking.bookingbackend.data.projection.AccommodationSearchDTO;
 import com.booking.bookingbackend.data.projection.AvailableAccommodationDTO;
 import com.booking.bookingbackend.data.repository.AccommodationRepository;
@@ -40,4 +43,10 @@ public interface AccommodationService extends BaseEntityService<
   List<AccommodationSearchDTO> findAccommodationByPropertyId(
       final AccommodationsSearchRequest request
   );
+
+  List<AccommodationHostDTO> getAccommodationsByPropertyId(final UUID id);
+
+  List<AvailableResponse> findAllByAccommodationId(final UUID id);
+
+  List<AvailableResponse> updatePriceAvailableByDate(final AvailableUpdatePriceRequest request);
 }

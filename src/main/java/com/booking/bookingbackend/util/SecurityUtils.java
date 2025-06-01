@@ -4,7 +4,7 @@ import com.booking.bookingbackend.data.entity.User;
 import java.security.SecureRandom;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-public class SecurityUtil {
+public class SecurityUtils {
 
   public static String generateVerificationCode() {
     String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
