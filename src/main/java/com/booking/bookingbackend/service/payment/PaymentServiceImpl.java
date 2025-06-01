@@ -10,6 +10,16 @@ import com.booking.bookingbackend.data.mapper.PaymentMapper;
 import com.booking.bookingbackend.data.repository.BookingRepository;
 import com.booking.bookingbackend.data.repository.PaymentRepository;
 import com.booking.bookingbackend.exception.AppException;
+import com.booking.bookingbackend.service.payment.command.PaymentCommand;
+import com.booking.bookingbackend.service.payment.command.PaymentCommandFactory;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -34,7 +44,6 @@ import org.springframework.stereotype.Service;
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @Slf4j(topic = "PAYMENT-SERVICE")
 public class PaymentServiceImpl implements PaymentService {
-
   PaymentRepository repository;
   BookingRepository bookingRepository;
   PaymentMapper mapper;
@@ -42,7 +51,6 @@ public class PaymentServiceImpl implements PaymentService {
   static String AUTHORIZATION_TOKEN = "Bearer CJPN4H68I7XSWHVPGNJ5CYU6H3UVZR24WS5NDT97EV0CXBFUXPFTLGACOM9IIQ1A";
   static String ACCOUNT_NUMBER = "0396441431";
   static String ACCOUNT_NAME = "NGUYEN THANH TAM";
-
   @Override
   public PaymentResponse save(PaymentRequest request) {
     Payment payment = mapper.toEntity(request);
