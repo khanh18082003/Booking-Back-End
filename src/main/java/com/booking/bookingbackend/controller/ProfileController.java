@@ -12,20 +12,24 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
+import java.io.IOException;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_PROFILE)
@@ -138,6 +142,31 @@ public class ProfileController {
   )
   ApiResponse<ProfileResponse> findById(@PathVariable UUID id) {
     return ApiResponse.<ProfileResponse>builder()
+        .build();
+  }
+
+  @PatchMapping("/avatar")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  ApiResponse<ProfileResponse> updateAvatar(@RequestPart("avatar") MultipartFile avatarFile)
+      throws IOException {
+
+    return ApiResponse.<ProfileResponse>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.ACCEPTED.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(profileService.updateAvatar(avatarFile))
+        .build();
+
+  }
+
+  @DeleteMapping("/avatar")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  ApiResponse<Void> deleteAvatar() {
+    profileService.deleteAvatar();
+    return ApiResponse.<Void>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.ACCEPTED.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .build();
   }
 }

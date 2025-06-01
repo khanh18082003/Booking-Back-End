@@ -9,14 +9,11 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.io.Serial;
 import java.sql.Timestamp;
-import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,10 +26,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.UuidGenerator.Style;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
+
+// Adaptee
 @Entity
 @Table(name = "tbl_user")
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -41,7 +37,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User extends UUIDJpaEntity implements UserDetails {
+public class User extends UUIDJpaEntity {
 
   @Serial
   private static final long serialVersionUID = -820978303502982886L;
@@ -93,35 +89,4 @@ public class User extends UUIDJpaEntity implements UserDetails {
   Set<Booking> bookings;
 
 
-  @Override
-  public Collection<? extends GrantedAuthority> getAuthorities() {
-    return roles.stream()
-        .map(role -> new SimpleGrantedAuthority(String.format("ROLE_%s", role.getName())))
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public String getUsername() {
-    return email;
-  }
-
-  @Override
-  public boolean isAccountNonExpired() {
-    return UserDetails.super.isAccountNonExpired();
-  }
-
-  @Override
-  public boolean isAccountNonLocked() {
-    return UserDetails.super.isAccountNonLocked();
-  }
-
-  @Override
-  public boolean isCredentialsNonExpired() {
-    return UserDetails.super.isCredentialsNonExpired();
-  }
-
-  @Override
-  public boolean isEnabled() {
-    return UserDetails.super.isEnabled();
-  }
 }

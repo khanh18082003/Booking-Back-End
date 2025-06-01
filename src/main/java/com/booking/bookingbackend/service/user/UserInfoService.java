@@ -1,9 +1,10 @@
 package com.booking.bookingbackend.service.user;
 
 import com.booking.bookingbackend.constant.ErrorCode;
+import com.booking.bookingbackend.data.entity.CustomUserDetails;
+import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
-import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -23,7 +24,8 @@ public class UserInfoService implements UserDetailsService {
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    return userRepository.findByEmail(username)
+    User user = userRepository.findByEmail(username)
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION));
+    return new CustomUserDetails(user);
   }
 }

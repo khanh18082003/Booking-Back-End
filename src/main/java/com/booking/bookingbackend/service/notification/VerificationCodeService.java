@@ -1,4 +1,4 @@
-package com.booking.bookingbackend.service.mail;
+package com.booking.bookingbackend.service.notification;
 
 import com.booking.bookingbackend.data.entity.RedisVerificationCode;
 import com.booking.bookingbackend.data.repository.VerificationCodeRepository;

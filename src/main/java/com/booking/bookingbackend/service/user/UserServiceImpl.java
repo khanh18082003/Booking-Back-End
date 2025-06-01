@@ -7,6 +7,7 @@ import com.booking.bookingbackend.data.dto.request.UserCreationRequest;
 import com.booking.bookingbackend.data.dto.response.RevenueResponse;
 import com.booking.bookingbackend.data.dto.response.UserProfileDto;
 import com.booking.bookingbackend.data.dto.response.UserResponse;
+import com.booking.bookingbackend.data.entity.CustomUserDetails;
 import com.booking.bookingbackend.data.entity.Profile;
 import com.booking.bookingbackend.data.entity.RedisVerificationCode;
 import com.booking.bookingbackend.data.entity.User;
@@ -28,8 +29,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -101,49 +100,51 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserProfileDto getMyProfile() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication != null) {
-      User user = SecurityUtils.getCurrentUser();
 
-      // Fetch user profile using the repository
-      Tuple userProfileTuple = repository.findByUserProfile(user.getId())
-          .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-              getEntityClass().getSimpleName())
+    CustomUserDetails userDetails = SecurityUtils.getCurrentUser();
 
-          );
-
-      // validate gender
-      String gender = userProfileTuple.get("gender", String.class);
-      String genderValidated = null;
-      if (gender != null) {
-        try {
-          genderValidated = Gender.valueOf(gender.toUpperCase()).getValue();
-        } catch (IllegalArgumentException e) {
-          throw new AppException(ErrorCode.MESSAGE_INVALID_FORMAT, "Invalid gender value");
-        }
-      }
-
-      return new UserProfileDto(
-          UUID.fromString(userProfileTuple.get("id", String.class)),
-          userProfileTuple.get("email", String.class),
-          userProfileTuple.get("isActive", Boolean.class),
-          UUID.fromString(userProfileTuple.get("profileId", String.class)),
-          userProfileTuple.get("avatar", String.class),
-          userProfileTuple.get("phone", String.class),
-          Optional.ofNullable(userProfileTuple.get("dob", Date.class))
-              .map(Date::toLocalDate)
-              .orElse(null),
-          genderValidated,
-          userProfileTuple.get("address", String.class),
-          userProfileTuple.get("firstName", String.class),
-          userProfileTuple.get("lastName", String.class),
-          userProfileTuple.get("name", String.class),
-          userProfileTuple.get("countryCode", String.class),
-          userProfileTuple.get("nationality", String.class)
-      );
-    } else {
+    if (userDetails == null) {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
+    User user = userDetails.getUser();
+    // Fetch user profile using the repository
+    Tuple userProfileTuple = repository.findByUserProfile(user.getId())
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            getEntityClass().getSimpleName())
+
+        );
+
+    // validate gender
+    String gender = userProfileTuple.get("gender", String.class);
+    String genderValidated = null;
+    if (gender != null) {
+      try {
+        genderValidated = Gender.valueOf(gender.toUpperCase()).getValue();
+      } catch (IllegalArgumentException e) {
+        throw new AppException(ErrorCode.MESSAGE_INVALID_FORMAT, "Invalid gender value");
+      }
+    }
+
+    return new UserProfileDto(
+        UUID.fromString(userProfileTuple.get("id", String.class)),
+        userProfileTuple.get("email", String.class),
+        userProfileTuple.get("isActive", Boolean.class),
+        UUID.fromString(userProfileTuple.get("profileId", String.class)),
+        userProfileTuple.get("avatar", String.class),
+        userProfileTuple.get("phone", String.class),
+        Optional.ofNullable(userProfileTuple.get("dob", Date.class))
+            .map(Date::toLocalDate)
+            .orElse(null),
+        genderValidated,
+        userProfileTuple.get("address", String.class),
+        userProfileTuple.get("firstName", String.class),
+        userProfileTuple.get("lastName", String.class),
+        userProfileTuple.get("name", String.class),
+        userProfileTuple.get("countryCode", String.class),
+        userProfileTuple.get("nationality", String.class)
+    );
+
+
   }
 
   @Transactional
@@ -171,9 +172,9 @@ public class UserServiceImpl implements UserService {
     repository.save(user);
   }
 
-    @Override
-    public List<RevenueResponse> getRevenueByHostId(UUID userId) {
-        return repository.RevenueByHostId(userId);
-    }
+  @Override
+  public List<RevenueResponse> getRevenueByHostId(UUID userId) {
+    return repository.RevenueByHostId(userId);
+  }
 
 }

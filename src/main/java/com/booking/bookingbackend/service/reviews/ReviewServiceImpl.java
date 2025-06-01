@@ -3,6 +3,7 @@ package com.booking.bookingbackend.service.reviews;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.ReviewCreationRequest;
 import com.booking.bookingbackend.data.dto.response.ReviewResponse;
+import com.booking.bookingbackend.data.entity.CustomUserDetails;
 import com.booking.bookingbackend.data.entity.Profile;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.Review;
@@ -40,6 +41,14 @@ public class ReviewServiceImpl implements ReviewService {
   @Transactional
   @Override
   public ReviewResponse save(ReviewCreationRequest request) {
+    // Get User
+    CustomUserDetails userDetails = SecurityUtils.getCurrentUser();
+    if (userDetails == null) {
+      throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
+    }
+
+    User user = userDetails.getUser();
+
     Review entity = mapper.toEntity(request);
     // Get Properties
     Properties properties = propertiesRepository.findById(request.propertiesId())
@@ -47,8 +56,7 @@ public class ReviewServiceImpl implements ReviewService {
             Properties.class.getSimpleName())
         );
     entity.setProperties(properties);
-    // Get User
-    User user = SecurityUtils.getCurrentUser();
+
     entity.setUser(user);
     // Save Review
     log.info("Saving review for user: {}", user.getId());

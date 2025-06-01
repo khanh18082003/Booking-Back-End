@@ -15,6 +15,7 @@ import com.booking.bookingbackend.data.dto.response.UserBookingResponse;
 import com.booking.bookingbackend.data.entity.Available;
 import com.booking.bookingbackend.data.entity.Booking;
 import com.booking.bookingbackend.data.entity.BookingDetail;
+import com.booking.bookingbackend.data.entity.CustomUserDetails;
 import com.booking.bookingbackend.data.entity.GuestBooking;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.User;
@@ -29,7 +30,7 @@ import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.accommodation.AccommodationService;
-import com.booking.bookingbackend.service.mail.MailService;
+import com.booking.bookingbackend.service.notification.MailService;
 import com.booking.bookingbackend.service.payment.PaymentService;
 import com.booking.bookingbackend.service.price.PriceService;
 import com.booking.bookingbackend.util.SecurityUtils;
@@ -235,7 +236,9 @@ public class BookingServiceImpl implements BookingService {
       int pageNo,
       int pageSize
   ) {
-    User user = SecurityUtils.getCurrentUser();
+    CustomUserDetails userDetails = SecurityUtils.getCurrentUser();
+    User user = userDetails.getUser();
+
     Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
     Page<UserBookingsHistoryDTO> page = repository.findUserBookingsHistory(
         user.getId(),
