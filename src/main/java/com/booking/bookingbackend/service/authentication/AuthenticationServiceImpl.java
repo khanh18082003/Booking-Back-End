@@ -84,7 +84,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         .filter(authority -> authority.getAuthority().equals("ROLE_USER"))
         .findFirst()
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION));
-    User user = userDetails.getUser();
+    User user = userDetails.user();
 
     if (user != null && !userDetails.isEnabled()) {
       ProfileResponse profileResponse = profileService.findByUserId(user.getId());

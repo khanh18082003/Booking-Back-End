@@ -47,7 +47,7 @@ public class ReviewServiceImpl implements ReviewService {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
 
-    User user = userDetails.getUser();
+    User user = userDetails.user();
 
     Review entity = mapper.toEntity(request);
     // Get Properties

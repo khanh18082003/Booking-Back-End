@@ -75,7 +75,7 @@ public class AuthenticationHostServiceImpl implements AuthenticationService {
         .filter(authority -> authority.getAuthority().equals("ROLE_HOST"))
         .findFirst()
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION));
-    User user = userDetails.getUser();
+    User user = userDetails.user();
     if (user != null && !user.isActive()) {
       ProfileResponse profileResponse = profileService.findByUserId(user.getId());
       String firstName = profileResponse.getFirstName();

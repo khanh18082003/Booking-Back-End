@@ -9,14 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 // UserDetails is target interface for Spring Security
 // Adapter
-@Getter
-public class CustomUserDetails implements UserDetails {
-
-  private final User user;
-
-  public CustomUserDetails(User user) {
-    this.user = user;
-  }
+public record CustomUserDetails(User user) implements UserDetails {
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -106,7 +106,7 @@ public class UserServiceImpl implements UserService {
     if (userDetails == null) {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
-    User user = userDetails.getUser();
+    User user = userDetails.user();
     // Fetch user profile using the repository
     Tuple userProfileTuple = repository.findByUserProfile(user.getId())
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,

@@ -237,7 +237,7 @@ public class BookingServiceImpl implements BookingService {
       int pageSize
   ) {
     CustomUserDetails userDetails = SecurityUtils.getCurrentUser();
-    User user = userDetails.getUser();
+    User user = userDetails.user();
 
     Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
     Page<UserBookingsHistoryDTO> page = repository.findUserBookingsHistory(
