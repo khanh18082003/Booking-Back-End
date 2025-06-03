@@ -121,6 +121,11 @@ public class AuthenticationHostServiceImpl implements AuthenticationService {
   }
 
   @Override
+  public AuthenticationResponse outboundAuthenticate(String code, HttpServletResponse res) {
+    return null;
+  }
+
+  @Override
   public AuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest,
       HttpServletRequest req) {
     // Retrieve the refresh token from cookies

@@ -29,6 +29,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -41,8 +42,10 @@ public class AuthenticationController {
   UserService userService;
 
   public AuthenticationController(
-      @Qualifier("authenticationServiceImpl") AuthenticationService authenticationService,
-      UserService userService) {
+      @Qualifier("authenticationServiceImpl")
+      AuthenticationService authenticationService,
+      UserService userService
+  ) {
     this.authenticationService = authenticationService;
     this.userService = userService;
   }
@@ -83,6 +86,19 @@ public class AuthenticationController {
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .data(authenticationService.authenticate(request, response))
+        .build();
+  }
+
+  @PostMapping("/outbound/authentication")
+  ApiResponse<AuthenticationResponse> outboundAuthentication(
+      @RequestParam("code") String code,
+      HttpServletResponse res
+  ) {
+    return ApiResponse.<AuthenticationResponse>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(authenticationService.outboundAuthenticate(code, res))
         .build();
   }
 

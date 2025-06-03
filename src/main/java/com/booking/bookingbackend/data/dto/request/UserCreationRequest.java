@@ -8,7 +8,9 @@ import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Set;
+import lombok.Builder;
 
+@Builder
 public record UserCreationRequest(
     @Email(message = "MESSAGE_INVALID_EMAIL")
     @NotBlank(message = "MESSAGE_NOT_BLANK")

@@ -17,8 +17,10 @@ public interface UserRepository extends BaseRepository<User, UUID> {
 
   boolean existsByEmail(String email);
 
-  @EntityGraph(attributePaths = "roles")
   Optional<User> findByEmail(String email);
+
+  @Query("SELECT u FROM User u JOIN FETCH u.roles r JOIN FETCH r.permissions WHERE u.email = :email")
+  Optional<User> findByEmailJoinRoleWithPermission(String email);
 
   @Query(value = """
       SELECT BIN_TO_UUID(u.id) AS id,

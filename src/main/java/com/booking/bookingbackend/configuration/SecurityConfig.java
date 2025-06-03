@@ -54,6 +54,7 @@ public class SecurityConfig {
       EndpointConstant.ENDPOINT_AUTH + "/refresh-token",
       EndpointConstant.ENDPOINT_AUTH + "/logout",
       EndpointConstant.ENDPOINT_AUTH + "/check-exist-email",
+      EndpointConstant.ENDPOINT_AUTH + "/outbound/authentication",
       EndpointConstant.ENDPOINT_MAIL,
       EndpointConstant.ENDPOINT_USER + "/forgot-password",
       EndpointConstant.ENDPOINT_USER + "/reset-password",

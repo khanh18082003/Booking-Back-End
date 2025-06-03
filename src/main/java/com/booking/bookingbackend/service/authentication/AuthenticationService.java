@@ -19,6 +19,11 @@ public interface AuthenticationService {
       HttpServletResponse response
   ) throws MessagingException, UnsupportedEncodingException;
 
+  AuthenticationResponse outboundAuthenticate(
+      String code,
+      HttpServletResponse res
+  );
+
   AuthenticationResponse refreshToken(
       RefreshTokenRequest refreshTokenRequest,
       HttpServletRequest req
@@ -31,6 +36,19 @@ public interface AuthenticationService {
   );
 
   void verifyTokenEmail(VerificationEmailRequest request);
+
+  default Cookie createRefreshTokenCookie(
+      String refreshToken,
+      RefreshTokenType type,
+      int maxAge
+  ) {
+    Cookie cookie = new Cookie(type.getType(), refreshToken);
+    cookie.setHttpOnly(true);
+    cookie.setSecure(true);
+    cookie.setPath("/");
+    cookie.setMaxAge(maxAge);
+    return cookie;
+  }
 
   default String getRefreshTokenFromCookies(HttpServletRequest request, RefreshTokenType type) {
     if (request.getCookies() != null) {

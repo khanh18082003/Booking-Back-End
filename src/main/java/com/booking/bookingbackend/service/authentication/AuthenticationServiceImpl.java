@@ -3,16 +3,24 @@ package com.booking.bookingbackend.service.authentication;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.RefreshTokenType;
 import com.booking.bookingbackend.constant.TokenType;
+import com.booking.bookingbackend.constant.UserRole;
 import com.booking.bookingbackend.data.dto.request.AuthenticationRequest;
+import com.booking.bookingbackend.data.dto.request.ExchangeTokenRequest;
 import com.booking.bookingbackend.data.dto.request.LogoutRequest;
 import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
 import com.booking.bookingbackend.data.dto.request.VerificationEmailRequest;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
 import com.booking.bookingbackend.data.dto.response.ProfileResponse;
 import com.booking.bookingbackend.data.entity.CustomUserDetails;
+import com.booking.bookingbackend.data.entity.Profile;
 import com.booking.bookingbackend.data.entity.RedisVerificationCode;
 import com.booking.bookingbackend.data.entity.User;
+import com.booking.bookingbackend.data.repository.ProfileRepository;
+import com.booking.bookingbackend.data.repository.RoleRepository;
+import com.booking.bookingbackend.data.repository.UserRepository;
 import com.booking.bookingbackend.data.repository.VerificationCodeRepository;
+import com.booking.bookingbackend.data.repository.httpclient.OutboundIdentityClient;
+import com.booking.bookingbackend.data.repository.httpclient.OutboundUserClient;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.jwt.JwtService;
 import com.booking.bookingbackend.service.notification.MailService;
@@ -23,10 +31,13 @@ import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 import java.io.UnsupportedEncodingException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
@@ -54,10 +65,31 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   MailService mailService;
   ProfileService profileService;
   UserInfoService userInfoService;
+  OutboundIdentityClient outboundIdentityClient;
+  OutboundUserClient outboundUserClient;
+  UserRepository userRepository;
+  RoleRepository roleRepository;
+  ProfileRepository profileRepository;
 
   @Value("${jwt.expirationDay}")
   @NonFinal
   int expirationDay;
+
+  @Value("${outbound.identity.client-id}")
+  @NonFinal
+  String CLIENT_ID;
+
+  @Value("${outbound.identity.client-secret}")
+  @NonFinal
+  String CLIENT_SECRET;
+
+  @Value("${outbound.identity.redirect-uri}")
+  @NonFinal
+  String REDIRECT_URI;
+
+  @Value("${outbound.identity.grant-type}")
+  @NonFinal
+  String GRANT_TYPE;
 
   /**
    * Authenticates a user based on the provided authentication request.
@@ -114,17 +146,79 @@ public class AuthenticationServiceImpl implements AuthenticationService {
           authentication.getAuthorities()
       );
 
-      // Store refresh token in HttpOnly cookie
-      Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
-      refreshTokenCookie.setHttpOnly(true);
-      refreshTokenCookie.setSecure(true);
-      refreshTokenCookie.setPath("/");
-      refreshTokenCookie.setMaxAge(expirationDay * 24 * 60 * 60);
-      response.addCookie(refreshTokenCookie);
+      response.addCookie(createRefreshTokenCookie(
+          refreshToken,
+          RefreshTokenType.USER,
+          expirationDay * 24 * 60 * 60
+      ));
 
     } else {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
+    return AuthenticationResponse.builder()
+        .accessToken(accessToken)
+        .build();
+  }
+
+  @Override
+  @Transactional
+  public AuthenticationResponse outboundAuthenticate(String code, HttpServletResponse res) {
+    var response = outboundIdentityClient.exchangeToken(
+        ExchangeTokenRequest.builder()
+            .code(code)
+            .clientId(CLIENT_ID)
+            .clientSecret(CLIENT_SECRET)
+            .redirectUri(REDIRECT_URI)
+            .grantType(GRANT_TYPE)
+            .build()
+    );
+    log.info("Outbound authentication successful for code: {}", code);
+
+    var userInfo = outboundUserClient.getUserInfo("json", response.getAccessToken());
+
+    var roles = roleRepository.findAllByName(List.of(UserRole.USER.name()));
+
+    var user = userRepository.findByEmailJoinRoleWithPermission(userInfo.getEmail())
+        .orElseGet(
+            () -> {
+              User userCreation = userRepository.save(
+                  User.builder()
+                      .email(userInfo.getEmail())
+                      .password("")
+                      .active(userInfo.isVerifiedEmail())
+                      .roles(new HashSet<>(roles))
+                      .build()
+              );
+              profileRepository.save(
+                  Profile.builder()
+                      .user(userCreation)
+                      .firstName(userInfo.getGivenName())
+                      .lastName(userInfo.getFamilyName())
+                      .avatar(userInfo.getPicture())
+                      .build()
+              );
+
+              return userCreation;
+            }
+        );
+    var authorities = SecurityUtils.getAuthorities(user);
+
+    var accessToken = jwtService.generateAccessToken(
+        user.getEmail(),
+        authorities
+    );
+
+    var refreshToken = jwtService.generateRefreshToken(
+        user.getEmail(),
+        authorities
+    );
+
+    res.addCookie(createRefreshTokenCookie(
+        refreshToken,
+        RefreshTokenType.USER,
+        expirationDay * 24 * 60 * 60
+    ));
+
     return AuthenticationResponse.builder()
         .accessToken(accessToken)
         .build();

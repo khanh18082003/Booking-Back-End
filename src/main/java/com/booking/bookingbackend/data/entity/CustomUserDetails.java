@@ -1,10 +1,8 @@
 package com.booking.bookingbackend.data.entity;
 
+import com.booking.bookingbackend.util.SecurityUtils;
 import java.util.Collection;
-import java.util.stream.Collectors;
-import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 // UserDetails is target interface for Spring Security
@@ -13,9 +11,8 @@ public record CustomUserDetails(User user) implements UserDetails {
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return user.getRoles().stream()
-        .map(role -> new SimpleGrantedAuthority(String.format("ROLE_%s", role.getName())))
-        .collect(Collectors.toList());
+
+    return SecurityUtils.getAuthorities(user);
   }
 
   @Override
