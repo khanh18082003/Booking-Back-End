@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 @FeignClient(
     name = "outbound-identity-client",
-    url = "${outbound.identity.url}"
+    url = "${outbound.google.identity.url}"
 )
 public interface OutboundIdentityClient {
 

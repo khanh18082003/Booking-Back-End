@@ -75,19 +75,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   @NonFinal
   int expirationDay;
 
-  @Value("${outbound.identity.client-id}")
+  @Value("${outbound.google.identity.client-id}")
   @NonFinal
   String CLIENT_ID;
 
-  @Value("${outbound.identity.client-secret}")
+  @Value("${outbound.google.identity.client-secret}")
   @NonFinal
   String CLIENT_SECRET;
 
-  @Value("${outbound.identity.redirect-uri}")
+  @Value("${outbound.google.identity.redirect-uri}")
   @NonFinal
   String REDIRECT_URI;
 
-  @Value("${outbound.identity.grant-type}")
+  @Value("${outbound.google.identity.grant-type}")
   @NonFinal
   String GRANT_TYPE;
 
