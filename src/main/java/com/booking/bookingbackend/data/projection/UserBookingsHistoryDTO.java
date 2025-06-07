@@ -64,4 +64,19 @@ public interface UserBookingsHistoryDTO {
 
   @JsonProperty("property_province")
   String getPropertyProvince();
+
+  @JsonProperty("payment_id")
+  UUID getPaymentId();
+
+  @JsonProperty("payment_status")
+  String getPaymentStatus();
+
+  @JsonProperty("payment_image")
+  String getPaymentImage();
+
+  @JsonProperty("payment_method")
+  String getPaymentMethod();
+
+  @JsonProperty("transaction_id")
+  String getTransactionId();
 }
