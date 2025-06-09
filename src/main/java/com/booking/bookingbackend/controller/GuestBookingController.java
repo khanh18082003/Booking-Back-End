@@ -27,7 +27,7 @@ public class GuestBookingController {
 
   GuestBookingService guestBookingService;
 
-  @PostMapping("/save")
+  @PostMapping
   public ApiResponse<GuestBookingResponse> save(
       @Valid @RequestBody GuestBookingRequest guestBookingRequest
   ) {

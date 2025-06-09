@@ -13,7 +13,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,8 +27,6 @@ public class RoleServiceImpl implements RoleService {
   PermissionRepository permissionRepository;
   RoleMapper mapper;
 
-
-  @PreAuthorize(value = "hasRole('ADMIN')")
   @Transactional
   @Override
   public RoleResponse save(RoleRequest request) {
@@ -39,7 +36,6 @@ public class RoleServiceImpl implements RoleService {
     return mapper.toDtoResponse(repository.save(entity));
   }
 
-  @PreAuthorize(value = "hasRole('ADMIN')")
   @Transactional
   @Override
   public void update(int id, RoleRequest request) {

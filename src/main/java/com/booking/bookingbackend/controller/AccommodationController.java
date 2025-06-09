@@ -33,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -112,6 +113,7 @@ public class AccommodationController {
           )
       }
   )
+  @PreAuthorize("hasRole('HOST') AND hasAuthority('POST/accommodations')")
   ApiResponse<AccommodationResponse> create(
       @RequestPart("request") @Valid AccommodationCreationRequest request,
       @RequestPart(value = "extra_image", required = false) MultipartFile[] images) {
@@ -146,6 +148,7 @@ public class AccommodationController {
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("hasRole('HOST') AND hasAuthority('PUT/accommodations/{id}')")
   ApiResponse<AccommodationResponse> update(@PathVariable UUID id,
       @Valid @RequestBody AccommodationUpdateRequest request) {
     return ApiResponse.<AccommodationResponse>builder()
@@ -157,6 +160,7 @@ public class AccommodationController {
   }
 
   @GetMapping
+  @PreAuthorize("hasRole('HOST') AND hasAuthority('GET/accommodations')")
   ApiResponse<PaginationResponse<AccommodationResponse>> findAll(
       @RequestParam(defaultValue = "1") int pageNo,
       @RequestParam(defaultValue = "20") int pageSize
@@ -192,6 +196,7 @@ public class AccommodationController {
   }
 
   @GetMapping("/{id}/available")
+  @PreAuthorize("hasAnyRole('USER', 'HOST') AND hasAuthority('GET/accommodations/{id}/available')")
   ApiResponse<List<AvailableResponse>> findAllByAccommodationId(@PathVariable UUID id) {
     List<AvailableResponse> availableResponses = accommodationService.findAllByAccommodationId(id);
     return ApiResponse.<List<AvailableResponse>>builder()
@@ -203,10 +208,12 @@ public class AccommodationController {
   }
 
   @PutMapping("/available")
+  @PreAuthorize("hasRole('HOST') AND hasAuthority('PUT/accommodations/available')")
   ApiResponse<List<AvailableResponse>> updatePriceAvailableByDate(
       @Valid @RequestBody AvailableUpdatePriceRequest request
   ) {
-    List<AvailableResponse> updatedResponses = accommodationService.updatePriceAvailableByDate(request);
+    List<AvailableResponse> updatedResponses = accommodationService.updatePriceAvailableByDate(
+        request);
     return ApiResponse.<List<AvailableResponse>>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())

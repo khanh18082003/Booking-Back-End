@@ -25,6 +25,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -75,6 +76,7 @@ public class PermissionController {
                               """))),
       }
   )
+  @PreAuthorize(value = "hasRole('ADMIN') and hasAuthority('POST/permissions')")
   ApiResponse<PermissionResponse> createPermission(@Valid @RequestBody PermissionRequest request) {
 
     return ApiResponse.<PermissionResponse>builder()
@@ -108,6 +110,7 @@ public class PermissionController {
                               """))),
       }
   )
+  @PreAuthorize(value = "hasRole('ADMIN') and hasAuthority('PUT/permissions')")
   ApiResponse<PermissionResponse> updatePermission(@PathVariable int id,
       @Valid @RequestBody PermissionRequest request) {
     permissionService.update(id, request);
@@ -148,6 +151,7 @@ public class PermissionController {
                               """))),
       }
   )
+  @PreAuthorize(value = "hasRole('ADMIN') and hasAuthority('GET/permissions/id')")
   ApiResponse<PermissionResponse> getById(@PathVariable int id) {
     return ApiResponse.<PermissionResponse>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
@@ -191,6 +195,7 @@ public class PermissionController {
                               """))),
       }
   )
+  @PreAuthorize(value = "hasRole('ADMIN') and hasAuthority('GET/permissions')")
   ApiResponse<PaginationResponse<PermissionResponse>> findAll(
       @RequestParam(defaultValue = "1") int pageNo,
       @RequestParam(defaultValue = "20") int pageSize

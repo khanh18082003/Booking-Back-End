@@ -10,7 +10,6 @@ import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
 import com.booking.bookingbackend.service.authentication.AuthenticationService;
-import com.booking.bookingbackend.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -36,14 +35,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationHostController {
 
   AuthenticationService authenticationService;
-  UserService userService;
+
 
   public AuthenticationHostController(
-      @Qualifier("authenticationHostServiceImpl") AuthenticationService authenticationService,
-      UserService userService
+      @Qualifier("authenticationHostServiceImpl") AuthenticationService authenticationService
   ) {
     this.authenticationService = authenticationService;
-    this.userService = userService;
   }
 
   @PostMapping("/host/login")

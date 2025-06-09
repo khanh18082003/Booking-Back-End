@@ -3,13 +3,13 @@
 spring:
   config:
     activate:
-      on-profile: dev
+      on-profile: prod
 
   datasource:
-    url: jdbc:mysql://localhost:3306/booking_db
+    url: jdbc:mysql://${JDBC_ADDRESS:localhost}:3306/booking_db
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: root
+    username: ${USERNAME:root}
+    password: ${PASSWORD:root}
   jpa:
     show-sql: true
     hibernate:
@@ -34,14 +34,15 @@ spring:
     type: redis
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
 outbound:
   google:
     identity:
       url: https://oauth2.googleapis.com
-      client-id: GOOGLE_CLIENT_ID=26485259913-st8ntcrddohfh57ekj4ifdpt9nmqodob.apps.googleusercontent.com
-      client-secret: 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
+      client-id: ${GOOGLE_CLIENT_ID}
+      client-secret: ${GOOGLE_CLIENT_SECRET}
       redirect-uri: http://localhost:5173/authentication
       grant-type: authorization_code
     user:
@@ -49,8 +50,8 @@ outbound:
   facebook:
     identity:
       url: https://graph.facebook.com
-      client-id: 4150002501944200
-      client-secret: a279635599ef4885e088698384f4bd1f
+      client-id: ${FACEBOOK_CLIENT_ID}
+      client-secret: ${FACEBOOK_CLIENT_SECRET}
       redirect-uri: http://localhost:5173/authentication
       grant-type: authorization_code
     user:
@@ -90,4 +91,4 @@ admin-profile:
 
 google:
   map:
-    api-key: AIzaSyCRkytscKpU_QjxA5bM3E2ggBv8S8REah4
+    api-key: ${GOOGLE_MAPS_API_KEY}
