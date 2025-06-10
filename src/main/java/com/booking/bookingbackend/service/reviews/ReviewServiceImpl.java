@@ -3,12 +3,9 @@ package com.booking.bookingbackend.service.reviews;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.ReviewCreationRequest;
 import com.booking.bookingbackend.data.dto.response.ReviewResponse;
-import com.booking.bookingbackend.data.entity.CustomUserDetails;
-import com.booking.bookingbackend.data.entity.Profile;
-import com.booking.bookingbackend.data.entity.Properties;
-import com.booking.bookingbackend.data.entity.Review;
-import com.booking.bookingbackend.data.entity.User;
+import com.booking.bookingbackend.data.entity.*;
 import com.booking.bookingbackend.data.mapper.ReviewMapper;
+import com.booking.bookingbackend.data.repository.BookingRepository;
 import com.booking.bookingbackend.data.repository.PropertiesRepository;
 import com.booking.bookingbackend.data.repository.ReviewRepository;
 import com.booking.bookingbackend.data.repository.UserRepository;
@@ -34,6 +31,7 @@ public class ReviewServiceImpl implements ReviewService {
   ReviewRepository repository;
   PropertiesRepository propertiesRepository;
   UserRepository userRepository;
+  BookingRepository bookingRepository;
 
   // Mappers
   ReviewMapper mapper;
@@ -49,12 +47,16 @@ public class ReviewServiceImpl implements ReviewService {
 
     User user = userDetails.user();
 
+    boolean exists = bookingRepository.getBooking(user.getId(),request.propertiesId()) == 1;
+    if (!exists){
+      throw new AppException(ErrorCode.MESSAGE_REVIEW_NOT_ALLOWED);
+    }
     Review entity = mapper.toEntity(request);
     // Get Properties
     Properties properties = propertiesRepository.findById(request.propertiesId())
-        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-            Properties.class.getSimpleName())
-        );
+            .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+                    Properties.class.getSimpleName())
+            );
     entity.setProperties(properties);
 
     entity.setUser(user);
@@ -64,7 +66,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     // Update Properties Rating
     double rating = (properties.getRating().doubleValue() * properties.getTotalRating() +
-        request.rating()) / (properties.getTotalRating() + 1);
+            request.rating()) / (properties.getTotalRating() + 1);
     properties.setRating(BigDecimal.valueOf(rating));
     properties.setTotalRating(properties.getTotalRating() + 1);
     propertiesRepository.save(properties);
