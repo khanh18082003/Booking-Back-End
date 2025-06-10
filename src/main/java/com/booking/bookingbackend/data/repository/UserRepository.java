@@ -7,7 +7,6 @@ import jakarta.persistence.Tuple;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -43,22 +42,73 @@ public interface UserRepository extends BaseRepository<User, UUID> {
   Optional<Tuple> findByUserProfile(@Param("id") UUID id);
 
   @Query(value = """
-          SELECT
-              b.created_at,
-              p.name,
-              a.name,
-              bd.booked_units,
-              b.check_in,
-              b.check_out,
-              b.total_price,
-              b.status
+          SELECT COUNT(*) AS totalBookings,
+                 SUM(pay.amount) AS totalAmount
           FROM tbl_booking b
-          JOIN tbl_booking_detail bd ON b.id = bd.booking_id
-          JOIN tbl_accommodation a ON bd.accommodation_id = a.id
-          JOIN tbl_properties p ON b.properties_id = p.id
-          WHERE p.host_id = :userId
-          ORDER BY b.created_at DESC
+                   JOIN (SELECT id, host_id, status
+                         FROM tbl_properties
+                         WHERE host_id = :hostId
+                           AND status = 1) p
+                        ON b.properties_id = p.id
+                   JOIN (SELECT id, status, amount, booking_id
+                         FROM tbl_payment
+                         WHERE status = 'COMPLETE') pay
+                        ON pay.booking_id = b.id
       """, nativeQuery = true)
-  List<RevenueResponse> RevenueByHostId(@Param("userId") UUID userId);
+  RevenueResponse revenueByHostId(@Param("hostId") UUID userId);
 
+  @Query(value = """
+          SELECT COUNT(*)        AS totalBookings,
+                 SUM(pay.amount) AS totalAmount
+          FROM (SELECT id, properties_id, check_in, check_out
+                FROM tbl_booking
+                WHERE (MONTH(check_in) = :month OR MONTH(check_out) = :month)
+                  AND YEAR(check_in) = :year) b
+                   JOIN (SELECT id, host_id, status
+                         FROM tbl_properties
+                         WHERE host_id = :hostId
+                           AND status = 1) p
+                        ON b.properties_id = p.id
+                   JOIN (SELECT id, status, amount, booking_id
+                         FROM tbl_payment
+                         WHERE status = 'COMPLETE') pay
+                        ON pay.booking_id = b.id
+      """, nativeQuery = true)
+  RevenueResponse revenueByHostIdWithMonthAndYear(
+      @Param("hostId") UUID userId,
+      @Param("month") int month,
+      @Param("year") int year
+  );
+
+  @Query(value = """
+      WITH RECURSIVE
+          months AS (SELECT 1 AS month
+                     UNION ALL
+                     SELECT month + 1
+                     FROM months
+                     WHERE month < 12),
+          revenue_by_month AS (SELECT MONTH(b.check_in) AS month,
+                                      COUNT(*)            AS totalBookings,
+                                      SUM(pay.amount)     AS totalAmount
+                               FROM (SELECT id, check_in, check_out, properties_id, created_at
+                                     FROM tbl_booking
+                                     WHERE YEAR(check_in) = :year) b
+                                        JOIN (SELECT id, host_id, status
+                                              FROM tbl_properties
+                                              WHERE host_id = :hostId
+                                                AND status = 1) p ON b.properties_id = p.id
+                                        JOIN (SELECT id, status, amount, booking_id
+                                              FROM tbl_payment
+                                              WHERE status = 'COMPLETE') pay ON pay.booking_id = b.id
+                               GROUP BY MONTH(b.check_in))
+      SELECT COALESCE(r.totalBookings, 0) AS totalBookings,
+             COALESCE(r.totalAmount, 0)   AS totalAmount
+      FROM months m
+               LEFT JOIN revenue_by_month r ON m.month = r.month
+      ORDER BY m.month;
+      """, nativeQuery = true)
+  List<RevenueResponse> revenueByHostIdWithYear(
+      @Param("hostId") UUID userId,
+      @Param("year") int year
+  );
 }

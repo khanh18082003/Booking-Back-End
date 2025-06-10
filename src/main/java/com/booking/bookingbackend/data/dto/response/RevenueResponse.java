@@ -1,14 +1,17 @@
 package com.booking.bookingbackend.data.dto.response;
 
-import com.booking.bookingbackend.constant.BookingStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.*;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import java.math.BigDecimal;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,13 +19,9 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class RevenueResponse {
-    Timestamp date;
-    String nameProperty;
-    String nameAccommodation;
-    int quantity;
-    Date checkIn;
-    Date checkOut;
-    BigDecimal totalPrice;
-    String status;
+
+  Long totalBookings;
+  BigDecimal totalAmount;
 }

@@ -67,7 +67,7 @@ public class ProfileServiceImpl implements ProfileService {
     if (authentication == null) {
       throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
-    UUID id = ((User) authentication.getPrincipal()).getId();
+    UUID id = SecurityUtils.getCurrentUser().user().getId();
 
     Profile entity = repository.findByUserId(id)
         .orElseThrow(
