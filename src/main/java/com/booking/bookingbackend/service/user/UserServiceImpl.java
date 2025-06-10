@@ -173,8 +173,18 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public List<RevenueResponse> getRevenueByHostId(UUID userId) {
-    return repository.RevenueByHostId(userId);
+  public RevenueResponse getRevenueByHostId(UUID userId) {
+    return repository.revenueByHostId(userId);
+  }
+
+  @Override
+  public RevenueResponse getRevenueByHostIdWithMonthAndYear(UUID userId, int month, int year) {
+    return repository.revenueByHostIdWithMonthAndYear(userId, month, year);
+  }
+
+  @Override
+  public List<RevenueResponse> getRevenueByHostIdWithYear(UUID userId, int year) {
+    return repository.revenueByHostIdWithYear(userId, year);
   }
 
 }
