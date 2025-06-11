@@ -21,8 +21,7 @@ import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.entity.ids.BookingDetailId;
 import com.booking.bookingbackend.data.mapper.BookingMapper;
-import com.booking.bookingbackend.data.projection.BookingDetailResponse;
-import com.booking.bookingbackend.data.projection.UserBookingsHistoryDTO;
+import com.booking.bookingbackend.data.projection.*;
 import com.booking.bookingbackend.data.repository.AvailableRepository;
 import com.booking.bookingbackend.data.repository.BookingDetailsRepository;
 import com.booking.bookingbackend.data.repository.BookingRepository;
@@ -35,13 +34,20 @@ import com.booking.bookingbackend.service.notification.MailService;
 import com.booking.bookingbackend.service.payment.PaymentService;
 import com.booking.bookingbackend.service.price.PriceService;
 import com.booking.bookingbackend.util.SecurityUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -302,13 +308,39 @@ public class BookingServiceImpl implements BookingService {
     Pageable pageable = PageRequest.of(
         pageNo - 1,
         pageSize,
-        Sort.by(Direction.DESC, "createdAt")
+        Sort.by(Direction.DESC, "created_at")
     );
 
     if (id.equals("all")) {
       CustomUserDetails userDetails = SecurityUtils.getCurrentUser();
-      Page<BookingDetailResponse> bookingPage = repository.findAllOfHost(userDetails.user().getId(), pageable);
-
+      var bookingPage = repository.findAllOfHost(userDetails.user().getId(), pageable);
+      ObjectMapper objectMapper= new ObjectMapper();
+      List<BookingDetailResponse> result =bookingPage.stream().map(booking -> {
+                  try {
+                      Set<AccommodationBaseBookingResponse> accommodations = objectMapper.readValue(booking.get("accommodations", String.class), new TypeReference<>() {
+                      });
+                    return BookingDetailResponse.builder()
+                            .id(UUID.fromString(booking.get("id", String.class)))
+                            .checkIn((booking.get("check_in", Date.class)).toLocalDate())
+                            .checkOut((booking.get("check_out", Date.class)).toLocalDate())
+                            .adultUnits(booking.get("adult_units", Integer.class))
+                            .childUnits(booking.get("children_units", Integer.class))
+                            .totalPrice(booking.get("total_price", BigDecimal.class))
+                            .status(BookingStatus.valueOf(booking.get("status", String.class)))
+                            .propertiesName(booking.get("property_name", String.class))
+                            .fullName(booking.get("full_name", String.class))
+                            .email(booking.get("email", String.class))
+                            .phone(booking.get("phone", String.class))
+                            .paymentStatus(booking.get("payment_status", Boolean.class))
+                            .paymentMethod(PaymentMethod.valueOf(booking.get("payment_method", String.class)))
+                            .accommodations(accommodations)
+                            .createdAt(booking.get("created_at", Timestamp.class))
+                                    .build();
+                  } catch (JsonProcessingException e) {
+                      throw new RuntimeException(e);
+                  }
+              })
+          .toList();
       return PaginationResponse.<BookingDetailResponse>builder()
           .meta(Meta.builder()
               .page(bookingPage.getNumber() + 1)
@@ -316,7 +348,7 @@ public class BookingServiceImpl implements BookingService {
               .pages(bookingPage.getTotalPages())
               .total(bookingPage.getTotalElements())
               .build())
-          .data(bookingPage.getContent())
+          .data(result)
           .build();
     } else {
       Properties properties = propertiesRepository.findById(UUID.fromString(id))
@@ -324,10 +356,37 @@ public class BookingServiceImpl implements BookingService {
               ErrorCode.MESSAGE_INVALID_ENTITY_ID,
               Properties.class.getSimpleName()
           ));
-      Page<BookingDetailResponse> bookingPage = repository.findAllByPropertiesId(
+      var bookingPage = repository.findAllByPropertiesId(
           properties.getId(),
           pageable
       );
+      ObjectMapper objectMapper= new ObjectMapper();
+        List<BookingDetailResponse> result = bookingPage.stream().map(booking -> {
+                    try {
+                        Set<AccommodationBaseBookingResponse> accommodations = objectMapper.readValue(booking.get("accommodations", String.class), new TypeReference<>() {
+                        });
+                        return BookingDetailResponse.builder()
+                                .id(UUID.fromString(booking.get("id", String.class)))
+                                .checkIn((booking.get("check_in", Date.class)).toLocalDate())
+                                .checkOut((booking.get("check_out", Date.class)).toLocalDate())
+                                .adultUnits(booking.get("adult_units", Integer.class))
+                                .childUnits(booking.get("children_units", Integer.class))
+                                .totalPrice(booking.get("total_price", BigDecimal.class))
+                                .status(BookingStatus.valueOf(booking.get("status", String.class)))
+                                .propertiesName(booking.get("property_name", String.class))
+                                .fullName(booking.get("full_name", String.class))
+                                .email(booking.get("email", String.class))
+                                .phone(booking.get("phone", String.class))
+                                .paymentStatus(booking.get("payment_status", Boolean.class))
+                                .paymentMethod(PaymentMethod.valueOf(booking.get("payment_method", String.class)))
+                                .accommodations(accommodations)
+                                .createdAt(booking.get("created_at", java.sql.Timestamp.class))
+                                        .build();
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+            .toList();
 
       return PaginationResponse.<BookingDetailResponse>builder()
           .meta(Meta.builder()
@@ -336,7 +395,7 @@ public class BookingServiceImpl implements BookingService {
               .pages(bookingPage.getTotalPages())
               .total(bookingPage.getTotalElements())
               .build())
-          .data(bookingPage.getContent())
+          .data(result)
           .build();
     }
   }

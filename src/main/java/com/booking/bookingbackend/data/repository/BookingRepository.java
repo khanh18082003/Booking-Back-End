@@ -6,6 +6,8 @@ import com.booking.bookingbackend.data.projection.BookingDetailResponse;
 import com.booking.bookingbackend.data.projection.UserBookingsHistoryDTO;
 import java.util.List;
 import java.util.UUID;
+
+import jakarta.persistence.Tuple;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -86,19 +88,137 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
   Long getBooking(@Param("userId") UUID userId, @Param("propertiesId") UUID propertiesId);
 
   @Query(value = """
-      """,
+          
+              WITH accommodation AS (
+              SELECT
+                  tbd.booking_id AS booking_id,
+                  ta.name,
+                  tbd.booked_units AS quantity
+              FROM tbl_booking_detail tbd
+                       JOIN tbl_accommodation ta ON tbd.accommodation_id = ta.id
+          )
+          SELECT
+              BIN_TO_UUID(b.id) AS id,
+              b.check_in AS check_in,
+              b.check_out AS check_out,
+              b.adult_units AS adult_units,
+              b.children_units AS children_units,
+              b.total_price AS total_price,
+              b.status AS status,
+              prop.name AS property_name,
+              CONCAT(gb.first_name, ' ', gb.last_name) AS full_name,
+              gb.email AS email,
+              gb.phone_number AS phone,
+              p.status AS payment_status,
+              p.payment_method AS payment_method,
+              JSON_ARRAYAGG(
+                      JSON_OBJECT(
+                              'name', acc.name,
+                              'quality', acc.quantity
+                      )
+              ) AS accommodations,
+            b.created_at AS created_at
+          FROM tbl_booking b
+                   JOIN tbl_properties prop ON b.properties_id = prop.id
+                   JOIN tbl_guest_booking gb ON gb.id = b.guest_id
+                   JOIN tbl_payment p ON p.booking_id = b.id
+                   JOIN accommodation acc ON acc.booking_id = b.id
+          WHERE b.properties_id = :propertiesId
+          GROUP BY
+              b.id,
+              b.check_in,
+              b.check_out,
+              b.adult_units,
+              b.children_units,
+              b.total_price,
+              b.status,
+              prop.name,
+              gb.first_name,
+              gb.last_name,
+              gb.email,
+              gb.phone_number,
+              p.status,
+              p.payment_method,
+              b.created_at
+          """,
       countQuery = """
-          """, nativeQuery = true)
-  Page<BookingDetailResponse> findAllByPropertiesId(
+              
+                  SELECT COUNT(DISTINCT b.id)
+              FROM tbl_booking b
+              WHERE b.properties_id = :propertiesId
+              """, nativeQuery = true)
+  Page<Tuple> findAllByPropertiesId(
       UUID propertiesId,
       Pageable pageable
   );
 
   @Query(value = """
-      """,
+          
+              WITH
+              property AS (
+                  SELECT id, name
+                  FROM tbl_properties
+                  WHERE host_id = :hostId
+              ),
+              accommodation AS (
+                  SELECT
+                      tbd.booking_id AS booking_id,
+                      ta.name,
+                      tbd.booked_units AS quantity
+                  FROM tbl_booking_detail tbd
+                           JOIN tbl_accommodation ta ON tbd.accommodation_id = ta.id
+              )
+          SELECT
+              BIN_TO_UUID(b.id) AS id,
+              b.check_in AS check_in,
+              b.check_out AS check_out,
+              b.adult_units AS adult_units,
+              b.children_units AS children_units,
+              b.total_price AS total_price,
+              b.status AS status,
+              property.name AS property_name,
+              CONCAT(gb.first_name, ' ', gb.last_name) AS full_name,
+              gb.email AS email,
+              gb.phone_number AS phone,
+              p.status AS payment_status,
+              p.payment_method AS payment_method,
+              JSON_ARRAYAGG(
+                      JSON_OBJECT(
+                              'name', acc.name,
+                              'quality', acc.quantity
+                      )
+              ) AS accommodations,
+            b.created_at AS created_at
+          FROM tbl_booking b
+                   JOIN property ON b.properties_id = property.id
+                   JOIN tbl_guest_booking gb ON gb.id = b.guest_id
+                   JOIN tbl_payment p ON p.booking_id = b.id
+                   JOIN accommodation acc ON acc.booking_id = b.id
+          GROUP BY
+              b.id,
+              b.check_in,
+              b.check_out,
+              b.adult_units,
+              b.children_units,
+              b.total_price,
+              b.status,
+              property.name,
+              gb.first_name,
+              gb.last_name,
+              gb.email,
+              gb.phone_number,
+              p.status,
+              p.payment_method,
+            b.created_at
+          """,
       countQuery = """
-          """, nativeQuery = true)
-  Page<BookingDetailResponse> findAllOfHost(
+              
+                  SELECT COUNT(DISTINCT b.id)
+              FROM tbl_booking b
+              JOIN tbl_properties p ON b.properties_id = p.id
+              WHERE p.host_id = :hostId
+              """, nativeQuery = true)
+  Page<Tuple> findAllOfHost(
       UUID hostId,
       Pageable pageable
   );
