@@ -21,6 +21,7 @@ import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.entity.ids.BookingDetailId;
 import com.booking.bookingbackend.data.mapper.BookingMapper;
+import com.booking.bookingbackend.data.projection.BookingDetailResponse;
 import com.booking.bookingbackend.data.projection.UserBookingsHistoryDTO;
 import com.booking.bookingbackend.data.repository.AvailableRepository;
 import com.booking.bookingbackend.data.repository.BookingDetailsRepository;
@@ -52,6 +53,8 @@ import org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -288,6 +291,54 @@ public class BookingServiceImpl implements BookingService {
       }
     });
 
+  }
+
+  @Override
+  public PaginationResponse<BookingDetailResponse> getAllBookingsByPropertiesId(
+      String id,
+      int pageNo,
+      int pageSize
+  ) {
+    Pageable pageable = PageRequest.of(
+        pageNo - 1,
+        pageSize,
+        Sort.by(Direction.DESC, "createdAt")
+    );
+
+    if (id.equals("all")) {
+      CustomUserDetails userDetails = SecurityUtils.getCurrentUser();
+      Page<BookingDetailResponse> bookingPage = repository.findAllOfHost(userDetails.user().getId(), pageable);
+
+      return PaginationResponse.<BookingDetailResponse>builder()
+          .meta(Meta.builder()
+              .page(bookingPage.getNumber() + 1)
+              .pageSize(bookingPage.getSize())
+              .pages(bookingPage.getTotalPages())
+              .total(bookingPage.getTotalElements())
+              .build())
+          .data(bookingPage.getContent())
+          .build();
+    } else {
+      Properties properties = propertiesRepository.findById(UUID.fromString(id))
+          .orElseThrow(() -> new AppException(
+              ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+              Properties.class.getSimpleName()
+          ));
+      Page<BookingDetailResponse> bookingPage = repository.findAllByPropertiesId(
+          properties.getId(),
+          pageable
+      );
+
+      return PaginationResponse.<BookingDetailResponse>builder()
+          .meta(Meta.builder()
+              .page(bookingPage.getNumber() + 1)
+              .pageSize(bookingPage.getSize())
+              .pages(bookingPage.getTotalPages())
+              .total(bookingPage.getTotalElements())
+              .build())
+          .data(bookingPage.getContent())
+          .build();
+    }
   }
 
 

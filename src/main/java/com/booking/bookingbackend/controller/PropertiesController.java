@@ -8,16 +8,20 @@ import com.booking.bookingbackend.data.dto.request.CheckAvailableAccommodationsB
 import com.booking.bookingbackend.data.dto.request.PropertiesRequest;
 import com.booking.bookingbackend.data.dto.request.PropertiesSearchRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
+import com.booking.bookingbackend.data.dto.response.BookingResponse;
+import com.booking.bookingbackend.data.dto.response.Meta;
 import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
 import com.booking.bookingbackend.data.dto.response.PropertyAvailableAccommodationBookingResponse;
 import com.booking.bookingbackend.data.dto.response.ReviewResponse;
 import com.booking.bookingbackend.data.projection.AccommodationHostDTO;
 import com.booking.bookingbackend.data.projection.AccommodationSearchDTO;
+import com.booking.bookingbackend.data.projection.BookingDetailResponse;
 import com.booking.bookingbackend.data.projection.PropertiesDTO;
 import com.booking.bookingbackend.data.projection.PropertiesDetailDTO;
 import com.booking.bookingbackend.data.projection.PropertiesHostDTO;
 import com.booking.bookingbackend.service.accommodation.AccommodationService;
+import com.booking.bookingbackend.service.booking.BookingService;
 import com.booking.bookingbackend.service.googlemap.GoogleMapService;
 import com.booking.bookingbackend.service.properties.PropertiesService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,9 +41,15 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -63,7 +73,8 @@ public class PropertiesController {
 
   PropertiesService propertiesService;
   GoogleMapService googleMapService;
-  private final AccommodationService accommodationService;
+  AccommodationService accommodationService;
+  BookingService bookingService;
 
   @PostMapping(
       consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
@@ -421,5 +432,22 @@ public class PropertiesController {
         .data(accommodations)
         .build();
 
+  }
+
+  @GetMapping("/{id}/bookings")
+  @PreAuthorize("hasRole('HOST')")
+  ApiResponse<PaginationResponse<BookingDetailResponse>> getBookingByPropertiesId(
+      @PathVariable String id,
+      @RequestParam(defaultValue = "1") int pageNo,
+      @RequestParam(defaultValue = "20") int pageSize)
+  {
+    PaginationResponse<BookingDetailResponse> result= bookingService.getAllBookingsByPropertiesId(id, pageNo, pageSize);
+
+    return ApiResponse.<PaginationResponse<BookingDetailResponse>>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(result)
+        .build();
   }
 }

@@ -2,11 +2,10 @@ package com.booking.bookingbackend.data.repository;
 
 import com.booking.bookingbackend.data.base.BaseRepository;
 import com.booking.bookingbackend.data.entity.Booking;
+import com.booking.bookingbackend.data.projection.BookingDetailResponse;
 import com.booking.bookingbackend.data.projection.UserBookingsHistoryDTO;
 import java.util.List;
 import java.util.UUID;
-
-import org.springframework.context.annotation.EnableLoadTimeWeaving;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -74,15 +73,33 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
       @Param("user_id") UUID userId,
       Pageable pageable
   );
+
   @Query(value = """
-    SELECT exists (
-        SELECT 1
-        FROM tbl_booking b
-        WHERE b.user_id = :userId
-          AND b.properties_id = :propertiesId
-          AND b.status = 'COMPLETE'
-    )
-""", nativeQuery = true)
+          SELECT exists (
+              SELECT 1
+              FROM tbl_booking b
+              WHERE b.user_id = :userId
+                AND b.properties_id = :propertiesId
+                AND b.status = 'COMPLETE'
+          )
+      """, nativeQuery = true)
   Long getBooking(@Param("userId") UUID userId, @Param("propertiesId") UUID propertiesId);
 
+  @Query(value = """
+      """,
+      countQuery = """
+          """, nativeQuery = true)
+  Page<BookingDetailResponse> findAllByPropertiesId(
+      UUID propertiesId,
+      Pageable pageable
+  );
+
+  @Query(value = """
+      """,
+      countQuery = """
+          """, nativeQuery = true)
+  Page<BookingDetailResponse> findAllOfHost(
+      UUID hostId,
+      Pageable pageable
+  );
 }

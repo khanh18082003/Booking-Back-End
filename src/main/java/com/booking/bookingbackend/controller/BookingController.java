@@ -90,30 +90,4 @@ public class BookingController {
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .build();
   }
-
-
-  @GetMapping
-  ApiResponse<PaginationResponse<BookingResponse>> findAll(
-          @RequestParam(defaultValue = "1") int pageNo,
-          @RequestParam(defaultValue = "20") int pageSize)
-  {
-    Order order= new Order(Sort.Direction.ASC, "createdAt");
-    Pageable pageable= PageRequest.of(pageNo - 1, pageSize, Sort.by(order));
-    Page<BookingResponse> page= bookingService.findAll(pageable);
-    PaginationResponse<BookingResponse> result= PaginationResponse.<BookingResponse>builder()
-        .meta(Meta.builder()
-            .page(pageNo)
-            .pageSize(pageSize)
-            .pages(page.getTotalPages())
-            .total(page.getTotalPages())
-            .build())
-        .data(page.getContent())
-        .build();
-    return ApiResponse.<PaginationResponse<BookingResponse>>builder()
-        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
-        .status(HttpStatus.OK.value())
-        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .data(result)
-        .build();
-  }
 }

@@ -5,6 +5,7 @@ import com.booking.bookingbackend.data.dto.request.BookingRequest;
 import com.booking.bookingbackend.data.dto.response.BookingResponse;
 import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.entity.Booking;
+import com.booking.bookingbackend.data.projection.BookingDetailResponse;
 import com.booking.bookingbackend.data.projection.UserBookingsHistoryDTO;
 import com.booking.bookingbackend.data.repository.BookingRepository;
 import com.booking.bookingbackend.service.BaseEntityService;
@@ -34,4 +35,10 @@ public interface BookingService extends
   );
 
   void cancelBooking(UUID bookingId);
+
+  PaginationResponse<BookingDetailResponse> getAllBookingsByPropertiesId(
+      String id,
+      int pageNo,
+      int pageSize
+  );
 }

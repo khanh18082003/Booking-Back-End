@@ -1,14 +1,10 @@
 package com.booking.bookingbackend.data.projection;
 
 import java.io.Serializable;
-import java.util.UUID;
 
-public interface AmenitiesPropertiesDTO extends Serializable {
-
-  UUID getId();
+public interface AccommodationBaseBookingResponse extends Serializable {
 
   String getName();
 
   Integer getQuantity();
-
 }
