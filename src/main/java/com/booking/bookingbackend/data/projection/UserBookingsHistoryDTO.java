@@ -70,7 +70,7 @@ public interface UserBookingsHistoryDTO extends Serializable {
   UUID getPaymentId();
 
   @JsonProperty("payment_status")
-  String getPaymentStatus();
+  boolean getPaymentStatus();
 
   @JsonProperty("payment_image")
   String getPaymentImage();
