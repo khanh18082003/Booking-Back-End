@@ -120,7 +120,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION));
     User user = userDetails.user();
 
-    if (user != null && !userDetails.isEnabled()) {
+    if (user != null && !user.isActive()) {
       ProfileResponse profileResponse = profileService.findByUserId(user.getId());
       String firstName = profileResponse.getFirstName();
       String lastName = profileResponse.getLastName();
@@ -289,7 +289,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   public void verifyTokenEmail(VerificationEmailRequest request) {
     if (request.code() == null || request.code().isEmpty()) {
       log.error("Token is empty");
-      return;
+        throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
     Optional<RedisVerificationCode> redisCodeOpt = verificationCodeRepository.findById(
         request.email());
