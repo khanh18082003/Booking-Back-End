@@ -75,6 +75,7 @@ springdoc:
 jwt:
   expirationTime: 15
   expirationDay: 7
+  expirationTimeApp: 30
   accessToken: ${ACCESS_TOKEN_SECRET}
   refreshToken: ${REFRESH_TOKEN_SECRET}
 
