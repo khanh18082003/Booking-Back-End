@@ -7,8 +7,6 @@ import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.BookingRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
 import com.booking.bookingbackend.data.dto.response.BookingResponse;
-import com.booking.bookingbackend.data.dto.response.Meta;
-import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.service.booking.BookingService;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
@@ -19,19 +17,16 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.data.domain.Sort.Order;
 
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_BOOKING)
@@ -91,29 +86,29 @@ public class BookingController {
         .build();
   }
 
-
-  @GetMapping
-  ApiResponse<PaginationResponse<BookingResponse>> findAll(
-          @RequestParam(defaultValue = "1") int pageNo,
-          @RequestParam(defaultValue = "20") int pageSize)
-  {
-    Order order= new Order(Sort.Direction.ASC, "createdAt");
-    Pageable pageable= PageRequest.of(pageNo - 1, pageSize, Sort.by(order));
-    Page<BookingResponse> page= bookingService.findAll(pageable);
-    PaginationResponse<BookingResponse> result= PaginationResponse.<BookingResponse>builder()
-        .meta(Meta.builder()
-            .page(pageNo)
-            .pageSize(pageSize)
-            .pages(page.getTotalPages())
-            .total(page.getTotalPages())
-            .build())
-        .data(page.getContent())
-        .build();
-    return ApiResponse.<PaginationResponse<BookingResponse>>builder()
+  @PreAuthorize("hasRole('HOST')")
+  @PatchMapping("/{id}/complete")
+  ApiResponse<Void> bookingConfirmation(
+      @PathVariable("id") UUID bookingId
+  ) {
+    bookingService.bookingConfirmation(bookingId);
+    return ApiResponse.<Void>builder()
         .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-        .data(result)
+        .build();
+  }
+
+  @PreAuthorize("hasRole('HOST')")
+  @PatchMapping("/{id}/cancellation")
+  ApiResponse<Void> bookingCancellation(
+      @PathVariable("id") UUID bookingId
+  ) {
+    bookingService.bookingCancellation(bookingId);
+    return ApiResponse.<Void>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .build();
   }
 }

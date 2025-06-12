@@ -21,4 +21,6 @@ public interface PaymentService extends BaseEntityService<UUID, Payment, Payment
 
 
     Boolean checkPaymentOnlineStatus(UUID id ,int expectedAmount, String expectedTransactionId) throws Exception;
+
+    void payComplete(UUID id);
 }

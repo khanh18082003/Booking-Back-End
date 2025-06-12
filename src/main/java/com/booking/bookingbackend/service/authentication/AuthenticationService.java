@@ -3,6 +3,7 @@ package com.booking.bookingbackend.service.authentication;
 import com.booking.bookingbackend.constant.RefreshTokenType;
 import com.booking.bookingbackend.data.dto.request.AuthenticationRequest;
 import com.booking.bookingbackend.data.dto.request.LogoutRequest;
+import com.booking.bookingbackend.data.dto.request.OutboundAuthenticationAppRequest;
 import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
 import com.booking.bookingbackend.data.dto.request.VerificationEmailRequest;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
@@ -60,4 +61,6 @@ public interface AuthenticationService {
     }
     return null;
   }
+
+  AuthenticationResponse outboundAuthenticateApp(OutboundAuthenticationAppRequest request);
 }

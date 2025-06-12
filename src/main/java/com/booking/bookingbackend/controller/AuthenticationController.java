@@ -7,6 +7,7 @@ import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.data.dto.request.AuthenticationRequest;
 import com.booking.bookingbackend.data.dto.request.CheckExistEmailRequest;
 import com.booking.bookingbackend.data.dto.request.LogoutRequest;
+import com.booking.bookingbackend.data.dto.request.OutboundAuthenticationAppRequest;
 import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
 import com.booking.bookingbackend.data.dto.request.VerificationEmailRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
@@ -99,6 +100,18 @@ public class AuthenticationController {
         .status(HttpStatus.OK.value())
         .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
         .data(authenticationService.outboundAuthenticate(code, res))
+        .build();
+  }
+
+  @PostMapping("/outbound/authentication-app")
+  ApiResponse<AuthenticationResponse> outboundAuthenticationApp(
+      @RequestBody OutboundAuthenticationAppRequest request
+  ) {
+    return ApiResponse.<AuthenticationResponse>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .data(authenticationService.outboundAuthenticateApp(request))
         .build();
   }
 

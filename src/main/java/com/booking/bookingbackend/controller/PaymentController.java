@@ -15,7 +15,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -68,4 +71,18 @@ public class PaymentController {
         .data(paymentService.checkPaymentOnlineStatus(id, expectedAmount, expectedTransactionId))
         .build();
   }
+
+  @PreAuthorize("hasRole('HOST')")
+  @PatchMapping("/bookings/{id}")
+  ApiResponse<Void> paymentComplete(
+      @PathVariable UUID id
+  ) {
+    paymentService.payComplete(id);
+    return ApiResponse.<Void>builder()
+        .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+        .status(HttpStatus.OK.value())
+        .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+        .build();
+  }
+
 }

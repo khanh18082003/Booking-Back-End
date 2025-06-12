@@ -52,7 +52,7 @@ public interface UserRepository extends BaseRepository<User, UUID> {
                         ON b.properties_id = p.id
                    JOIN (SELECT id, status, amount, booking_id
                          FROM tbl_payment
-                         WHERE status = 'COMPLETE') pay
+                         WHERE status = true) pay
                         ON pay.booking_id = b.id
       """, nativeQuery = true)
   RevenueResponse revenueByHostId(@Param("hostId") UUID userId);
@@ -71,7 +71,7 @@ public interface UserRepository extends BaseRepository<User, UUID> {
                         ON b.properties_id = p.id
                    JOIN (SELECT id, status, amount, booking_id
                          FROM tbl_payment
-                         WHERE status = 'COMPLETE') pay
+                         WHERE status = true) pay
                         ON pay.booking_id = b.id
       """, nativeQuery = true)
   RevenueResponse revenueByHostIdWithMonthAndYear(
@@ -99,7 +99,7 @@ public interface UserRepository extends BaseRepository<User, UUID> {
                                                 AND status = 1) p ON b.properties_id = p.id
                                         JOIN (SELECT id, status, amount, booking_id
                                               FROM tbl_payment
-                                              WHERE status = 'COMPLETE') pay ON pay.booking_id = b.id
+                                              WHERE status = true) pay ON pay.booking_id = b.id
                                GROUP BY MONTH(b.check_in))
       SELECT COALESCE(r.totalBookings, 0) AS totalBookings,
              COALESCE(r.totalAmount, 0)   AS totalAmount
