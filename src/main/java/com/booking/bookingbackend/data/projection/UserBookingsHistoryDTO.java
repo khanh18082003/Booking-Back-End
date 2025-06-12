@@ -69,7 +69,7 @@ public interface UserBookingsHistoryDTO {
   UUID getPaymentId();
 
   @JsonProperty("payment_status")
-  String getPaymentStatus();
+  Boolean getPaymentStatus();
 
   @JsonProperty("payment_image")
   String getPaymentImage();

@@ -93,7 +93,6 @@ public class ProfileServiceImpl implements ProfileService {
         .orElseThrow(
             () -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID, getEntityClass())
         );
-
     if (avatarFile.getSize() > MAX_SIZE_AVATAR.toBytes()) {
       throw new AppException(ErrorCode.FILE_TOO_LARGE, MAX_SIZE_AVATAR.toBytes());
     }
