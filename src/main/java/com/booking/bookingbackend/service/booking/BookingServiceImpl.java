@@ -17,11 +17,14 @@ import com.booking.bookingbackend.data.entity.Booking;
 import com.booking.bookingbackend.data.entity.BookingDetail;
 import com.booking.bookingbackend.data.entity.CustomUserDetails;
 import com.booking.bookingbackend.data.entity.GuestBooking;
+import com.booking.bookingbackend.data.entity.Payment;
 import com.booking.bookingbackend.data.entity.Properties;
 import com.booking.bookingbackend.data.entity.User;
 import com.booking.bookingbackend.data.entity.ids.BookingDetailId;
 import com.booking.bookingbackend.data.mapper.BookingMapper;
-import com.booking.bookingbackend.data.projection.*;
+import com.booking.bookingbackend.data.projection.AccommodationBaseBookingResponse;
+import com.booking.bookingbackend.data.projection.BookingDetailResponse;
+import com.booking.bookingbackend.data.projection.UserBookingsHistoryDTO;
 import com.booking.bookingbackend.data.repository.AvailableRepository;
 import com.booking.bookingbackend.data.repository.BookingDetailsRepository;
 import com.booking.bookingbackend.data.repository.BookingRepository;
@@ -45,7 +48,6 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -314,32 +316,33 @@ public class BookingServiceImpl implements BookingService {
     if (id.equals("all")) {
       CustomUserDetails userDetails = SecurityUtils.getCurrentUser();
       var bookingPage = repository.findAllOfHost(userDetails.user().getId(), pageable);
-      ObjectMapper objectMapper= new ObjectMapper();
-      List<BookingDetailResponse> result =bookingPage.stream().map(booking -> {
-                  try {
-                      Set<AccommodationBaseBookingResponse> accommodations = objectMapper.readValue(booking.get("accommodations", String.class), new TypeReference<>() {
-                      });
-                    return BookingDetailResponse.builder()
-                            .id(UUID.fromString(booking.get("id", String.class)))
-                            .checkIn((booking.get("check_in", Date.class)).toLocalDate())
-                            .checkOut((booking.get("check_out", Date.class)).toLocalDate())
-                            .adultUnits(booking.get("adult_units", Integer.class))
-                            .childUnits(booking.get("children_units", Integer.class))
-                            .totalPrice(booking.get("total_price", BigDecimal.class))
-                            .status(BookingStatus.valueOf(booking.get("status", String.class)))
-                            .propertiesName(booking.get("property_name", String.class))
-                            .fullName(booking.get("full_name", String.class))
-                            .email(booking.get("email", String.class))
-                            .phone(booking.get("phone", String.class))
-                            .paymentStatus(booking.get("payment_status", Boolean.class))
-                            .paymentMethod(PaymentMethod.valueOf(booking.get("payment_method", String.class)))
-                            .accommodations(accommodations)
-                            .createdAt(booking.get("created_at", Timestamp.class))
-                                    .build();
-                  } catch (JsonProcessingException e) {
-                      throw new RuntimeException(e);
-                  }
-              })
+      ObjectMapper objectMapper = new ObjectMapper();
+      List<BookingDetailResponse> result = bookingPage.stream().map(booking -> {
+            try {
+              Set<AccommodationBaseBookingResponse> accommodations = objectMapper.readValue(
+                  booking.get("accommodations", String.class), new TypeReference<>() {
+                  });
+              return BookingDetailResponse.builder()
+                  .id(UUID.fromString(booking.get("id", String.class)))
+                  .checkIn((booking.get("check_in", Date.class)).toLocalDate())
+                  .checkOut((booking.get("check_out", Date.class)).toLocalDate())
+                  .adultUnits(booking.get("adult_units", Integer.class))
+                  .childUnits(booking.get("children_units", Integer.class))
+                  .totalPrice(booking.get("total_price", BigDecimal.class))
+                  .status(BookingStatus.valueOf(booking.get("status", String.class)))
+                  .propertiesName(booking.get("property_name", String.class))
+                  .fullName(booking.get("full_name", String.class))
+                  .email(booking.get("email", String.class))
+                  .phone(booking.get("phone", String.class))
+                  .paymentStatus(booking.get("payment_status", Boolean.class))
+                  .paymentMethod(PaymentMethod.valueOf(booking.get("payment_method", String.class)))
+                  .accommodations(accommodations)
+                  .createdAt(booking.get("created_at", Timestamp.class))
+                  .build();
+            } catch (JsonProcessingException e) {
+              throw new RuntimeException(e);
+            }
+          })
           .toList();
       return PaginationResponse.<BookingDetailResponse>builder()
           .meta(Meta.builder()
@@ -360,33 +363,34 @@ public class BookingServiceImpl implements BookingService {
           properties.getId(),
           pageable
       );
-      ObjectMapper objectMapper= new ObjectMapper();
-        List<BookingDetailResponse> result = bookingPage.stream().map(booking -> {
-                    try {
-                        Set<AccommodationBaseBookingResponse> accommodations = objectMapper.readValue(booking.get("accommodations", String.class), new TypeReference<>() {
-                        });
-                        return BookingDetailResponse.builder()
-                                .id(UUID.fromString(booking.get("id", String.class)))
-                                .checkIn((booking.get("check_in", Date.class)).toLocalDate())
-                                .checkOut((booking.get("check_out", Date.class)).toLocalDate())
-                                .adultUnits(booking.get("adult_units", Integer.class))
-                                .childUnits(booking.get("children_units", Integer.class))
-                                .totalPrice(booking.get("total_price", BigDecimal.class))
-                                .status(BookingStatus.valueOf(booking.get("status", String.class)))
-                                .propertiesName(booking.get("property_name", String.class))
-                                .fullName(booking.get("full_name", String.class))
-                                .email(booking.get("email", String.class))
-                                .phone(booking.get("phone", String.class))
-                                .paymentStatus(booking.get("payment_status", Boolean.class))
-                                .paymentMethod(PaymentMethod.valueOf(booking.get("payment_method", String.class)))
-                                .accommodations(accommodations)
-                                .createdAt(booking.get("created_at", java.sql.Timestamp.class))
-                                        .build();
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-            .toList();
+      ObjectMapper objectMapper = new ObjectMapper();
+      List<BookingDetailResponse> result = bookingPage.stream().map(booking -> {
+            try {
+              Set<AccommodationBaseBookingResponse> accommodations = objectMapper.readValue(
+                  booking.get("accommodations", String.class), new TypeReference<>() {
+                  });
+              return BookingDetailResponse.builder()
+                  .id(UUID.fromString(booking.get("id", String.class)))
+                  .checkIn((booking.get("check_in", Date.class)).toLocalDate())
+                  .checkOut((booking.get("check_out", Date.class)).toLocalDate())
+                  .adultUnits(booking.get("adult_units", Integer.class))
+                  .childUnits(booking.get("children_units", Integer.class))
+                  .totalPrice(booking.get("total_price", BigDecimal.class))
+                  .status(BookingStatus.valueOf(booking.get("status", String.class)))
+                  .propertiesName(booking.get("property_name", String.class))
+                  .fullName(booking.get("full_name", String.class))
+                  .email(booking.get("email", String.class))
+                  .phone(booking.get("phone", String.class))
+                  .paymentStatus(booking.get("payment_status", Boolean.class))
+                  .paymentMethod(PaymentMethod.valueOf(booking.get("payment_method", String.class)))
+                  .accommodations(accommodations)
+                  .createdAt(booking.get("created_at", java.sql.Timestamp.class))
+                  .build();
+            } catch (JsonProcessingException e) {
+              throw new RuntimeException(e);
+            }
+          })
+          .toList();
 
       return PaginationResponse.<BookingDetailResponse>builder()
           .meta(Meta.builder()
@@ -398,6 +402,47 @@ public class BookingServiceImpl implements BookingService {
           .data(result)
           .build();
     }
+  }
+
+  @Transactional
+  @Override
+  public void bookingConfirmation(UUID bookingId) {
+    Booking booking = repository.findById(bookingId)
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            getEntityClass().getSimpleName())
+        );
+
+    Payment payment = booking.getPayment();
+
+    if (booking.getStatus() == BookingStatus.CANCELLED) {
+      throw new AppException(ErrorCode.MESSAGE_BOOKING_ALREADY_CANCELLED);
+    }
+
+    if (!payment.getStatus()) {
+      throw new AppException(ErrorCode.MESSAGE_PAYMENT_NOT_COMPLETED);
+    }
+
+    if (booking.getCheckIn().isAfter(LocalDate.now()) && payment.getStatus()) {
+      throw new AppException(ErrorCode.MESSAGE_INVALID_BOOKING_COMPLETE);
+    }
+
+    booking.setStatus(BookingStatus.COMPLETE);
+    repository.save(booking);
+  }
+
+  @Override
+  public void bookingCancellation(UUID bookingId) {
+    Booking booking = repository.findById(bookingId)
+        .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+            getEntityClass().getSimpleName())
+        );
+
+    if (booking.getStatus() == BookingStatus.CANCELLED) {
+      throw new AppException(ErrorCode.MESSAGE_BOOKING_ALREADY_CANCELLED);
+    }
+
+    booking.setStatus(BookingStatus.CANCELLED);
+    repository.save(booking);
   }
 
 

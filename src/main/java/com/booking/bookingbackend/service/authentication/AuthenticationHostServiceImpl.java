@@ -1,10 +1,12 @@
 package com.booking.bookingbackend.service.authentication;
 
+import com.booking.bookingbackend.constant.DeviceType;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.RefreshTokenType;
 import com.booking.bookingbackend.constant.TokenType;
 import com.booking.bookingbackend.data.dto.request.AuthenticationRequest;
 import com.booking.bookingbackend.data.dto.request.LogoutRequest;
+import com.booking.bookingbackend.data.dto.request.OutboundAuthenticationAppRequest;
 import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
 import com.booking.bookingbackend.data.dto.request.VerificationEmailRequest;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
@@ -94,27 +96,22 @@ public class AuthenticationHostServiceImpl implements AuthenticationService {
     String accessToken;
     String refreshToken;
 
-    if (authentication.isAuthenticated()) {
-      accessToken = jwtService.generateAccessToken(
-          request.email(),
-          authentication.getAuthorities()
-      );
-      refreshToken = jwtService.generateRefreshToken(
-          request.email(),
-          authentication.getAuthorities()
-      );
+    accessToken = jwtService.generateAccessToken(
+        request.email(),
+        authentication.getAuthorities(),
+        request.device()
+    );
+    refreshToken = jwtService.generateRefreshToken(
+        request.email(),
+        authentication.getAuthorities()
+    );
 
-      // Store refresh token in HttpOnly cookie
-      Cookie refreshTokenCookie = new Cookie("refresh_token_host", refreshToken);
-      refreshTokenCookie.setHttpOnly(true);
-      refreshTokenCookie.setSecure(true);
-      refreshTokenCookie.setPath("/");
-      refreshTokenCookie.setMaxAge(expirationDay * 24 * 60 * 60);
-      response.addCookie(refreshTokenCookie);
+    response.addCookie(createRefreshTokenCookie(
+        refreshToken,
+        RefreshTokenType.HOST,
+        expirationDay * 24 * 60 * 60
+    ));
 
-    } else {
-      throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
-    }
     return AuthenticationResponse.builder()
         .accessToken(accessToken)
         .build();
@@ -156,7 +153,8 @@ public class AuthenticationHostServiceImpl implements AuthenticationService {
     // Generate a new access token for the authenticated user
     String newAccessToken = jwtService.generateAccessToken(
         userDetails.getUsername(),
-        userDetails.getAuthorities()
+        userDetails.getAuthorities(),
+        DeviceType.WEB
     );
 
     // Return the new access token in the response
@@ -194,6 +192,11 @@ public class AuthenticationHostServiceImpl implements AuthenticationService {
     log.info("Token verified successfully");
     //delete token
     verificationCodeRepository.deleteById(request.email());
+  }
+
+  @Override
+  public AuthenticationResponse outboundAuthenticateApp(OutboundAuthenticationAppRequest request) {
+    return null;
   }
 
   /**

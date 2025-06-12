@@ -1,5 +1,6 @@
 package com.booking.bookingbackend.service.authentication;
 
+import com.booking.bookingbackend.constant.DeviceType;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.RefreshTokenType;
 import com.booking.bookingbackend.constant.TokenType;
@@ -7,6 +8,7 @@ import com.booking.bookingbackend.constant.UserRole;
 import com.booking.bookingbackend.data.dto.request.AuthenticationRequest;
 import com.booking.bookingbackend.data.dto.request.ExchangeTokenRequest;
 import com.booking.bookingbackend.data.dto.request.LogoutRequest;
+import com.booking.bookingbackend.data.dto.request.OutboundAuthenticationAppRequest;
 import com.booking.bookingbackend.data.dto.request.RefreshTokenRequest;
 import com.booking.bookingbackend.data.dto.request.VerificationEmailRequest;
 import com.booking.bookingbackend.data.dto.response.AuthenticationResponse;
@@ -136,25 +138,23 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     String accessToken;
     String refreshToken;
 
-    if (authentication.isAuthenticated()) {
-      accessToken = jwtService.generateAccessToken(
-          request.email(),
-          authentication.getAuthorities()
-      );
+    accessToken = jwtService.generateAccessToken(
+        request.email(),
+        authentication.getAuthorities(),
+        request.device()
+    );
+    if (request.device() == DeviceType.WEB) {
       refreshToken = jwtService.generateRefreshToken(
           request.email(),
           authentication.getAuthorities()
       );
-
       response.addCookie(createRefreshTokenCookie(
           refreshToken,
           RefreshTokenType.USER,
           expirationDay * 24 * 60 * 60
       ));
-
-    } else {
-      throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
     }
+
     return AuthenticationResponse.builder()
         .accessToken(accessToken)
         .build();
@@ -205,7 +205,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     var accessToken = jwtService.generateAccessToken(
         user.getEmail(),
-        authorities
+        authorities,
+        DeviceType.WEB
     );
 
     var refreshToken = jwtService.generateRefreshToken(
@@ -266,7 +267,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     // Generate a new access token for the authenticated user
     String newAccessToken = jwtService.generateAccessToken(
         userDetails.getUsername(),
-        userDetails.getAuthorities()
+        userDetails.getAuthorities(),
+        DeviceType.WEB
     );
 
     // Return the new access token in the response
@@ -304,6 +306,46 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     log.info("Token verified successfully");
     //delete token
     verificationCodeRepository.deleteById(request.email());
+  }
+
+  @Override
+  public AuthenticationResponse outboundAuthenticateApp(OutboundAuthenticationAppRequest request) {
+    var roles = roleRepository.findAllByName(List.of(UserRole.USER.name()));
+
+    var user = userRepository.findByEmailJoinRoleWithPermission(request.email())
+        .orElseGet(
+            () -> {
+              User userCreation = userRepository.save(
+                  User.builder()
+                      .email(request.email())
+                      .password("")
+                      .active(true)
+                      .roles(new HashSet<>(roles))
+                      .build()
+              );
+              profileRepository.save(
+                  Profile.builder()
+                      .user(userCreation)
+                      .firstName(request.firstName())
+                      .lastName(request.lastName())
+                      .avatar(request.avatarUrl())
+                      .build()
+              );
+
+              return userCreation;
+            }
+        );
+    var authorities = SecurityUtils.getAuthorities(user);
+
+    var accessToken = jwtService.generateAccessToken(
+        user.getEmail(),
+        authorities,
+        request.deviceType()
+    );
+
+    return AuthenticationResponse.builder()
+        .accessToken(accessToken)
+        .build();
   }
 
   /**

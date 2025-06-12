@@ -41,4 +41,8 @@ public interface BookingService extends
       int pageNo,
       int pageSize
   );
+
+  void bookingConfirmation(UUID bookingId);
+
+  void bookingCancellation(UUID bookingId);
 }

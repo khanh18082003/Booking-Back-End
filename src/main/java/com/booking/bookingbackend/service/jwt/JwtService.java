@@ -1,5 +1,6 @@
 package com.booking.bookingbackend.service.jwt;
 
+import com.booking.bookingbackend.constant.DeviceType;
 import com.booking.bookingbackend.constant.TokenType;
 import java.util.Collection;
 import java.util.Date;
@@ -9,7 +10,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 public interface JwtService {
 
-  String generateAccessToken(String username, Collection<? extends GrantedAuthority> authorities);
+  String generateAccessToken(
+      String username,
+      Collection<? extends GrantedAuthority> authorities,
+      DeviceType deviceType);
 
   String generateRefreshToken(String username, Collection<? extends GrantedAuthority> authorities);
 

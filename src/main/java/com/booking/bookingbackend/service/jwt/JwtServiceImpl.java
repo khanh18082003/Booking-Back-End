@@ -1,5 +1,6 @@
 package com.booking.bookingbackend.service.jwt;
 
+import com.booking.bookingbackend.constant.DeviceType;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.TokenType;
 import com.booking.bookingbackend.exception.AppException;
@@ -49,6 +50,10 @@ public class JwtServiceImpl implements JwtService {
   @NonFinal
   long expirationDay;
 
+  @Value("${jwt.expirationTimeApp}")
+  @NonFinal
+  long expirationTimeApp;
+
   @Value("${server.servlet.context-path}")
   @NonFinal
   String issuer;
@@ -57,12 +62,18 @@ public class JwtServiceImpl implements JwtService {
 
   @Override
   public String generateAccessToken(String username,
-      Collection<? extends GrantedAuthority> authorities) {
+      Collection<? extends GrantedAuthority> authorities,
+      DeviceType deviceType
+  ) {
     log.info("Generate access token for user {} with authorities {}", username, authorities);
     Map<String, Object> headers = new HashMap<>();
     headers.put("typ", "JWT");
     Map<String, Object> claims = new HashMap<>();
     claims.put("role", authorities);
+
+    long expirationTime = deviceType != DeviceType.WEB
+        ? expirationTimeApp
+        : this.expirationTime;
 
     return Jwts.builder()
         .setHeader(headers)
