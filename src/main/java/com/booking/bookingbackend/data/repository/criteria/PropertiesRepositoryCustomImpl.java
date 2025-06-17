@@ -163,6 +163,12 @@ public class PropertiesRepositoryCustomImpl implements PropertiesRepositoryCusto
     query.setParameter("adults", adults);
     query.setParameter("children", children);
     query.setParameter("rooms", rooms);
+
+    query.setHint("org.hibernate.readOnly", "true");
+    query.setHint("org.hibernate.cacheable", "true");
+    query.setHint("org.hibernate.fetchSize", "20");
+    query.setHint("jakarta.persistence.cache.retrieveMode", "USE");
+    query.setHint("jakarta.persistence.cache.storeMode", "REFRESH");
     return query.getResultList();
   }
 }

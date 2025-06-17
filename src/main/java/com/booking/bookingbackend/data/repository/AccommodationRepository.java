@@ -2,12 +2,14 @@ package com.booking.bookingbackend.data.repository;
 
 import com.booking.bookingbackend.data.base.BaseRepository;
 import com.booking.bookingbackend.data.entity.Accommodation;
+import jakarta.persistence.QueryHint;
 import jakarta.persistence.Tuple;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
 public interface AccommodationRepository extends BaseRepository<Accommodation, UUID> {
@@ -84,6 +86,13 @@ public interface AccommodationRepository extends BaseRepository<Accommodation, U
       FROM valid_accommodations;
       
       """, nativeQuery = true)
+  @QueryHints({
+      @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+      @QueryHint(name = "org.hibernate.cacheable", value = "true"),
+      @QueryHint(name = "org.hibernate.fetchSize", value = "20"),
+      @QueryHint(name = "jakarta.persistence.cache.retrieveMode", value = "USE"),
+      @QueryHint(name = "jakarta.persistence.cache.storeMode", value = "USE")
+  })
   List<Tuple> searchAllByPropertyId(
       @Param("propertyId") String propertyId,
       @Param("startDate") LocalDate startDate,

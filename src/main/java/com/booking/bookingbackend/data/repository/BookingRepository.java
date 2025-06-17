@@ -2,17 +2,16 @@ package com.booking.bookingbackend.data.repository;
 
 import com.booking.bookingbackend.data.base.BaseRepository;
 import com.booking.bookingbackend.data.entity.Booking;
-import com.booking.bookingbackend.data.projection.BookingDetailResponse;
 import com.booking.bookingbackend.data.projection.UserBookingsHistoryDTO;
-import java.util.List;
-import java.util.UUID;
-
 import jakarta.persistence.Tuple;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface BookingRepository extends BaseRepository<Booking, UUID> {

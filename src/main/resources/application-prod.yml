@@ -21,7 +21,7 @@ spring:
     from: Booking
     host: smtp.gmail.com
     port: 587
-    username: ${USERNAME}
+    username: ${EMAIL_USERNAME}
     password: ${MAIL_PASSWORD}
     properties:
       mail:

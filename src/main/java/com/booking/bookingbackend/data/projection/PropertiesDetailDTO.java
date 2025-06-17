@@ -30,4 +30,8 @@ public record PropertiesDetailDTO(
     List<String> imageUrls
 ) implements Serializable {
 
+    public PropertiesDetailDTO {
+        amenities = amenities == null ? List.of() : amenities;
+        imageUrls = imageUrls == null ? List.of() : imageUrls;
+    }
 }
