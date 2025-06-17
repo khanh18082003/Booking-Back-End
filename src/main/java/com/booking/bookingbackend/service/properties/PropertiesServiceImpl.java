@@ -69,6 +69,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -91,6 +92,7 @@ public class PropertiesServiceImpl implements PropertiesService {
     ReviewRepository reviewRepository;
     BookingValidationService bookingValidationService;
     AmenitiesMapper amenitiesMapper;
+    RedisTemplate<String, Object> redisTemplate;
 
     @Override
     @Transactional
@@ -215,6 +217,8 @@ public class PropertiesServiceImpl implements PropertiesService {
                         row.get("totalRating", Integer.class),
                         row.get("distance", Double.class),
                         totalPrice,
+                        request.startDate(),
+                        request.endDate(),
                         row.get("propertiesType", String.class),
                         row.get("nights", Long.class),
                         row.get("adults", Long.class),
@@ -665,35 +669,26 @@ public class PropertiesServiceImpl implements PropertiesService {
     }
 
     @Override
-    public PropertiesDetailDTO findPropertiesDetailByIdWithCheckInAndCheckOut(
-            UUID id,
-            LocalDate checkIn,
-            LocalDate checkOut
-    ) {
-
-        var raw = repository.findPropertiesDetailByIdWithCheckInAndCheckOut(
-                id,
-                checkIn,
-                checkOut
-        );
-
-        return new PropertiesDetailDTO(
-                UUID.fromString(raw.get("id", String.class)),
-                raw.get("name", String.class),
-                raw.get("description", String.class),
-                raw.get("image", String.class),
-                raw.get("address", String.class),
-                raw.get("rating", BigDecimal.class),
-                raw.get("totalRating", Integer.class),
-                raw.get("status", Boolean.class),
-                raw.get("latitude", Double.class),
-                raw.get("longitude", Double.class),
-                raw.get("checkInTime", Time.class).toLocalTime(),
-                raw.get("checkOutTime", Time.class).toLocalTime(),
-                raw.get("propertyType", String.class),
-                List.of(),
-                List.of()
-        );
+    public String addLovedPropertiesInRedis(PropertiesDTO request) {
+        String uuid = UUID.randomUUID().toString();
+        String key = "loved_properties:" + uuid;
+        redisTemplate.opsForValue().set(key, request);
+        return uuid;
     }
+
+    @Override
+    public PropertiesDTO getLovedPropertiesInRedis(String id) {
+        if (id != null && !id.isEmpty()) {
+            String key = "loved_properties:" + id;
+            PropertiesDTO propertiesDTO = (PropertiesDTO) redisTemplate.opsForValue().get(key);
+            if (propertiesDTO != null) {
+                return propertiesDTO;
+            } else {
+                throw new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID, "Loved properties not found");
+            }
+        }
+        return null;
+    }
+
 
 }

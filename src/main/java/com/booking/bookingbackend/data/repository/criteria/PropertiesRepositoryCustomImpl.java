@@ -168,7 +168,7 @@ public class PropertiesRepositoryCustomImpl implements PropertiesRepositoryCusto
     query.setHint("org.hibernate.cacheable", "true");
     query.setHint("org.hibernate.fetchSize", "20");
     query.setHint("jakarta.persistence.cache.retrieveMode", "USE");
-    query.setHint("jakarta.persistence.cache.storeMode", "REFRESH");
+    query.setHint("jakarta.persistence.cache.storeMode", "USE");
     return query.getResultList();
   }
 }

@@ -2,14 +2,12 @@ package com.booking.bookingbackend.data.repository;
 
 import com.booking.bookingbackend.data.base.BaseRepository;
 import com.booking.bookingbackend.data.entity.Properties;
-import com.booking.bookingbackend.data.projection.PropertiesDetailDTO;
 import jakarta.persistence.Tuple;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface PropertiesRepository extends BaseRepository<Properties, UUID> {
@@ -56,41 +54,4 @@ public interface PropertiesRepository extends BaseRepository<Properties, UUID> {
     Tuple findPropertiesDetail(@Param("id") UUID id);
 
     List<Properties> findAllByHostId(UUID hostId);
-
-    @Query(value = """
-            select BIN_TO_UUID(p.id)  as id,
-                   p.name             as name,
-                   p.description      as description,
-                   p.address          as address,
-                   p.city             as city,
-                   p.latitude         as latitude,
-                   p.longitude        as longitude,
-                   p.image            as image,
-                   p.rating           as rating,
-                   p.total_rating     as totalRating,
-                   p.status           as status,
-                   p.check_in_time    as checkInTime,
-                   p.check_out_time   as checkOutTime,
-                   p.typeName         as propertyType
-            from (select properties.*, tbl_property_type.name AS typeName
-                  from tbl_properties properties
-                           inner join tbl_property_type on properties.type_id = tbl_property_type.id
-                  where properties.id = :id) as p
-                     inner join (select a.id, a.properties_id
-                                 from (select id, properties_id from tbl_accommodation where properties_id = :id) a
-                                          inner join
-                                      (select id, accommodation_id, date
-                                       from tbl_available
-                                       where date between :checkIn and :checkOut) av
-                                      on a.id = av.accommodation_id
-                                 group by a.id
-                                 having count(av.id) = DATEDIFF(:checkOut, :checkIn) + 1) as acc_avai
-                                on acc_avai.properties_id = p.id
-            group by p.id
-            """, nativeQuery = true)
-    Tuple findPropertiesDetailByIdWithCheckInAndCheckOut(
-            UUID id,
-            LocalDate checkIn,
-            LocalDate checkOut
-    );
 }

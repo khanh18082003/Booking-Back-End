@@ -53,16 +53,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -452,18 +443,26 @@ public class PropertiesController {
                 .build();
     }
 
-    @GetMapping("/{id}/detail")
-    ApiResponse<PropertiesDetailDTO> findPropertiesDetailByIdWithCheckInAndCheckOut(
-            @PathVariable UUID id,
-            @RequestParam(name = "check-in", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate checkIn,
-            @RequestParam(name = "check-out", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate checkOut
+    @PostMapping("/redis")
+    ApiResponse<String> addLovedPropertiesInRedis(
+            @RequestBody PropertiesDTO request
     ) {
-        PropertiesDetailDTO propertiesDetail = propertiesService.findPropertiesDetailByIdWithCheckInAndCheckOut(
-                id,
-                checkIn,
-                checkOut
+        return ApiResponse.<String>builder()
+                .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
+                .status(HttpStatus.OK.value())
+                .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
+                .data(propertiesService.addLovedPropertiesInRedis(request))
+                .build();
+    }
+
+    @GetMapping("/{id}/detail")
+    ApiResponse<PropertiesDTO> getLovedPropertiesInRedis(
+            @PathVariable String id
+    ) {
+        PropertiesDTO propertiesDetail = propertiesService.getLovedPropertiesInRedis(
+                id
         );
-        return ApiResponse.<PropertiesDetailDTO>builder()
+        return ApiResponse.<PropertiesDTO>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
                 .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))

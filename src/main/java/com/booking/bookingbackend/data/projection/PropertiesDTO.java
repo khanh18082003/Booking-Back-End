@@ -1,15 +1,18 @@
 package com.booking.bookingbackend.data.projection;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record PropertiesDTO(
-    @JsonProperty("properties_id")
     UUID propertiesId,
-    @JsonProperty("properties_name")
     String propertiesName,
     String image,
     Double latitude,
@@ -18,18 +21,14 @@ public record PropertiesDTO(
     String city,
     String district,
     BigDecimal rating,
-    @JsonProperty("total_rating")
     Integer totalRating,
     Double distance,
-    @JsonProperty("total_price")
     Double totalPrice,
-    @JsonProperty("properties_type")
+    LocalDate checkIn,
+    LocalDate checkOut,
     String propertiesType,
-    @JsonProperty("nights")
     Long nights,
-    @JsonProperty("adults")
     Long adults,
-    @JsonProperty("children")
     Long children,
     List<AccommodationDTO> accommodations
 ) implements Serializable {

@@ -17,6 +17,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import jakarta.websocket.Endpoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -64,6 +65,7 @@ public class SecurityConfig {
             EndpointConstant.ENDPOINT_PAYMENT,
             EndpointConstant.ENDPOINT_BOOKING,
             EndpointConstant.ENDPOINT_USER + "/host/check-email",
+            EndpointConstant.ENDPOINT_PROPERTY + "/redis"
     };
     private static final String[] GET_LIST_API = {
             EndpointConstant.ENDPOINT_PROPERTY + "/search",

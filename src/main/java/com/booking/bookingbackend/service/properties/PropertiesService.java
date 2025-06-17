@@ -53,9 +53,11 @@ public interface PropertiesService extends
 
     List<PropertiesHostDTO> getMyProperties();
 
-    PropertiesDetailDTO findPropertiesDetailByIdWithCheckInAndCheckOut(
-            UUID id,
-            LocalDate checkIn,
-            LocalDate checkOut
+    String addLovedPropertiesInRedis(
+            PropertiesDTO request
+    );
+
+    PropertiesDTO getLovedPropertiesInRedis(
+            String id
     );
 }
