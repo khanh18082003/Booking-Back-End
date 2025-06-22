@@ -22,8 +22,8 @@ spring:
     from: Booking
     host: smtp.gmail.com
     port: 587
-    username: nguyentrungk285@gmail.com
-    password: ogqcuyyrjdddwxkm
+    username: ${EMAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -39,12 +39,19 @@ spring:
       port: 6379
   kafka:
     bootstrap-servers: localhost:29092
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+#    consumer:
+#      group-id: booking-back-end-service
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 outbound:
   google:
     identity:
       url: https://oauth2.googleapis.com
-      client-id: 26485259913-st8ntcrddohfh57ekj4ifdpt9nmqodob.apps.googleusercontent.com
-      client-secret: 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
+      client-id: ${GOOGLE_CLIENT_ID}
+      client-secret: ${GOOGLE_CLIENT_SECRET}
       redirect-uri: http://localhost:5173/authentication
       grant-type: authorization_code
     user:
@@ -52,8 +59,8 @@ outbound:
   facebook:
     identity:
       url: https://graph.facebook.com
-      client-id: 4150002501944200
-      client-secret: a279635599ef4885e088698384f4bd1f
+      client-id: ${FACEBOOK_CLIENT_ID}
+      client-secret: ${FACEBOOK_CLIENT_SECRET}
       redirect-uri: http://localhost:5173/authentication
       grant-type: authorization_code
     user:
