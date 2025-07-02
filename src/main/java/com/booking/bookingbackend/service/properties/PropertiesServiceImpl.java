@@ -2,6 +2,32 @@ package com.booking.bookingbackend.service.properties;
 
 import static com.booking.bookingbackend.constant.CommonConstant.ACCOMMODATION_ID;
 
+import java.math.BigDecimal;
+import java.sql.Time;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import jakarta.persistence.Tuple;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
+
+import org.locationtech.jts.geom.Point;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.ImageReferenceType;
 import com.booking.bookingbackend.data.dto.request.CheckAvailableAccommodationsBookingRequest;
@@ -41,37 +67,12 @@ import com.booking.bookingbackend.util.GeometryUtils;
 import com.booking.bookingbackend.util.SecurityUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.persistence.Tuple;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.transaction.Transactional;
-
-import java.math.BigDecimal;
-import java.sql.Time;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.locationtech.jts.geom.Point;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Service;
 
 @Getter
 @Service
@@ -106,13 +107,14 @@ public class PropertiesServiceImpl implements PropertiesService {
         }
 
         User host = hostDetails.user();
-        properties.setHost(userRepository.findById(host.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-                        User.class.getSimpleName())));
+        properties.setHost(userRepository
+                .findById(host.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID, User.class.getSimpleName())));
 
-        properties.setPropertyType(propertyTypeRepository.findById(request.typeId())
-                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-                        getEntityClass().getSimpleName())));
+        properties.setPropertyType(propertyTypeRepository
+                .findById(request.typeId())
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.MESSAGE_INVALID_ENTITY_ID, getEntityClass().getSimpleName())));
 
         properties.setAmenities(amenitiesRepository.findAllById(request.amenitiesIds()));
 
@@ -129,12 +131,12 @@ public class PropertiesServiceImpl implements PropertiesService {
                         .referenceId(properties.getId().toString())
                         .referenceType(ImageReferenceType.PROPERTIES.name())
                         .url(url)
-                        .build()).toList();
+                        .build())
+                .toList();
         imageRepository.saveAll(imageList);
 
         return response;
     }
-
 
     @Override
     public PaginationResponse<PropertiesDTO> searchProperties(
@@ -142,8 +144,7 @@ public class PropertiesServiceImpl implements PropertiesService {
             int pageNo,
             int pageSize,
             String[] filters, // e.g., "amenities:pool", "type:apartment"
-            String... sort
-    ) {
+            String... sort) {
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
 
         String[] filteredSort = null;
@@ -185,69 +186,57 @@ public class PropertiesServiceImpl implements PropertiesService {
                 request.children(),
                 request.rooms(),
                 filters,
-                filteredSort
-        );
+                filteredSort);
 
         ObjectMapper objectMapper = new ObjectMapper();
-        List<PropertiesDTO> dtos = new ArrayList<>(raw.stream().map(row -> {
-            try {
-                List<AccommodationDTO> accommodations = objectMapper.readValue(
-                        row.get("accommodations", String.class),
-                        new TypeReference<>() {
-                        }
-                );
+        List<PropertiesDTO> dtos = new ArrayList<>(raw.stream()
+                .map(row -> {
+                    try {
+                        List<AccommodationDTO> accommodations = objectMapper.readValue(
+                                row.get("accommodations", String.class), new TypeReference<>() {});
 
-                // TODO: Insert combination logic here to choose best accommodations set
-                List<AccommodationDTO> best = selectBestCombination(
-                        accommodations,
-                        request.adults() + request.children(),
-                        request.rooms()
-                );
-                double totalPrice = best.stream().mapToDouble(AccommodationDTO::totalPrice).sum();
-                return new PropertiesDTO(
-                        UUID.fromString(row.get("propertiesId", String.class)),
-                        row.get("propertiesName", String.class),
-                        row.get("image", String.class),
-                        row.get("latitude", Double.class),
-                        row.get("longitude", Double.class),
-                        row.get("address", String.class),
-                        row.get("city", String.class),
-                        row.get("district", String.class),
-                        row.get("rating", BigDecimal.class),
-                        row.get("totalRating", Integer.class),
-                        row.get("distance", Double.class),
-                        totalPrice,
-                        request.startDate(),
-                        request.endDate(),
-                        row.get("propertiesType", String.class),
-                        row.get("nights", Long.class),
-                        row.get("adults", Long.class),
-                        row.get("children", Long.class),
-                        best
-                );
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to map accommodations JSON", e);
-            }
-        }).toList());
+                        // TODO: Insert combination logic here to choose best accommodations set
+                        List<AccommodationDTO> best = selectBestCombination(
+                                accommodations, request.adults() + request.children(), request.rooms());
+                        double totalPrice = best.stream()
+                                .mapToDouble(AccommodationDTO::totalPrice)
+                                .sum();
+                        return new PropertiesDTO(
+                                UUID.fromString(row.get("propertiesId", String.class)),
+                                row.get("propertiesName", String.class),
+                                row.get("image", String.class),
+                                row.get("latitude", Double.class),
+                                row.get("longitude", Double.class),
+                                row.get("address", String.class),
+                                row.get("city", String.class),
+                                row.get("district", String.class),
+                                row.get("rating", BigDecimal.class),
+                                row.get("totalRating", Integer.class),
+                                row.get("distance", Double.class),
+                                totalPrice,
+                                request.startDate(),
+                                request.endDate(),
+                                row.get("propertiesType", String.class),
+                                row.get("nights", Long.class),
+                                row.get("adults", Long.class),
+                                row.get("children", Long.class),
+                                best);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to map accommodations JSON", e);
+                    }
+                })
+                .toList());
 
         Comparator<PropertiesDTO> comparator = Comparator.comparing(p -> 0);
         if (ratingDirection != null) {
-            comparator = Comparator
-                    .comparing(
-                            PropertiesDTO::rating,
-                            ratingDirection.equals("desc")
-                                    ? Comparator.reverseOrder()
-                                    : Comparator.naturalOrder()
-                    );
+            comparator = Comparator.comparing(
+                    PropertiesDTO::rating,
+                    ratingDirection.equals("desc") ? Comparator.reverseOrder() : Comparator.naturalOrder());
         }
         if (totalPriceDirection != null) {
-            Comparator<PropertiesDTO> priceComparator = Comparator
-                    .comparing(
-                            PropertiesDTO::totalPrice,
-                            totalPriceDirection.equals("desc")
-                                    ? Comparator.reverseOrder()
-                                    : Comparator.naturalOrder()
-                    );
+            Comparator<PropertiesDTO> priceComparator = Comparator.comparing(
+                    PropertiesDTO::totalPrice,
+                    totalPriceDirection.equals("desc") ? Comparator.reverseOrder() : Comparator.naturalOrder());
             comparator = comparator.thenComparing(priceComparator);
         }
         dtos.sort(comparator);
@@ -266,10 +255,7 @@ public class PropertiesServiceImpl implements PropertiesService {
     }
 
     private List<AccommodationDTO> selectBestCombination(
-            List<AccommodationDTO> all,
-            int requiredGuests,
-            int requiredRooms
-    ) {
+            List<AccommodationDTO> all, int requiredGuests, int requiredRooms) {
         List<AccommodationDTO> bestCombination = new ArrayList<>();
         double minTotalPrice = Double.MAX_VALUE;
 
@@ -309,8 +295,7 @@ public class PropertiesServiceImpl implements PropertiesService {
                             totalCapacity1,
                             totalBeds1,
                             totalPrice1,
-                            acc.bedNames()
-                    ));
+                            acc.bedNames()));
                 }
 
                 if (totalCapacity >= requiredGuests && totalPrice < minTotalPrice) {
@@ -323,11 +308,7 @@ public class PropertiesServiceImpl implements PropertiesService {
         return bestCombination;
     }
 
-
-    private List<List<Integer>> allocateRooms(
-            List<AccommodationDTO> accs,
-            int requiredRooms,
-            int requiredCapacity) {
+    private List<List<Integer>> allocateRooms(List<AccommodationDTO> accs, int requiredRooms, int requiredCapacity) {
         List<List<Integer>> result = new ArrayList<>();
         backtrack(accs, 0, requiredRooms, requiredCapacity, new ArrayList<>(), result);
         return result;
@@ -339,8 +320,7 @@ public class PropertiesServiceImpl implements PropertiesService {
             int roomsLeft,
             int requiredCapacity,
             List<Integer> current,
-            List<List<Integer>> result
-    ) {
+            List<List<Integer>> result) {
         if (idx == accs.size()) {
             if (roomsLeft == 0 || accs.get(idx - 1).totalCapacity() >= requiredCapacity) {
                 result.add(new ArrayList<>(current));
@@ -358,13 +338,13 @@ public class PropertiesServiceImpl implements PropertiesService {
         }
     }
 
-
     @Override
     @Transactional
     public void changeStatus(UUID id) {
-        Properties properties = repository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-                        getEntityClass().getSimpleName()));
+        Properties properties = repository
+                .findById(id)
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.MESSAGE_INVALID_ENTITY_ID, getEntityClass().getSimpleName()));
         properties.setStatus(false);
         repository.save(properties);
     }
@@ -377,10 +357,10 @@ public class PropertiesServiceImpl implements PropertiesService {
         if (userDetails == null) {
             throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
         }
-        Properties properties = repository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-                        getEntityClass().getSimpleName())
-                );
+        Properties properties = repository
+                .findById(id)
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.MESSAGE_INVALID_ENTITY_ID, getEntityClass().getSimpleName()));
         mapper.merge(request, properties);
 
         if (!properties.getHost().getId().equals(userDetails.user().getId())) {
@@ -388,14 +368,11 @@ public class PropertiesServiceImpl implements PropertiesService {
         }
 
         if (request.typeId() != null) {
-            properties.setPropertyType(propertyTypeRepository.findById(request.typeId())
-                    .orElseThrow(
-                            () -> new AppException(
-                                    ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-                                    getEntityClass().getSimpleName()
-                            )
-                    )
-            );
+            properties.setPropertyType(propertyTypeRepository
+                    .findById(request.typeId())
+                    .orElseThrow(() -> new AppException(
+                            ErrorCode.MESSAGE_INVALID_ENTITY_ID,
+                            getEntityClass().getSimpleName())));
         }
 
         if (request.amenitiesIds() != null) {
@@ -412,8 +389,8 @@ public class PropertiesServiceImpl implements PropertiesService {
 
         // Handle image updates
         List<Image> existingImages = imageRepository.findAllByReferenceId(id.toString());
-        List<String> existingUrls = new ArrayList<>(
-                existingImages.stream().map(Image::getUrl).toList());
+        List<String> existingUrls =
+                new ArrayList<>(existingImages.stream().map(Image::getUrl).toList());
 
         // 1. Delete images that are no longer in the request
         existingImages.forEach(image -> {
@@ -433,7 +410,8 @@ public class PropertiesServiceImpl implements PropertiesService {
                             .referenceType(ImageReferenceType.PROPERTIES.name())
                             .url(url)
                             .build();
-                }).toList();
+                })
+                .toList();
 
         if (!newImages.isEmpty()) {
             imageRepository.saveAll(newImages);
@@ -462,8 +440,7 @@ public class PropertiesServiceImpl implements PropertiesService {
                 .propertyType(properties.getPropertyType().getName())
                 .imageUrls(existingUrls)
                 .amenitiesIds(
-                        properties.getAmenities().stream().map(Amenities::getId).toList()
-                )
+                        properties.getAmenities().stream().map(Amenities::getId).toList())
                 .build();
     }
 
@@ -472,23 +449,15 @@ public class PropertiesServiceImpl implements PropertiesService {
         Tuple raw = repository.findPropertiesDetail(id);
         if (raw == null) {
             throw new AppException(
-                    ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-                    getEntityClass().getSimpleName()
-            );
+                    ErrorCode.MESSAGE_INVALID_ENTITY_ID, getEntityClass().getSimpleName());
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            List<String> imageUrls = objectMapper.readValue(
-                    raw.get("image_urls", String.class),
-                    new TypeReference<>() {
-                    }
-            );
-            List<AmenityDTO> amenities = objectMapper.readValue(
-                    raw.get("amenities", String.class),
-                    new TypeReference<>() {
-                    }
-            );
+            List<String> imageUrls =
+                    objectMapper.readValue(raw.get("image_urls", String.class), new TypeReference<>() {});
+            List<AmenityDTO> amenities =
+                    objectMapper.readValue(raw.get("amenities", String.class), new TypeReference<>() {});
             return new PropertiesDetailDTO(
                     UUID.fromString(raw.get("id", String.class)),
                     raw.get("name", String.class),
@@ -504,19 +473,14 @@ public class PropertiesServiceImpl implements PropertiesService {
                     raw.get("checkOutTime", Time.class).toLocalTime(),
                     raw.get("propertyType", String.class),
                     amenities,
-                    imageUrls
-            );
+                    imageUrls);
         } catch (Exception e) {
             throw new RuntimeException("Failed to map accommodations JSON", e);
         }
     }
 
     @Override
-    public PaginationResponse<ReviewResponse> getPropertiesReviews(
-            UUID id,
-            int pageNo,
-            int pageSize
-    ) {
+    public PaginationResponse<ReviewResponse> getPropertiesReviews(UUID id, int pageNo, int pageSize) {
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
         Page<ReviewResponse> page = reviewRepository.findAllByPropertiesId(id, pageable);
 
@@ -533,39 +497,27 @@ public class PropertiesServiceImpl implements PropertiesService {
 
     @Override
     public PropertyAvailableAccommodationBookingResponse checkAvailableAccommodationsBooking(
-            UUID id,
-            CheckAvailableAccommodationsBookingRequest request,
-            HttpServletResponse httpServletResponse
-    ) {
+            UUID id, CheckAvailableAccommodationsBookingRequest request, HttpServletResponse httpServletResponse) {
         bookingValidationService.validateRequest(
-                request.checkIn(),
-                request.checkOut(),
-                request.adults(),
-                request.children()
-        );
-        Map<UUID, Integer> accommodationQuantities = getAccommodationQuantities(
-                request.accommodations()
-        );
+                request.checkIn(), request.checkOut(), request.adults(), request.children());
+        Map<UUID, Integer> accommodationQuantities = getAccommodationQuantities(request.accommodations());
         log.info("Accommodation quantities: {}", accommodationQuantities);
-        List<CheckedAvailableAccommodationBookingResponse> availableAccommodationBooking = accommodationQuantities.entrySet()
-                .stream()
-                .map(v -> {
-                            return availableRepository.checkAvailableAccommodation(
-                                    v.getKey(),
-                                    request.checkIn(),
-                                    request.checkOut().minusDays(1),
-                                    v.getValue(),
-                                    (int) ChronoUnit.DAYS.between(
-                                            request.checkIn(),
-                                            request.checkOut()
-                                    )
-                            ).orElseThrow(() -> new AppException(ErrorCode.MESSAGE_NO_AVAILABLE_ACCOMMODATION));
-                        }
-                ).toList();
+        List<CheckedAvailableAccommodationBookingResponse> availableAccommodationBooking =
+                accommodationQuantities.entrySet().stream()
+                        .map(v -> availableRepository
+                                .checkAvailableAccommodation(
+                                        v.getKey(),
+                                        request.checkIn(),
+                                        request.checkOut().minusDays(1),
+                                        v.getValue(),
+                                        (int) ChronoUnit.DAYS.between(request.checkIn(), request.checkOut()))
+                                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_NO_AVAILABLE_ACCOMMODATION)))
+                        .toList();
 
-        Properties properties = repository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_INVALID_ENTITY_ID,
-                        getEntityClass().getSimpleName()));
+        Properties properties = repository
+                .findById(id)
+                .orElseThrow(() -> new AppException(
+                        ErrorCode.MESSAGE_INVALID_ENTITY_ID, getEntityClass().getSimpleName()));
         PropertiesBookingResponse propertiesBookingResponse = PropertiesBookingResponse.builder()
                 .id(properties.getId())
                 .name(properties.getName())
@@ -581,12 +533,9 @@ public class PropertiesServiceImpl implements PropertiesService {
                 .checkInTime(properties.getCheckInTime())
                 .checkOutTime(properties.getCheckOutTime())
                 .propertiesType(properties.getPropertyType().getName())
-                .amenities(
-                        properties.getAmenities()
-                                .stream()
-                                .map(amenitiesMapper::toDtoResponse)
-                                .collect(Collectors.toSet())
-                )
+                .amenities(properties.getAmenities().stream()
+                        .map(amenitiesMapper::toDtoResponse)
+                        .collect(Collectors.toSet()))
                 .build();
 
         return PropertyAvailableAccommodationBookingResponse.builder()
@@ -603,9 +552,7 @@ public class PropertiesServiceImpl implements PropertiesService {
                 .build();
     }
 
-    private Map<UUID, Integer> getAccommodationQuantities(
-            String... accommodations
-    ) {
+    private Map<UUID, Integer> getAccommodationQuantities(String... accommodations) {
         Map<UUID, Integer> accommodationQuantities = new HashMap<>();
         if (accommodations != null) {
             for (String s : accommodations) {
@@ -613,10 +560,7 @@ public class PropertiesServiceImpl implements PropertiesService {
                 Matcher matcher = pattern.matcher(s);
 
                 if (matcher.find()) {
-                    accommodationQuantities.put(
-                            UUID.fromString(matcher.group(1)),
-                            Integer.parseInt(matcher.group(3))
-                    );
+                    accommodationQuantities.put(UUID.fromString(matcher.group(1)), Integer.parseInt(matcher.group(3)));
                 } else {
                     log.warn("Invalid search parameter: {}", s);
                 }
@@ -632,7 +576,8 @@ public class PropertiesServiceImpl implements PropertiesService {
         if (userDetails == null) {
             throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
         }
-        List<Properties> propertiesList = repository.findAllByHostId(userDetails.user().getId());
+        List<Properties> propertiesList =
+                repository.findAllByHostId(userDetails.user().getId());
 
         return propertiesList.stream()
                 .map(properties -> PropertiesHostDTO.builder()
@@ -656,14 +601,14 @@ public class PropertiesServiceImpl implements PropertiesService {
                         .createdAt(properties.getCreatedAt())
                         .updatedAt(properties.getUpdatedAt())
                         .propertyType(properties.getPropertyType().getName())
-                        .imageUrls(
-                                imageRepository.findAllByReferenceId(properties.getId().toString()).stream().map(
-                                        Image::getUrl
-                                ).toList()
-                        )
-                        .amenitiesIds(
-                                properties.getAmenities().stream().map(Amenities::getId).toList()
-                        )
+                        .imageUrls(imageRepository
+                                .findAllByReferenceId(properties.getId().toString())
+                                .stream()
+                                .map(Image::getUrl)
+                                .toList())
+                        .amenitiesIds(properties.getAmenities().stream()
+                                .map(Amenities::getId)
+                                .toList())
                         .build())
                 .toList();
     }
@@ -680,7 +625,8 @@ public class PropertiesServiceImpl implements PropertiesService {
     public PropertiesDTO getLovedPropertiesInRedis(String id) {
         if (id != null && !id.isEmpty()) {
             String key = "loved_properties:" + id;
-            PropertiesDTO propertiesDTO = (PropertiesDTO) redisTemplate.opsForValue().get(key);
+            PropertiesDTO propertiesDTO =
+                    (PropertiesDTO) redisTemplate.opsForValue().get(key);
             if (propertiesDTO != null) {
                 return propertiesDTO;
             } else {
@@ -689,6 +635,4 @@ public class PropertiesServiceImpl implements PropertiesService {
         }
         return null;
     }
-
-
 }

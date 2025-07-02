@@ -1,10 +1,11 @@
 package com.booking.bookingbackend.data.dto.response;
 
+import java.io.Serializable;
+import java.util.UUID;
+
 import com.booking.bookingbackend.constant.AmenityType;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import java.io.Serializable;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,16 +23,16 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AmenitiesResponse implements Serializable {
 
-  UUID id;
+    UUID id;
 
-  String name;
+    String name;
 
-  String icon;
+    String icon;
 
-  AmenityType type;
+    AmenityType type;
 
-  public AmenitiesResponse(UUID id, String name) {
-    this.id = id;
-    this.name = name;
-  }
+    public AmenitiesResponse(UUID id, String name) {
+        this.id = id;
+        this.name = name;
+    }
 }

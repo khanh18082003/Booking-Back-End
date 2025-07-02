@@ -1,7 +1,9 @@
 package com.booking.bookingbackend.data.entity;
 
-import com.booking.bookingbackend.constant.Gender;
-import com.booking.bookingbackend.data.base.UUIDJpaEntity;
+import java.io.Serial;
+import java.time.LocalDate;
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,9 +13,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import java.io.Serial;
-import java.time.LocalDate;
-import java.util.UUID;
+
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.UuidGenerator.Style;
+
+import com.booking.bookingbackend.constant.Gender;
+import com.booking.bookingbackend.data.base.UUIDJpaEntity;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,8 +28,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.UuidGenerator;
-import org.hibernate.annotations.UuidGenerator.Style;
 
 @Entity
 @Table(name = "tbl_profile")
@@ -35,43 +39,43 @@ import org.hibernate.annotations.UuidGenerator.Style;
 @Builder
 public class Profile extends UUIDJpaEntity {
 
-  @Serial
-  private static final long serialVersionUID = -4881599000575895723L;
+    @Serial
+    private static final long serialVersionUID = -4881599000575895723L;
 
-  @Id
-  @UuidGenerator(style = Style.TIME)
-  UUID id;
+    @Id
+    @UuidGenerator(style = Style.TIME)
+    UUID id;
 
-  @Column(name = "first_name")
-  String firstName;
+    @Column(name = "first_name")
+    String firstName;
 
-  @Column(name = "last_name")
-  String lastName;
+    @Column(name = "last_name")
+    String lastName;
 
-  @Column(name = "avatar")
-  String avatar;
+    @Column(name = "avatar")
+    String avatar;
 
-  @Column(name = "country_code")
-  String countryCode;
+    @Column(name = "country_code")
+    String countryCode;
 
-  @Column(name = "phone_number")
-  String phone;
+    @Column(name = "phone_number")
+    String phone;
 
-  @Column(name = "dob")
-  LocalDate dob;
+    @Column(name = "dob")
+    LocalDate dob;
 
-  @Column(name = "address")
-  String address;
+    @Column(name = "address")
+    String address;
 
-  @Column(name = "gender")
-  @Enumerated(EnumType.STRING)
-  Gender gender;
+    @Column(name = "gender")
+    @Enumerated(EnumType.STRING)
+    Gender gender;
 
-  @Column(name = "nationality")
-  String nationality;
+    @Column(name = "nationality")
+    String nationality;
 
-  @ToString.Exclude
-  @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id")
-  User user;
+    @ToString.Exclude
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    User user;
 }

@@ -1,10 +1,12 @@
 package com.booking.bookingbackend.data.entity.ids;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.UUID;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,12 +30,12 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class BookingDetailId implements Serializable {
 
-  @Serial
-  private static final long serialVersionUID = -5602276862764545365L;
+    @Serial
+    private static final long serialVersionUID = -5602276862764545365L;
 
-  @Column(name = "booking_id", nullable = false)
-  UUID bookingId;
+    @Column(name = "booking_id", nullable = false)
+    UUID bookingId;
 
-  @Column(name = "accommodation_id", nullable = false)
-  UUID accommodationId;
+    @Column(name = "accommodation_id", nullable = false)
+    UUID accommodationId;
 }

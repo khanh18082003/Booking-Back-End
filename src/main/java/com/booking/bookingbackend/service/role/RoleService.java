@@ -6,18 +6,14 @@ import com.booking.bookingbackend.data.entity.Role;
 import com.booking.bookingbackend.data.repository.RoleRepository;
 import com.booking.bookingbackend.service.BaseEntityService;
 
-public interface RoleService extends BaseEntityService<
-    Integer,
-    Role,
-    RoleRepository,
-    RoleResponse> {
+public interface RoleService extends BaseEntityService<Integer, Role, RoleRepository, RoleResponse> {
 
-  @Override
-  default Class<?> getEntityClass() {
-    return Role.class;
-  }
+    @Override
+    default Class<?> getEntityClass() {
+        return Role.class;
+    }
 
-  RoleResponse save(RoleRequest request);
+    RoleResponse save(RoleRequest request);
 
-  void update(int id, RoleRequest request);
+    void update(int id, RoleRequest request);
 }

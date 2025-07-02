@@ -1,7 +1,9 @@
 package com.booking.bookingbackend.data.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import java.io.Serializable;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,9 +21,9 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserBookingResponse implements Serializable {
 
-  String email;
-  String firstName;
-  String lastName;
-  String phone;
-  String country;
+    String email;
+    String firstName;
+    String lastName;
+    String phone;
+    String country;
 }

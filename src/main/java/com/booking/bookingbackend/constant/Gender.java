@@ -4,14 +4,13 @@ import lombok.Getter;
 
 @Getter
 public enum Gender {
-  MALE("Nam"),
-  FEMALE("Nữ"),
-  OTHER("Khác");
+    MALE("Nam"),
+    FEMALE("Nữ"),
+    OTHER("Khác");
 
-  private final String value;
+    private final String value;
 
-  Gender(String value) {
-    this.value = value;
-  }
-
+    Gender(String value) {
+        this.value = value;
+    }
 }

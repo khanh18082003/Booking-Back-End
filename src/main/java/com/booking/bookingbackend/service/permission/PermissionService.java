@@ -6,18 +6,15 @@ import com.booking.bookingbackend.data.entity.Permission;
 import com.booking.bookingbackend.data.repository.PermissionRepository;
 import com.booking.bookingbackend.service.BaseEntityService;
 
-public interface PermissionService extends BaseEntityService<
-    Integer,
-    Permission,
-    PermissionRepository,
-    PermissionResponse> {
+public interface PermissionService
+        extends BaseEntityService<Integer, Permission, PermissionRepository, PermissionResponse> {
 
-  @Override
-  default Class<?> getEntityClass() {
-    return Permission.class;
-  }
+    @Override
+    default Class<?> getEntityClass() {
+        return Permission.class;
+    }
 
-  PermissionResponse save(PermissionRequest request);
+    PermissionResponse save(PermissionRequest request);
 
-  void update(int id, PermissionRequest request);
+    void update(int id, PermissionRequest request);
 }

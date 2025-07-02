@@ -1,11 +1,12 @@
 package com.booking.bookingbackend.data.projection;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import lombok.*;
 
-import java.io.Serializable;
+import lombok.*;
 
 @Builder
 @Setter
@@ -16,6 +17,6 @@ import java.io.Serializable;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class AccommodationBaseBookingResponse implements Serializable {
 
-  String name;
-  Integer quality;
+    String name;
+    Integer quality;
 }

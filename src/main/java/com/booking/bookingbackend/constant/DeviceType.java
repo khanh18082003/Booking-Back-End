@@ -4,13 +4,13 @@ import lombok.Getter;
 
 @Getter
 public enum DeviceType {
-  WEB("web"),
-  ANDROID("android"),
-  IOS("ios");
+    WEB("web"),
+    ANDROID("android"),
+    IOS("ios");
 
-  private final String type;
+    private final String type;
 
-  DeviceType(String type) {
-    this.type = type;
-  }
+    DeviceType(String type) {
+        this.type = type;
+    }
 }

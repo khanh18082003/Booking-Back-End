@@ -1,7 +1,9 @@
 package com.booking.bookingbackend.data.entity;
 
 import java.io.Serializable;
-import java.util.Date;
+
+import org.springframework.data.redis.core.RedisHash;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +11,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.redis.core.RedisHash;
 
 @RedisHash(value = "verification_code", timeToLive = 60 * 10)
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -19,6 +20,6 @@ import org.springframework.data.redis.core.RedisHash;
 @AllArgsConstructor
 @Builder
 public class RedisVerificationCode implements Serializable {
-  String id;
-  String code;
+    String id;
+    String code;
 }

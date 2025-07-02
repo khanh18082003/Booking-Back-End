@@ -1,10 +1,12 @@
 package com.booking.bookingbackend.data.dto.response;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import java.io.Serializable;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,11 +25,11 @@ import lombok.experimental.FieldDefaults;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class OutboundUserResponse implements Serializable {
 
-  String id;
-  String email;
-  boolean verifiedEmail;
-  String name;
-  String givenName;
-  String familyName;
-  String picture;
+    String id;
+    String email;
+    boolean verifiedEmail;
+    String name;
+    String givenName;
+    String familyName;
+    String picture;
 }

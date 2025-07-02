@@ -1,5 +1,20 @@
 package com.booking.bookingbackend.controller;
 
+import java.io.UnsupportedEncodingException;
+
+import jakarta.mail.MessagingException;
+import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.booking.bookingbackend.configuration.Translator;
 import com.booking.bookingbackend.constant.CommonConstant;
 import com.booking.bookingbackend.constant.EndpointConstant;
@@ -21,27 +36,14 @@ import com.booking.bookingbackend.service.notification.MailService;
 import com.booking.bookingbackend.service.profile.ProfileService;
 import com.booking.bookingbackend.service.user.UserService;
 import com.booking.bookingbackend.util.SecurityUtils;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-import jakarta.mail.MessagingException;
-import jakarta.validation.Valid;
-
-import java.io.UnsupportedEncodingException;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_USER)
@@ -62,31 +64,30 @@ public class UserController {
             summary = "Create User",
             description = "Create a new User",
             responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = CommonConstant.MESSAGE_CREATED,
-                            description = "User created",
-                            content =
-                            @Content(
-                                    examples =
-                                    @ExampleObject(
-                                            value =
-                                                    """
-                                                            {
-                                                              "code": "M000",
-                                                              "status": "201",
-                                                              "message": "Success",
-                                                              "data": {
-                                                                "id": 1073741824,
-                                                                "email": "host@gmail.com",
-                                                                "is_active": "true",
-                                                                "created_at": "2025-03-15T05:35:35.467Z",
-                                                                "updated_at": "2025-03-15T05:35:35.467Z",
-                                                                "roles": ["USER"]
-                                                              }
-                                                            }
-                                                            """))),
-            }
-    )
+                @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                        responseCode = CommonConstant.MESSAGE_CREATED,
+                        description = "User created",
+                        content =
+                                @Content(
+                                        examples =
+                                                @ExampleObject(
+                                                        value =
+                                                                """
+															{
+															"code": "M000",
+															"status": "201",
+															"message": "Success",
+															"data": {
+																"id": 1073741824,
+																"email": "host@gmail.com",
+																"is_active": "true",
+																"created_at": "2025-03-15T05:35:35.467Z",
+																"updated_at": "2025-03-15T05:35:35.467Z",
+																"roles": ["USER"]
+															}
+															}
+															"""))),
+            })
     ApiResponse<UserResponse> createUser(@Valid @RequestBody UserCreationRequest request) {
         UserResponse userResponse = userService.save(request);
         ProfileResponse userProfile = profileService.findByUserId(userResponse.getId());
@@ -95,11 +96,8 @@ public class UserController {
         String lastName = userProfile.getLastName();
         String name = firstName != null && lastName != null ? firstName + " " + lastName : null;
 
-        String message = String.format("email=%s,name=%s,code=%s",
-                userResponse.getEmail(),
-                name,
-                SecurityUtils.generateVerificationCode()
-        );
+        String message = String.format(
+                "email=%s,name=%s,code=%s", userResponse.getEmail(), name, SecurityUtils.generateVerificationCode());
         log.info("Sending message to Kafka: {}", message);
         kafkaTemplate.send("confirm-account-topic", message);
 
@@ -116,37 +114,36 @@ public class UserController {
             summary = "Get My Profile",
             description = "Retrieve the profile of the currently authenticated user",
             responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = CommonConstant.MESSAGE_SUCCESS,
-                            description = "User profile retrieved successfully",
-                            content =
-                            @Content(
-                                    examples =
-                                    @ExampleObject(
-                                            value =
-                                                    """
-                                                            {
-                                                              "code": "M000",
-                                                              "status": "200",
-                                                              "message": "Success",
-                                                              "data": {
-                                                                "id": "550e8400-e29b-41d4-a716-446655440000",
-                                                                "email": "host@gmail.com",
-                                                                "isActive": true,
-                                                                "profileId": "550e8400-e29b-41d4-a716-446655440001",
-                                                                "avatar": "https://example.com/avatar.jpg",
-                                                                "phone": "+1234567890",
-                                                                "dob": "1990-01-01",
-                                                                "gender": "MALE",
-                                                                "address": "123 Main St, City, Country",
-                                                                "firstName": "John",
-                                                                "lastName": "Doe",
-                                                                "countryCode": "+84"
-                                                              }
-                                                            }
-                                                            """))),
-            }
-    )
+                @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                        responseCode = CommonConstant.MESSAGE_SUCCESS,
+                        description = "User profile retrieved successfully",
+                        content =
+                                @Content(
+                                        examples =
+                                                @ExampleObject(
+                                                        value =
+                                                                """
+															{
+															"code": "M000",
+															"status": "200",
+															"message": "Success",
+															"data": {
+																"id": "550e8400-e29b-41d4-a716-446655440000",
+																"email": "host@gmail.com",
+																"isActive": true,
+																"profileId": "550e8400-e29b-41d4-a716-446655440001",
+																"avatar": "https://example.com/avatar.jpg",
+																"phone": "+1234567890",
+																"dob": "1990-01-01",
+																"gender": "MALE",
+																"address": "123 Main St, City, Country",
+																"firstName": "John",
+																"lastName": "Doe",
+																"countryCode": "+84"
+															}
+															}
+															"""))),
+            })
     ApiResponse<UserProfileDto> getMyProfile() {
 
         return ApiResponse.<UserProfileDto>builder()
@@ -161,11 +158,7 @@ public class UserController {
     ApiResponse<Void> forgotPassword(@RequestBody ForgotPasswordRequest request) {
         String code = SecurityUtils.generateVerificationCode();
         try {
-            mailService.sendVerificationEmail(
-                    request.email().trim(),
-                    null,
-                    code
-            );
+            mailService.sendVerificationEmail(request.email().trim(), null, code);
         } catch (MessagingException | UnsupportedEncodingException e) {
             log.error("Error sending verification email", e);
             return ApiResponse.<Void>builder()
@@ -193,13 +186,11 @@ public class UserController {
     }
 
     @PostMapping("/host/check-email")
-    ApiResponse<Void> createHost(
-            @Valid @RequestBody CheckExistEmailRequest request) {
+    ApiResponse<Void> createHost(@Valid @RequestBody CheckExistEmailRequest request) {
         UserResponse user = userService.findByEmail(request.email().strip());
         // Kiểm tra trong user có role host chưa
-        String[] rolesNames = user.getRoles().stream()
-                .map(RoleResponse::getName)
-                .toArray(String[]::new);
+        String[] rolesNames =
+                user.getRoles().stream().map(RoleResponse::getName).toArray(String[]::new);
         for (String roleName : rolesNames) {
             if (roleName.equals("HOST")) {
                 return ApiResponse.<Void>builder()
@@ -221,12 +212,8 @@ public class UserController {
     @GetMapping("/bookings-history")
     ApiResponse<PaginationResponse<UserBookingsHistoryDTO>> getUserBookingsHistory(
             @RequestParam(value = "pageNo", defaultValue = "1") int pageNo,
-            @RequestParam(value = "pageSize", defaultValue = "10") int pageSize
-    ) {
-        PaginationResponse<UserBookingsHistoryDTO> response = bookingService.getUserBookingsHistory(
-                pageNo,
-                pageSize
-        );
+            @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
+        PaginationResponse<UserBookingsHistoryDTO> response = bookingService.getUserBookingsHistory(pageNo, pageSize);
 
         return ApiResponse.<PaginationResponse<UserBookingsHistoryDTO>>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())

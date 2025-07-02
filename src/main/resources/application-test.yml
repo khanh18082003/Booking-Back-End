@@ -44,8 +44,8 @@ outbound:
   google:
     identity:
       url: https://oauth2.googleapis.com
-      client-id: ${GOOGLE_CLIENT_ID}
-      client-secret: ${GOOGLE_CLIENT_SECRET}
+      client-id: ${GOOGLE_CLIENT_ID:26485259913-st8ntcrddohfh57ekj4ifdpt9nmqodob.apps.googleusercontent.com}
+      client-secret: ${GOOGLE_CLIENT_SECRET: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}
       redirect-uri: http://localhost:5173/authentication
       grant-type: authorization_code
     user:
@@ -86,4 +86,4 @@ admin-profile:
 
 google:
   map:
-    api-key: ${GOOGLE_MAPS_API_KEY}
+    api-key: ${GOOGLE_MAPS_API_KEY:AIzaSyCRkytscKpU_QjxA5bM3E2ggBv8S8REah4}

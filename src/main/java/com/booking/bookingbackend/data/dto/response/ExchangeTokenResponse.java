@@ -2,6 +2,7 @@ package com.booking.bookingbackend.data.dto.response;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,9 +20,9 @@ import lombok.experimental.FieldDefaults;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ExchangeTokenResponse {
 
-  String accessToken;
-  Long expiresIn;
-  String scope;
-  String tokenType;
-  String idToken;
+    String accessToken;
+    Long expiresIn;
+    String scope;
+    String tokenType;
+    String idToken;
 }

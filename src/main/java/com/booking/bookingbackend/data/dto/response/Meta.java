@@ -1,8 +1,10 @@
 package com.booking.bookingbackend.data.dto.response;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import java.io.Serializable;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,8 +21,8 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @JsonInclude(Include.NON_NULL)
 public class Meta implements Serializable {
-  int page;
-  int pageSize;
-  int pages;
-  long total;
+    int page;
+    int pageSize;
+    int pages;
+    long total;
 }

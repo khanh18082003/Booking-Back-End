@@ -1,9 +1,11 @@
 package com.booking.bookingbackend.data.dto.response;
 
+import java.math.BigDecimal;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import java.math.BigDecimal;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +24,6 @@ import lombok.experimental.FieldDefaults;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class RevenueResponse {
 
-  Long totalBookings;
-  BigDecimal totalAmount;
+    Long totalBookings;
+    BigDecimal totalAmount;
 }

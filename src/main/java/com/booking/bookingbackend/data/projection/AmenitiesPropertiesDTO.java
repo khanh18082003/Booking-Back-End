@@ -5,10 +5,9 @@ import java.util.UUID;
 
 public interface AmenitiesPropertiesDTO extends Serializable {
 
-  UUID getId();
+    UUID getId();
 
-  String getName();
+    String getName();
 
-  Integer getQuantity();
-
+    Integer getQuantity();
 }

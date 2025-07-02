@@ -1,14 +1,17 @@
 package com.booking.bookingbackend.data.entity;
 
-import com.booking.bookingbackend.data.base.AbstractIdentifiable;
+import java.io.Serial;
+import java.sql.Timestamp;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.io.Serial;
-import java.sql.Timestamp;
+
+import com.booking.bookingbackend.data.base.AbstractIdentifiable;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,21 +30,20 @@ import lombok.experimental.FieldDefaults;
 @Builder
 public class PropertyType extends AbstractIdentifiable<Integer> {
 
-  @Serial
-  private static final long serialVersionUID = -6831571580026059854L;
+    @Serial
+    private static final long serialVersionUID = -6831571580026059854L;
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  Integer id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Integer id;
 
-  String name;
+    String name;
 
-  String description;
+    String description;
 
-  @Column(name = "created_at")
-  Timestamp createdAt;
+    @Column(name = "created_at")
+    Timestamp createdAt;
 
-  @Column(name = "updated_at")
-  Timestamp updatedAt;
-
+    @Column(name = "updated_at")
+    Timestamp updatedAt;
 }

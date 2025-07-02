@@ -1,7 +1,10 @@
 package com.booking.bookingbackend.data.entity;
 
-import com.booking.bookingbackend.constant.PaymentMethod;
-import com.booking.bookingbackend.data.base.UUIDJpaEntity;
+import java.io.Serial;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,10 +14,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import java.io.Serial;
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.util.UUID;
+
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.UuidGenerator.Style;
+
+import com.booking.bookingbackend.constant.PaymentMethod;
+import com.booking.bookingbackend.data.base.UUIDJpaEntity;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,8 +29,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.UuidGenerator;
-import org.hibernate.annotations.UuidGenerator.Style;
 
 @Entity
 @Table(name = "tbl_payment")
@@ -36,34 +40,34 @@ import org.hibernate.annotations.UuidGenerator.Style;
 @Builder
 public class Payment extends UUIDJpaEntity {
 
-  @Serial
-  private static final long serialVersionUID = -6383790542466985068L;
+    @Serial
+    private static final long serialVersionUID = -6383790542466985068L;
 
-  @Id
-  @UuidGenerator(style = Style.TIME)
-  UUID id;
+    @Id
+    @UuidGenerator(style = Style.TIME)
+    UUID id;
 
-  @Column(name = "amount", nullable = false, precision = 15, scale = 2)
-  BigDecimal amount;
+    @Column(name = "amount", nullable = false, precision = 15, scale = 2)
+    BigDecimal amount;
 
-  @Column(name = "payment_method", nullable = false)
-  @Enumerated(EnumType.STRING)
-  PaymentMethod paymentMethod;
+    @Column(name = "payment_method", nullable = false)
+    @Enumerated(EnumType.STRING)
+    PaymentMethod paymentMethod;
 
-  @Column(name = "status", columnDefinition = "BIT(1) DEFAULT 0", nullable = false)
-  Boolean status;
+    @Column(name = "status", columnDefinition = "BIT(1) DEFAULT 0", nullable = false)
+    Boolean status;
 
-  @Column(name = "transaction_id", nullable = false, unique = true)
-  String transactionId;
+    @Column(name = "transaction_id", nullable = false, unique = true)
+    String transactionId;
 
-  @Column(name = "paid_at", nullable = false)
-  Timestamp paidAt;
+    @Column(name = "paid_at", nullable = false)
+    Timestamp paidAt;
 
-  @Column(name = "url_image", nullable = false)
+    @Column(name = "url_image", nullable = false)
     String urlImage;
 
-  @ToString.Exclude
-  @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "booking_id", referencedColumnName = "id", nullable = false)
-  Booking booking;
+    @ToString.Exclude
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_id", referencedColumnName = "id", nullable = false)
+    Booking booking;
 }

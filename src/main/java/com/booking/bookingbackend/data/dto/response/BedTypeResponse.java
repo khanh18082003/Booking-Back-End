@@ -1,10 +1,11 @@
 package com.booking.bookingbackend.data.dto.response;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.io.Serializable;
 
 @Builder
 @NoArgsConstructor

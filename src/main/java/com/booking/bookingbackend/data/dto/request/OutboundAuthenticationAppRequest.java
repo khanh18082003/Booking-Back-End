@@ -6,11 +6,4 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record OutboundAuthenticationAppRequest(
-    String email,
-    String firstName,
-    String lastName,
-    String avatarUrl,
-    DeviceType deviceType
-) {
-
-}
+        String email, String firstName, String lastName, String avatarUrl, DeviceType deviceType) {}

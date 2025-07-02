@@ -6,16 +6,12 @@ import com.booking.bookingbackend.data.entity.Review;
 import com.booking.bookingbackend.data.repository.ReviewRepository;
 import com.booking.bookingbackend.service.BaseEntityService;
 
-public interface ReviewService extends BaseEntityService<
-    Integer,
-    Review,
-    ReviewRepository,
-    ReviewResponse> {
+public interface ReviewService extends BaseEntityService<Integer, Review, ReviewRepository, ReviewResponse> {
 
-  @Override
-  default Class<?> getEntityClass() {
-    return Review.class;
-  }
+    @Override
+    default Class<?> getEntityClass() {
+        return Review.class;
+    }
 
-  ReviewResponse save(ReviewCreationRequest request);
+    ReviewResponse save(ReviewCreationRequest request);
 }

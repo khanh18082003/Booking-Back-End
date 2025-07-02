@@ -1,5 +1,28 @@
 package com.booking.bookingbackend.service.authentication;
 
+import java.io.UnsupportedEncodingException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import jakarta.mail.MessagingException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+
 import com.booking.bookingbackend.constant.DeviceType;
 import com.booking.bookingbackend.constant.ErrorCode;
 import com.booking.bookingbackend.constant.RefreshTokenType;
@@ -25,37 +48,15 @@ import com.booking.bookingbackend.data.repository.httpclient.OutboundIdentityCli
 import com.booking.bookingbackend.data.repository.httpclient.OutboundUserClient;
 import com.booking.bookingbackend.exception.AppException;
 import com.booking.bookingbackend.service.jwt.JwtService;
-import com.booking.bookingbackend.service.notification.MailService;
 import com.booking.bookingbackend.service.profile.ProfileService;
 import com.booking.bookingbackend.service.user.UserInfoService;
 import com.booking.bookingbackend.util.SecurityUtils;
-import jakarta.mail.MessagingException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.transaction.Transactional;
-
-import java.io.UnsupportedEncodingException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -67,7 +68,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     JwtService jwtService;
     RedisTemplate<String, Object> redisTemplate;
     VerificationCodeRepository verificationCodeRepository;
-    MailService mailService;
+    //    MailService mailService;
     ProfileService profileService;
     UserInfoService userInfoService;
     OutboundIdentityClient outboundIdentityClient;
@@ -105,23 +106,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * @throws AppException if the authentication process fails due to invalid credentials
      */
     @Override
-    public AuthenticationResponse authenticate(
-            AuthenticationRequest request,
-            HttpServletResponse response
-    ) throws MessagingException, UnsupportedEncodingException {
+    public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response)
+            throws MessagingException, UnsupportedEncodingException {
         log.info("Authentication request received for email: {}", request.email());
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.email().strip(),
-                        request.password().strip()
-                )
-        );
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                request.email().strip(), request.password().strip()));
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        userDetails.getAuthorities().stream()
-                .filter(authority -> authority.getAuthority().equals("ROLE_USER"))
-                .findFirst()
-                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION));
+        userDetails.getAuthorities().forEach(authority -> {
+            if (!authority.getAuthority().equals("ROLE_USER")) {
+                log.error("User does not have USER role");
+                throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
+            }
+        });
         User user = userDetails.user();
 
         if (user != null && !user.isActive()) {
@@ -133,11 +130,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             log.info("User is not active");
 
             String message = String.format(
-                    "email=%s,name=%s,code=%s",
-                    user.getEmail(),
-                    name,
-                    SecurityUtils.generateVerificationCode()
-            );
+                    "email=%s,name=%s,code=%s", user.getEmail(), name, SecurityUtils.generateVerificationCode());
             kafkaTemplate.send("confirm-account-topic", message);
             throw new AppException(ErrorCode.MESSAGE_USER_NOT_ACTIVE);
         }
@@ -145,93 +138,61 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String accessToken;
         String refreshToken;
 
-        accessToken = jwtService.generateAccessToken(
-                request.email(),
-                authentication.getAuthorities(),
-                request.device()
-        );
+        accessToken =
+                jwtService.generateAccessToken(request.email(), authentication.getAuthorities(), request.device());
         if (request.device() == DeviceType.WEB) {
-            refreshToken = jwtService.generateRefreshToken(
-                    request.email(),
-                    authentication.getAuthorities()
-            );
-            response.addCookie(createRefreshTokenCookie(
-                    refreshToken,
-                    RefreshTokenType.USER,
-                    expirationDay * 24 * 60 * 60
-            ));
+            refreshToken = jwtService.generateRefreshToken(request.email(), authentication.getAuthorities());
+            response.addCookie(
+                    createRefreshTokenCookie(refreshToken, RefreshTokenType.USER, expirationDay * 24 * 60 * 60));
         }
 
-        return AuthenticationResponse.builder()
-                .accessToken(accessToken)
-                .build();
+        return AuthenticationResponse.builder().accessToken(accessToken).build();
     }
 
     @Override
     @Transactional
     public AuthenticationResponse outboundAuthenticate(String code, HttpServletResponse res) {
-        var response = outboundIdentityClient.exchangeToken(
-                ExchangeTokenRequest.builder()
-                        .code(code)
-                        .clientId(CLIENT_ID)
-                        .clientSecret(CLIENT_SECRET)
-                        .redirectUri(REDIRECT_URI)
-                        .grantType(GRANT_TYPE)
-                        .build()
-        );
+        var response = outboundIdentityClient.exchangeToken(ExchangeTokenRequest.builder()
+                .code(code)
+                .clientId(CLIENT_ID)
+                .clientSecret(CLIENT_SECRET)
+                .redirectUri(REDIRECT_URI)
+                .grantType(GRANT_TYPE)
+                .build());
         log.info("Outbound authentication successful for code: {}", code);
 
         var userInfo = outboundUserClient.getUserInfo("json", response.getAccessToken());
 
         var roles = roleRepository.findAllByName(List.of(UserRole.USER.name()));
 
-        var user = userRepository.findByEmailJoinRoleWithPermission(userInfo.getEmail())
-                .orElseGet(
-                        () -> {
-                            User userCreation = userRepository.save(
-                                    User.builder()
-                                            .email(userInfo.getEmail())
-                                            .password("")
-                                            .active(userInfo.isVerifiedEmail())
-                                            .roles(new HashSet<>(roles))
-                                            .build()
-                            );
-                            profileRepository.save(
-                                    Profile.builder()
-                                            .user(userCreation)
-                                            .firstName(userInfo.getGivenName())
-                                            .lastName(userInfo.getFamilyName())
-                                            .avatar(userInfo.getPicture())
-                                            .build()
-                            );
+        var user = userRepository
+                .findByEmailJoinRoleWithPermission(userInfo.getEmail())
+                .orElseGet(() -> {
+                    User userCreation = userRepository.save(User.builder()
+                            .email(userInfo.getEmail())
+                            .password("")
+                            .active(userInfo.isVerifiedEmail())
+                            .roles(new HashSet<>(roles))
+                            .build());
+                    profileRepository.save(Profile.builder()
+                            .user(userCreation)
+                            .firstName(userInfo.getGivenName())
+                            .lastName(userInfo.getFamilyName())
+                            .avatar(userInfo.getPicture())
+                            .build());
 
-                            return userCreation;
-                        }
-                );
+                    return userCreation;
+                });
         var authorities = SecurityUtils.getAuthorities(user);
 
-        var accessToken = jwtService.generateAccessToken(
-                user.getEmail(),
-                authorities,
-                DeviceType.WEB
-        );
+        var accessToken = jwtService.generateAccessToken(user.getEmail(), authorities, DeviceType.WEB);
 
-        var refreshToken = jwtService.generateRefreshToken(
-                user.getEmail(),
-                authorities
-        );
+        var refreshToken = jwtService.generateRefreshToken(user.getEmail(), authorities);
 
-        res.addCookie(createRefreshTokenCookie(
-                refreshToken,
-                RefreshTokenType.USER,
-                expirationDay * 24 * 60 * 60
-        ));
+        res.addCookie(createRefreshTokenCookie(refreshToken, RefreshTokenType.USER, expirationDay * 24 * 60 * 60));
 
-        return AuthenticationResponse.builder()
-                .accessToken(accessToken)
-                .build();
+        return AuthenticationResponse.builder().accessToken(accessToken).build();
     }
-
 
     /**
      * Refreshes the access token using the provided refresh token and access token.
@@ -243,8 +204,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      *                      authenticated
      */
     @Override
-    public AuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest,
-                                               HttpServletRequest req) {
+    public AuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest, HttpServletRequest req) {
 
         String refreshToken = getRefreshTokenFromCookies(req, RefreshTokenType.USER);
         if (refreshToken == null || refreshToken.isEmpty()) {
@@ -256,14 +216,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String username = jwtService.extractUsername(TokenType.REFRESH_TOKEN, refreshToken);
 
         // Load the user by username
-        CustomUserDetails userDetails = (CustomUserDetails) userInfoService.loadUserByUsername(
-                username
-        );
+        CustomUserDetails userDetails = (CustomUserDetails) userInfoService.loadUserByUsername(username);
 
         // Validate the refresh token and access token
         if (!jwtService.validateToken(TokenType.REFRESH_TOKEN, refreshToken, userDetails)
-                && !jwtService.extractUsername(TokenType.ACCESS_TOKEN, refreshTokenRequest.accessToken())
-                .equals(username)) {
+                && !jwtService
+                        .extractUsername(TokenType.ACCESS_TOKEN, refreshTokenRequest.accessToken())
+                        .equals(username)) {
             // Throw an exception if both tokens are invalid
             throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
         }
@@ -272,16 +231,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         invalidateToken(refreshTokenRequest.accessToken(), TokenType.ACCESS_TOKEN);
 
         // Generate a new access token for the authenticated user
-        String newAccessToken = jwtService.generateAccessToken(
-                userDetails.getUsername(),
-                userDetails.getAuthorities(),
-                DeviceType.WEB
-        );
+        String newAccessToken =
+                jwtService.generateAccessToken(userDetails.getUsername(), userDetails.getAuthorities(), DeviceType.WEB);
 
         // Return the new access token in the response
-        return AuthenticationResponse.builder()
-                .accessToken(newAccessToken)
-                .build();
+        return AuthenticationResponse.builder().accessToken(newAccessToken).build();
     }
 
     /**
@@ -298,8 +252,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             log.error("Token is empty");
             throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
         }
-        Optional<RedisVerificationCode> redisCodeOpt = verificationCodeRepository.findById(
-                request.email());
+        Optional<RedisVerificationCode> redisCodeOpt = verificationCodeRepository.findById(request.email());
         if (redisCodeOpt.isEmpty()) {
             log.error("Token not found");
             throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
@@ -311,7 +264,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new AppException(ErrorCode.MESSAGE_UN_AUTHENTICATION);
         }
         log.info("Token verified successfully");
-        //delete token
+        // delete token
         verificationCodeRepository.deleteById(request.email());
     }
 
@@ -319,40 +272,29 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public AuthenticationResponse outboundAuthenticateApp(OutboundAuthenticationAppRequest request) {
         var roles = roleRepository.findAllByName(List.of(UserRole.USER.name()));
 
-        var user = userRepository.findByEmailJoinRoleWithPermission(request.email())
-                .orElseGet(
-                        () -> {
-                            User userCreation = userRepository.save(
-                                    User.builder()
-                                            .email(request.email())
-                                            .password("")
-                                            .active(true)
-                                            .roles(new HashSet<>(roles))
-                                            .build()
-                            );
-                            profileRepository.save(
-                                    Profile.builder()
-                                            .user(userCreation)
-                                            .firstName(request.firstName())
-                                            .lastName(request.lastName())
-                                            .avatar(request.avatarUrl())
-                                            .build()
-                            );
+        var user = userRepository
+                .findByEmailJoinRoleWithPermission(request.email())
+                .orElseGet(() -> {
+                    User userCreation = userRepository.save(User.builder()
+                            .email(request.email())
+                            .password("")
+                            .active(true)
+                            .roles(new HashSet<>(roles))
+                            .build());
+                    profileRepository.save(Profile.builder()
+                            .user(userCreation)
+                            .firstName(request.firstName())
+                            .lastName(request.lastName())
+                            .avatar(request.avatarUrl())
+                            .build());
 
-                            return userCreation;
-                        }
-                );
+                    return userCreation;
+                });
         var authorities = SecurityUtils.getAuthorities(user);
 
-        var accessToken = jwtService.generateAccessToken(
-                user.getEmail(),
-                authorities,
-                request.deviceType()
-        );
+        var accessToken = jwtService.generateAccessToken(user.getEmail(), authorities, request.deviceType());
 
-        return AuthenticationResponse.builder()
-                .accessToken(accessToken)
-                .build();
+        return AuthenticationResponse.builder().accessToken(accessToken).build();
     }
 
     /**
@@ -403,10 +345,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return;
         }
 
-        long ttlSeconds = Duration.between(
-                Instant.now(),
-                expireTime.toInstant()
-        ).getSeconds();
+        long ttlSeconds =
+                Duration.between(Instant.now(), expireTime.toInstant()).getSeconds();
         if (ttlSeconds <= 0) {
             return; // token đã hết hạn rồi, không cần lưu
         }

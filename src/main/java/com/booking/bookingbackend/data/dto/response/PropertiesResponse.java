@@ -1,18 +1,18 @@
 package com.booking.bookingbackend.data.dto.response;
 
-import com.booking.bookingbackend.data.entity.User;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalTime;
+import java.util.Set;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.io.Serializable;
-import java.util.Set;
 
 @Builder
 @NoArgsConstructor
@@ -33,19 +33,32 @@ public class PropertiesResponse implements Serializable {
     String province;
     String country;
     BigDecimal rating;
+
     @JsonProperty("total_rating")
     Integer totalRating;
+
     boolean status;
     Double latitude;
     Double longitude;
-    @JsonFormat(pattern = "HH:mm")
-    @JsonProperty("check_in_time") LocalTime checkInTime;
-    @JsonFormat(pattern = "HH:mm")
-    @JsonProperty("check_out_time") LocalTime checkOutTime;
-    @JsonProperty("created_at") Timestamp createdAt;
-    @JsonProperty("updated_at") Timestamp updatedAt;
-    UserResponse host;
-    @JsonProperty("property_type") PropertyTypeResponse propertyType;
-    Set<AmenitiesResponse> amenities;
 
+    @JsonFormat(pattern = "HH:mm")
+    @JsonProperty("check_in_time")
+    LocalTime checkInTime;
+
+    @JsonFormat(pattern = "HH:mm")
+    @JsonProperty("check_out_time")
+    LocalTime checkOutTime;
+
+    @JsonProperty("created_at")
+    Timestamp createdAt;
+
+    @JsonProperty("updated_at")
+    Timestamp updatedAt;
+
+    UserResponse host;
+
+    @JsonProperty("property_type")
+    PropertyTypeResponse propertyType;
+
+    Set<AmenitiesResponse> amenities;
 }

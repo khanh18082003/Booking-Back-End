@@ -1,13 +1,12 @@
 package com.booking.bookingbackend.service.payment;
 
+import java.util.UUID;
+
 import com.booking.bookingbackend.data.dto.request.PaymentRequest;
 import com.booking.bookingbackend.data.dto.response.PaymentResponse;
 import com.booking.bookingbackend.data.entity.Payment;
 import com.booking.bookingbackend.data.repository.PaymentRepository;
 import com.booking.bookingbackend.service.BaseEntityService;
-
-import java.math.BigDecimal;
-import java.util.UUID;
 
 public interface PaymentService extends BaseEntityService<UUID, Payment, PaymentRepository, PaymentResponse> {
     @Override
@@ -19,8 +18,7 @@ public interface PaymentService extends BaseEntityService<UUID, Payment, Payment
 
     PaymentResponse getPayment(UUID id);
 
-
-    Boolean checkPaymentOnlineStatus(UUID id ,int expectedAmount, String expectedTransactionId) throws Exception;
+    Boolean checkPaymentOnlineStatus(UUID id, int expectedAmount, String expectedTransactionId) throws Exception;
 
     void payComplete(UUID id);
 }

@@ -1,15 +1,12 @@
 package com.booking.bookingbackend.data.dto.request;
 
-import com.booking.bookingbackend.constant.AmenityType;
-import jakarta.validation.constraints.NotBlank;
-
 import java.io.Serializable;
 
+import jakarta.validation.constraints.NotBlank;
+
 public record AmenitiesRequest(
-        @NotBlank(message = "MESSAGE_NOT_BLANK")
-        String name,
+        @NotBlank(message = "MESSAGE_NOT_BLANK") String name,
         String icon,
-        @NotBlank(message = "MESSAGE_NOT_BLANK")
-        String type
-) implements Serializable {
-};
+        @NotBlank(message = "MESSAGE_NOT_BLANK") String type)
+        implements Serializable {}
+;

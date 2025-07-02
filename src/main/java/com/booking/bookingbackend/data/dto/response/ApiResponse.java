@@ -1,9 +1,11 @@
 package com.booking.bookingbackend.data.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,12 +22,11 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(Include.NON_NULL)
 @Builder
 public class ApiResponse<T> implements Serializable {
-  LocalDateTime timeStamp;
-  String path;
-  String error;
-  String code;
-  int status;
-  String message;
-  T data;
-
+    LocalDateTime timeStamp;
+    String path;
+    String error;
+    String code;
+    int status;
+    String message;
+    T data;
 }

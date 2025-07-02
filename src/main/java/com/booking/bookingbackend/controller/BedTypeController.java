@@ -1,21 +1,23 @@
 package com.booking.bookingbackend.controller;
 
-import com.booking.bookingbackend.configuration.Translator;
-import com.booking.bookingbackend.constant.EndpointConstant;
-import com.booking.bookingbackend.constant.ErrorCode;
-import com.booking.bookingbackend.data.dto.response.*;
-import com.booking.bookingbackend.service.bedtype.BedTypeService;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.booking.bookingbackend.configuration.Translator;
+import com.booking.bookingbackend.constant.EndpointConstant;
+import com.booking.bookingbackend.constant.ErrorCode;
+import com.booking.bookingbackend.data.dto.response.*;
+import com.booking.bookingbackend.service.bedtype.BedTypeService;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_BED_TYPE)
@@ -35,5 +37,4 @@ public class BedTypeController {
                 .data(bedTypeService.getAll())
                 .build();
     }
-
 }

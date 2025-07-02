@@ -1,11 +1,12 @@
 package com.booking.bookingbackend.data.dto.response;
 
+import java.io.Serializable;
+import java.sql.Timestamp;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.sql.Timestamp;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,12 +23,13 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @JsonInclude(Include.NON_NULL)
 public class ReviewResponse implements Serializable {
-  Integer id;
-  Integer rating;
-  String review;
-  String avatar;
-  String name;
-  String nationality;
-  @JsonProperty("create_at")
-  Timestamp createdAt;
+    Integer id;
+    Integer rating;
+    String review;
+    String avatar;
+    String name;
+    String nationality;
+
+    @JsonProperty("create_at")
+    Timestamp createdAt;
 }

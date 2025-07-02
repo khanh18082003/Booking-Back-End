@@ -1,10 +1,12 @@
 package com.booking.bookingbackend.data.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,13 +24,13 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(Include.NON_NULL)
 public class AvailableResponse implements Serializable {
 
-  Integer id;
+    Integer id;
 
-  LocalDate date;
+    LocalDate date;
 
-  BigDecimal price;
+    BigDecimal price;
 
-  int totalInventory;
+    int totalInventory;
 
-  int totalReserved;
+    int totalReserved;
 }

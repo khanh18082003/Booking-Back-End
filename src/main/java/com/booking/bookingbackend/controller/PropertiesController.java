@@ -1,5 +1,26 @@
 package com.booking.bookingbackend.controller;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 import com.booking.bookingbackend.configuration.Translator;
 import com.booking.bookingbackend.constant.EndpointConstant;
 import com.booking.bookingbackend.constant.ErrorCode;
@@ -8,8 +29,6 @@ import com.booking.bookingbackend.data.dto.request.CheckAvailableAccommodationsB
 import com.booking.bookingbackend.data.dto.request.PropertiesRequest;
 import com.booking.bookingbackend.data.dto.request.PropertiesSearchRequest;
 import com.booking.bookingbackend.data.dto.response.ApiResponse;
-import com.booking.bookingbackend.data.dto.response.BookingResponse;
-import com.booking.bookingbackend.data.dto.response.Meta;
 import com.booking.bookingbackend.data.dto.response.PaginationResponse;
 import com.booking.bookingbackend.data.dto.response.PropertiesResponse;
 import com.booking.bookingbackend.data.dto.response.PropertyAvailableAccommodationBookingResponse;
@@ -24,38 +43,14 @@ import com.booking.bookingbackend.service.accommodation.AccommodationService;
 import com.booking.bookingbackend.service.booking.BookingService;
 import com.booking.bookingbackend.service.googlemap.GoogleMapService;
 import com.booking.bookingbackend.service.properties.PropertiesService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Order;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_PROPERTY)
@@ -69,74 +64,70 @@ public class PropertiesController {
     AccommodationService accommodationService;
     BookingService bookingService;
 
-    @PostMapping(
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
             summary = "Create Property",
             description = "Create a new Property (`ADMIN` only)",
             responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = "201",
-                            description = "Property created",
-                            content = @Content(
-                                    examples = @ExampleObject(
-                                            value = """
-                                                    {
-                                                      "code": "M000",
-                                                      "status": "201",
-                                                      "message": "Success",
-                                                      "data": {
-                                                        "name": "Luxury Villa",
-                                                        "description": "A beautiful villa with sea view",
-                                                        "address": "123 Ocean Drive",
-                                                        "city": "Miami",
-                                                        "country": "USA",
-                                                        "district": "South Beach",
-                                                        "rating": 4.8,
-                                                        "status": true,
-                                                        "latitude": 25.7617,
-                                                        "longitude": -80.1918,
-                                                        "check_in_time": "14:00",
-                                                        "check_out_time": "11:00",
-                                                        "created_at": "2025-03-15T05:35:35.467Z",
-                                                        "updated_at": "2025-03-15T05:35:35.467Z",
-                                                        "host": {
-                                                          "id": "1",
-                                                          "name": "John Doe"
-                                                        },
-                                                        "property_type": {
-                                                          "id": "2",
-                                                          "name": "Villa"
-                                                        },
-                                                        "amenities": [
-                                                          {
-                                                            "id": "1",
-                                                            "name": "WiFi"
-                                                          },
-                                                          {
-                                                            "id": "2",
-                                                            "name": "Pool"
-                                                          }
-                                                        ]
-                                                      }
-                                                    }
-                                                    """
-                                    )
-                            )
-                    )
-            }
-    )
+                @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                        responseCode = "201",
+                        description = "Property created",
+                        content =
+                                @Content(
+                                        examples =
+                                                @ExampleObject(
+                                                        value =
+                                                                """
+													{
+													"code": "M000",
+													"status": "201",
+													"message": "Success",
+													"data": {
+														"name": "Luxury Villa",
+														"description": "A beautiful villa with sea view",
+														"address": "123 Ocean Drive",
+														"city": "Miami",
+														"country": "USA",
+														"district": "South Beach",
+														"rating": 4.8,
+														"status": true,
+														"latitude": 25.7617,
+														"longitude": -80.1918,
+														"check_in_time": "14:00",
+														"check_out_time": "11:00",
+														"created_at": "2025-03-15T05:35:35.467Z",
+														"updated_at": "2025-03-15T05:35:35.467Z",
+														"host": {
+														"id": "1",
+														"name": "John Doe"
+														},
+														"property_type": {
+														"id": "2",
+														"name": "Villa"
+														},
+														"amenities": [
+														{
+															"id": "1",
+															"name": "WiFi"
+														},
+														{
+															"id": "2",
+															"name": "Pool"
+														}
+														]
+													}
+													}
+													""")))
+            })
     public ApiResponse<PropertiesResponse> save(
             @RequestPart("request") @Valid PropertiesRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image,
-            @RequestPart(value = "extra_image", required = false) MultipartFile[] images
-    ) {
+            @RequestPart(value = "extra_image", required = false) MultipartFile[] images) {
         StringBuilder address = new StringBuilder(request.name());
-        String[] addressParts = {request.ward(), request.district(), request.city(), request.province(),
-                request.country()};
+        String[] addressParts = {
+            request.ward(), request.district(), request.city(), request.province(), request.country()
+        };
         for (String part : addressParts) {
             if (StringUtils.hasLength(part)) {
                 address.append(", ").append(part);
@@ -151,7 +142,8 @@ public class PropertiesController {
         try {
             Files.createDirectories(uploadPath.getParent());
             Files.write(uploadPath, image.getBytes());
-            String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+            String baseUrl =
+                    ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
             String imageUrl = baseUrl + "/uploads/properties/" + fileName; // URL tương đối
             request = request.withImage(imageUrl); // Cập nhật URL ảnh vào request
         } catch (IOException e) {
@@ -168,7 +160,8 @@ public class PropertiesController {
                         uploadPath = Paths.get("uploads/properties/", fileName);
                         Files.createDirectories(uploadPath.getParent());
                         Files.write(uploadPath, i.getBytes());
-                        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build()
+                        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                                .build()
                                 .toUriString();
                         String imageUrl = baseUrl + "/uploads/properties/" + fileName;
                         imageUrls.add(imageUrl); // URL tương đối
@@ -181,10 +174,9 @@ public class PropertiesController {
         }
         log.info("Image URLs: {}", imageUrls);
         // ✅ Gắn toạ độ và image vào request mới
-        PropertiesRequest latLngRequest = request
-                .withLatitude(location[0])
+        PropertiesRequest latLngRequest = request.withLatitude(location[0])
                 .withLongitude(location[1])
-                .withExtraImages(imageUrls);  // Phần duy nhất được cập nhật thêm
+                .withExtraImages(imageUrls); // Phần duy nhất được cập nhật thêm
         log.info("Properties Request: {}", latLngRequest);
         return ApiResponse.<PropertiesResponse>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
@@ -193,7 +185,6 @@ public class PropertiesController {
                 .data(propertiesService.save(latLngRequest))
                 .build();
     }
-
 
     @GetMapping("/search")
     ApiResponse<PaginationResponse<PropertiesDTO>> search(
@@ -227,9 +218,7 @@ public class PropertiesController {
     }
 
     @PatchMapping("/{id}")
-    ApiResponse<Void> changeStatus(
-            @PathVariable UUID id
-    ) {
+    ApiResponse<Void> changeStatus(@PathVariable UUID id) {
         propertiesService.changeStatus(id);
         return ApiResponse.<Void>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
@@ -241,21 +230,15 @@ public class PropertiesController {
     @PutMapping(
             value = "/{id}",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
+            produces = MediaType.APPLICATION_JSON_VALUE)
     ApiResponse<PropertiesHostDTO> update(
             @PathVariable UUID id,
             @RequestPart("request") @Valid PropertiesRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image,
-            @RequestPart(value = "extra_image", required = false) MultipartFile[] images
-    ) {
+            @RequestPart(value = "extra_image", required = false) MultipartFile[] images) {
         StringBuilder address = new StringBuilder(request.name());
         String[] addressParts = {
-                request.ward(),
-                request.district(),
-                request.city(),
-                request.province(),
-                request.country()
+            request.ward(), request.district(), request.city(), request.province(), request.country()
         };
         for (String part : addressParts) {
             if (StringUtils.hasLength(part)) {
@@ -274,7 +257,9 @@ public class PropertiesController {
             try {
                 Files.createDirectories(uploadPath.getParent());
                 Files.write(uploadPath, image.getBytes());
-                String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+                String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                        .build()
+                        .toUriString();
                 String imageUrl = baseUrl + "/uploads/properties/" + fileName; // URL tương đối
                 request = request.withImage(imageUrl); // Cập nhật URL ảnh vào request
             } catch (IOException e) {
@@ -284,8 +269,7 @@ public class PropertiesController {
         }
 
         // ✅ Xử lý images nếu có
-        List<String> imageUrls =
-                request.extraImages() != null ? request.extraImages() : new ArrayList<>();
+        List<String> imageUrls = request.extraImages() != null ? request.extraImages() : new ArrayList<>();
         if (images != null) {
             int index = 0;
             for (MultipartFile i : images) {
@@ -295,7 +279,8 @@ public class PropertiesController {
                         uploadPath = Paths.get("uploads/properties/", fileName);
                         Files.createDirectories(uploadPath.getParent());
                         Files.write(uploadPath, i.getBytes());
-                        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build()
+                        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                                .build()
                                 .toUriString();
                         String imageUrl = baseUrl + "/uploads/properties/" + fileName;
                         imageUrls.set(imageUrls.size() - images.length + index, imageUrl);
@@ -313,18 +298,16 @@ public class PropertiesController {
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
                 .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-                .data(propertiesService.update(id, request
-                        .withLatitude(location[0])
-                        .withLongitude(location[1])
-                        .withExtraImages(imageUrls)
-                ))
+                .data(propertiesService.update(
+                        id,
+                        request.withLatitude(location[0])
+                                .withLongitude(location[1])
+                                .withExtraImages(imageUrls)))
                 .build();
     }
 
     @GetMapping("/{id}")
-    ApiResponse<PropertiesDetailDTO> getPropertiesDetail(
-            @PathVariable UUID id
-    ) {
+    ApiResponse<PropertiesDetailDTO> getPropertiesDetail(@PathVariable UUID id) {
         return ApiResponse.<PropertiesDetailDTO>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
@@ -337,8 +320,7 @@ public class PropertiesController {
     ApiResponse<PaginationResponse<ReviewResponse>> getPropertiesReviews(
             @PathVariable UUID id,
             @RequestParam(name = "pageNo", defaultValue = "1") int pageNo,
-            @RequestParam(name = "pageSize", defaultValue = "10") int pageSize
-    ) {
+            @RequestParam(name = "pageSize", defaultValue = "10") int pageSize) {
         return ApiResponse.<PaginationResponse<ReviewResponse>>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
@@ -348,13 +330,13 @@ public class PropertiesController {
     }
 
     @GetMapping("/{id}/accommodations")
-    ApiResponse<List<AccommodationSearchDTO>> findAccommodationByPropertyId(@PathVariable UUID id,
-                                                                            @RequestParam(name = "start_date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-                                                                            @RequestParam(name = "end_date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
-                                                                            @RequestParam(name = "rooms") Integer rooms,
-                                                                            @RequestParam(name = "adults") Integer adults,
-                                                                            @RequestParam(name = "children") Integer children
-    ) {
+    ApiResponse<List<AccommodationSearchDTO>> findAccommodationByPropertyId(
+            @PathVariable UUID id,
+            @RequestParam(name = "start_date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(name = "end_date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+            @RequestParam(name = "rooms") Integer rooms,
+            @RequestParam(name = "adults") Integer adults,
+            @RequestParam(name = "children") Integer children) {
         var request = AccommodationsSearchRequest.builder()
                 .id(id)
                 .startDate(startDate)
@@ -371,7 +353,6 @@ public class PropertiesController {
                 .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
                 .data(accommodationService.findAccommodationByPropertyId(request))
                 .build();
-
     }
 
     @GetMapping("/{id}/accommodations/available")
@@ -383,8 +364,7 @@ public class PropertiesController {
             @RequestParam(name = "adults") Integer adults,
             @RequestParam(name = "children") Integer children,
             @RequestParam(name = "rooms") Integer rooms,
-            @RequestParam(name = "accommodations") String... accommodations
-    ) {
+            @RequestParam(name = "accommodations") String... accommodations) {
         var request = CheckAvailableAccommodationsBookingRequest.builder()
                 .checkIn(checkIn)
                 .checkOut(checkOut)
@@ -398,8 +378,7 @@ public class PropertiesController {
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
                 .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
-                .data(
-                        propertiesService.checkAvailableAccommodationsBooking(id, request, httpServletResponse))
+                .data(propertiesService.checkAvailableAccommodationsBooking(id, request, httpServletResponse))
                 .build();
     }
 
@@ -416,15 +395,13 @@ public class PropertiesController {
 
     @GetMapping("/{id}/host-accommodations")
     ApiResponse<List<AccommodationHostDTO>> getAccommodationsByPropertyId(@PathVariable UUID id) {
-        List<AccommodationHostDTO> accommodations = accommodationService.getAccommodationsByPropertyId(
-                id);
+        List<AccommodationHostDTO> accommodations = accommodationService.getAccommodationsByPropertyId(id);
         return ApiResponse.<List<AccommodationHostDTO>>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
                 .message(Translator.toLocale(ErrorCode.MESSAGE_SUCCESS.getErrorCode()))
                 .data(accommodations)
                 .build();
-
     }
 
     @GetMapping("/{id}/bookings")
@@ -433,7 +410,8 @@ public class PropertiesController {
             @PathVariable String id,
             @RequestParam(defaultValue = "1") int pageNo,
             @RequestParam(defaultValue = "20") int pageSize) {
-        PaginationResponse<BookingDetailResponse> result = bookingService.getAllBookingsByPropertiesId(id, pageNo, pageSize);
+        PaginationResponse<BookingDetailResponse> result =
+                bookingService.getAllBookingsByPropertiesId(id, pageNo, pageSize);
 
         return ApiResponse.<PaginationResponse<BookingDetailResponse>>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
@@ -444,9 +422,7 @@ public class PropertiesController {
     }
 
     @PostMapping("/redis")
-    ApiResponse<String> addLovedPropertiesInRedis(
-            @RequestBody PropertiesDTO request
-    ) {
+    ApiResponse<String> addLovedPropertiesInRedis(@RequestBody PropertiesDTO request) {
         return ApiResponse.<String>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())
@@ -456,12 +432,8 @@ public class PropertiesController {
     }
 
     @GetMapping("/{id}/detail")
-    ApiResponse<PropertiesDTO> getLovedPropertiesInRedis(
-            @PathVariable String id
-    ) {
-        PropertiesDTO propertiesDetail = propertiesService.getLovedPropertiesInRedis(
-                id
-        );
+    ApiResponse<PropertiesDTO> getLovedPropertiesInRedis(@PathVariable String id) {
+        PropertiesDTO propertiesDetail = propertiesService.getLovedPropertiesInRedis(id);
         return ApiResponse.<PropertiesDTO>builder()
                 .code(ErrorCode.MESSAGE_SUCCESS.getErrorCode())
                 .status(HttpStatus.OK.value())

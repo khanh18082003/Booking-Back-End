@@ -5,5 +5,5 @@ import java.io.Serializable;
 @FunctionalInterface
 public interface Identifiable<I> extends Serializable {
 
-  I getId();
+    I getId();
 }

@@ -1,24 +1,11 @@
 package com.booking.bookingbackend.configuration;
 
-import com.booking.bookingbackend.constant.EndpointConstant;
-import com.booking.bookingbackend.service.user.UserInfoService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import jakarta.websocket.Endpoint;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -40,6 +27,19 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.booking.bookingbackend.constant.EndpointConstant;
+import com.booking.bookingbackend.service.user.UserInfoService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
+
+import lombok.RequiredArgsConstructor;
+
 @Configuration
 @EnableMethodSecurity
 @EnableWebSecurity
@@ -50,37 +50,36 @@ public class SecurityConfig {
     private final UserInfoService userInfoService;
 
     private static final String[] WHITE_LIST_API = {
-            EndpointConstant.ENDPOINT_USER + "/register",
-            EndpointConstant.ENDPOINT_AUTH + "/login",
-            EndpointConstant.ENDPOINT_AUTH + "/host/**",
-            EndpointConstant.ENDPOINT_AUTH + "/verify-email",
-            EndpointConstant.ENDPOINT_AUTH + "/refresh-token",
-            EndpointConstant.ENDPOINT_AUTH + "/logout",
-            EndpointConstant.ENDPOINT_AUTH + "/check-exist-email",
-            EndpointConstant.ENDPOINT_AUTH + "/outbound/authentication",
-            EndpointConstant.ENDPOINT_AUTH + "/outbound/authentication-app",
-            EndpointConstant.ENDPOINT_MAIL,
-            EndpointConstant.ENDPOINT_USER + "/forgot-password",
-            EndpointConstant.ENDPOINT_USER + "/reset-password",
-            EndpointConstant.ENDPOINT_PAYMENT,
-            EndpointConstant.ENDPOINT_BOOKING,
-            EndpointConstant.ENDPOINT_USER + "/host/check-email",
-            EndpointConstant.ENDPOINT_PROPERTY + "/redis"
+        EndpointConstant.ENDPOINT_USER + "/register",
+        EndpointConstant.ENDPOINT_AUTH + "/login",
+        EndpointConstant.ENDPOINT_AUTH + "/host/**",
+        EndpointConstant.ENDPOINT_AUTH + "/verify-email",
+        EndpointConstant.ENDPOINT_AUTH + "/refresh-token",
+        EndpointConstant.ENDPOINT_AUTH + "/logout",
+        EndpointConstant.ENDPOINT_AUTH + "/check-exist-email",
+        EndpointConstant.ENDPOINT_AUTH + "/outbound/authentication",
+        EndpointConstant.ENDPOINT_AUTH + "/outbound/authentication-app",
+        EndpointConstant.ENDPOINT_MAIL,
+        EndpointConstant.ENDPOINT_USER + "/forgot-password",
+        EndpointConstant.ENDPOINT_USER + "/reset-password",
+        EndpointConstant.ENDPOINT_PAYMENT,
+        EndpointConstant.ENDPOINT_BOOKING,
+        EndpointConstant.ENDPOINT_USER + "/host/check-email",
+        EndpointConstant.ENDPOINT_PROPERTY + "/redis"
     };
     private static final String[] GET_LIST_API = {
-            EndpointConstant.ENDPOINT_PROPERTY + "/search",
-            EndpointConstant.ENDPOINT_PROPERTY + "/{id}",
-            EndpointConstant.ENDPOINT_PROPERTY + "/{id}/accommodations",
-            EndpointConstant.ENDPOINT_PROPERTY + "/{id}/reviews",
-            EndpointConstant.ENDPOINT_PROPERTY + "/{id}/accommodations/available",
-            EndpointConstant.ENDPOINT_PROPERTY + "/{id}/detail",
-            EndpointConstant.ENDPOINT_PAYMENT + "/check-payment-status",
-            EndpointConstant.ENDPOINT_PAYMENT + "/get-payment",
-            EndpointConstant.ENDPOINT_LOCATION,
-            EndpointConstant.ENDPOINT_AMENITIES + "/properties",
-            EndpointConstant.ENDPOINT_IMAGE + "/**"
+        EndpointConstant.ENDPOINT_PROPERTY + "/search",
+        EndpointConstant.ENDPOINT_PROPERTY + "/{id}",
+        EndpointConstant.ENDPOINT_PROPERTY + "/{id}/accommodations",
+        EndpointConstant.ENDPOINT_PROPERTY + "/{id}/reviews",
+        EndpointConstant.ENDPOINT_PROPERTY + "/{id}/accommodations/available",
+        EndpointConstant.ENDPOINT_PROPERTY + "/{id}/detail",
+        EndpointConstant.ENDPOINT_PAYMENT + "/check-payment-status",
+        EndpointConstant.ENDPOINT_PAYMENT + "/get-payment",
+        EndpointConstant.ENDPOINT_LOCATION,
+        EndpointConstant.ENDPOINT_AMENITIES + "/properties",
+        EndpointConstant.ENDPOINT_IMAGE + "/**"
     };
-
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -98,40 +97,32 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
-                .authorizeHttpRequests(
-                        request -> request
-                                .requestMatchers(
-                                        "/v3/api-docs/**",
-                                        "/swagger-ui/**",
-                                        "/swagger-ui.html",
-                                        "/booking-api/v1/v3/api-docs/**"
-
-                                ).permitAll()
-                                .requestMatchers(HttpMethod.POST, WHITE_LIST_API).permitAll()
-                                .requestMatchers(HttpMethod.GET, GET_LIST_API).permitAll()
-                                .anyRequest().authenticated()
-                ).sessionManagement(
-                        manager -> manager
-                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .authorizeHttpRequests(request -> request.requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/booking-api/v1/v3/api-docs/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, WHITE_LIST_API)
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, GET_LIST_API)
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated())
+                .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(requestFilter, UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling(
-                        ex -> ex
-                                .authenticationEntryPoint(new JwtAuthenticationEntryPoint(objectMapper())));
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(new JwtAuthenticationEntryPoint(objectMapper())));
 
         httpSecurity.csrf(AbstractHttpConfigurer::disable);
-        httpSecurity
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())); // cấu hình CORS
+        httpSecurity.cors(cors -> cors.configurationSource(corsConfigurationSource())); // cấu hình CORS
         return httpSecurity.build();
     }
 
     // Config resource from swagger
     @Bean
     public WebSecurityCustomizer ignoreResource() {
-        return webSecurity -> webSecurity
-                .ignoring()
-                .requestMatchers("/css/**", "/js/**", "/images/**");
+        return webSecurity -> webSecurity.ignoring().requestMatchers("/css/**", "/js/**", "/images/**");
     }
 
     /**
@@ -151,8 +142,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
-            throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
@@ -165,30 +155,12 @@ public class SecurityConfig {
     public ObjectMapper objectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
-        module.addSerializer(
-                LocalDateTime.class,
-                new LocalDateTimeSerializer(DateTimeFormatter.ISO_DATE_TIME)
-        );
-        module.addSerializer(
-                LocalDate.class,
-                new LocalDateSerializer(DateTimeFormatter.ISO_DATE)
-        );
-        module.addDeserializer(
-                LocalDateTime.class,
-                new LocalDateTimeDeserializer(DateTimeFormatter.ISO_DATE_TIME)
-        );
-        module.addDeserializer(
-                LocalDate.class,
-                new LocalDateDeserializer(DateTimeFormatter.ISO_DATE)
-        );
-        module.addSerializer(
-                LocalTime.class,
-                new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm"))
-        );
-        module.addDeserializer(
-                LocalTime.class,
-                new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm"))
-        );
+        module.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ISO_DATE_TIME));
+        module.addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ISO_DATE));
+        module.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ISO_DATE_TIME));
+        module.addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ISO_DATE));
+        module.addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm")));
+        module.addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm")));
         objectMapper.registerModule(module);
         return objectMapper;
     }

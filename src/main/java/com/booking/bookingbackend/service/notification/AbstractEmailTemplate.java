@@ -1,13 +1,14 @@
 package com.booking.bookingbackend.service.notification;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.thymeleaf.spring6.SpringTemplateEngine;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 
 public abstract class AbstractEmailTemplate {
     protected final JavaMailSender mailSender;

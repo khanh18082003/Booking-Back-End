@@ -1,13 +1,16 @@
 package com.booking.bookingbackend.data.entity;
 
-import com.booking.bookingbackend.data.base.AbstractIdentifiable;
-import com.booking.bookingbackend.data.entity.ids.BookingDetailId;
+import java.io.Serial;
+import java.math.BigDecimal;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import java.io.Serial;
-import java.math.BigDecimal;
+
+import com.booking.bookingbackend.data.base.AbstractIdentifiable;
+import com.booking.bookingbackend.data.entity.ids.BookingDetailId;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,24 +29,24 @@ import lombok.experimental.FieldDefaults;
 @Builder
 public class BookingDetail extends AbstractIdentifiable<BookingDetailId> {
 
-  @Serial
-  private static final long serialVersionUID = -5602276862764545365L;
+    @Serial
+    private static final long serialVersionUID = -5602276862764545365L;
 
-  @EmbeddedId
-  BookingDetailId id;
+    @EmbeddedId
+    BookingDetailId id;
 
-  @Column(name = "booked_units", nullable = false)
-  Integer bookedUnits;
+    @Column(name = "booked_units", nullable = false)
+    Integer bookedUnits;
 
-  @Column(name = "total_nights", nullable = false)
-  Integer totalNights;
+    @Column(name = "total_nights", nullable = false)
+    Integer totalNights;
 
-  @Column(name = "tax", precision = 10, scale = 2)
-  BigDecimal tax;
+    @Column(name = "tax", precision = 10, scale = 2)
+    BigDecimal tax;
 
-  @Column(name = "service_fee", precision = 10, scale = 2)
-  BigDecimal serviceFee;
+    @Column(name = "service_fee", precision = 10, scale = 2)
+    BigDecimal serviceFee;
 
-  @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
-  BigDecimal totalPrice;
+    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
+    BigDecimal totalPrice;
 }

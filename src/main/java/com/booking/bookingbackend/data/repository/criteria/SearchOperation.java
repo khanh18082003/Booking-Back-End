@@ -10,8 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SearchOperation {
-  private String key;
-  private String operator;
-  private Object value;
-
+    private String key;
+    private String operator;
+    private Object value;
 }

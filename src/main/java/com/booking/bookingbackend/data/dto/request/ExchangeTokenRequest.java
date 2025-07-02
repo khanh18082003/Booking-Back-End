@@ -1,8 +1,10 @@
 package com.booking.bookingbackend.data.dto.request;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import java.io.Serializable;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,10 +22,9 @@ import lombok.experimental.FieldDefaults;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ExchangeTokenRequest implements Serializable {
 
-  String code;
-  String clientId;
-  String clientSecret;
-  String redirectUri;
-  String grantType;
-
+    String code;
+    String clientId;
+    String clientSecret;
+    String redirectUri;
+    String grantType;
 }
